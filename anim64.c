@@ -19,6 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 #include <conio.h>
+#include <string.h>
 
 #include "keymap.h"
 
@@ -45,6 +46,8 @@ static void init() {
 #define PAINT_MODE 0
 #define KEYMAP_MODE 1
 static char mode;
+
+static char color_buffer[40 * 25];
 
 static char last_char = 'a';
 static char paint_char = 'a';
@@ -98,6 +101,7 @@ static void do_paint(char ch) {
     } else if (ch >= 'A' && ch <= 'Z') {
         mode = KEYMAP_MODE;
         last_char = ch - 'A' + 'a';
+        memcpy(color_buffer, (char*)0xd800, sizeof(color_buffer));
         enter_keymap_mode(ch - 'A');
     }
 
@@ -151,7 +155,8 @@ void main() {
             case KEYMAP_MODE:
                 if (do_keymap(ch)) {
                     mode = PAINT_MODE;
-                    clrscr();
+                    memcpy((char*)0xd800, color_buffer, sizeof(color_buffer));
+                    set_color(color);
                     move_cursor();
                     paint_char = get_char(last_char);
                     punch(paint_char);
