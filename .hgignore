@@ -1,0 +1,10 @@
+syntax: glob
+*~
+*.a
+*.o
+*.prg
+*.map
+*.swp
+*.lbl
+.dep
+tags

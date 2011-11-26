@@ -1,0 +1,73 @@
+/** Copyright (c) 2011, Johan Kotlinski
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE. */
+
+#include <conio.h>
+
+#include "keymap.h"
+
+#define SCREEN (char*)0x400u
+
+void init() {
+    clrscr();
+    bordercolor(0);
+    bgcolor(0);
+    cursor(1);
+    init_keymap();
+}
+
+#define PAINT_MODE 0
+#define KEYMAP_MODE 1
+char mode;
+
+void do_paint(char ch) {
+    if (ch >= '1' && ch <= '8') {  // textcolor 1-8
+        textcolor(ch - '1');
+    } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
+        textcolor(ch - '1' - 16 + 8);
+    }
+}
+
+void main() {
+    init();
+    while (1) {
+        const char ch = cgetc();
+        if (ch == CH_ENTER) {
+            switch (mode) {
+                case KEYMAP_MODE:
+                    mode = PAINT_MODE;
+                    clrscr();
+                    break;
+                case PAINT_MODE:
+                    mode = KEYMAP_MODE;
+                    enter_keymap_mode();
+                    break;
+            }
+        } else {
+            switch (mode) {
+                case PAINT_MODE:
+                    do_paint(ch);
+                    break;
+                case KEYMAP_MODE:
+                    do_keymap(ch);
+                    break;
+            }
+        }
+    }
+}
