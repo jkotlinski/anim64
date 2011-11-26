@@ -27,9 +27,16 @@ THE SOFTWARE. */
 static char cur_x;
 static char cur_y;
 
-void init() {
+static char color;
+static void set_color(char c) {
+    textcolor(c);
+    color = c;
+}
+
+static void init() {
     clrscr();
     bordercolor(0);
+    set_color(1);
     bgcolor(0);
     cursor(1);
     init_keymap();
@@ -45,11 +52,13 @@ static void move_cursor() {
 
 void do_paint(char ch) {
     if (ch >= '1' && ch <= '8') {  // textcolor 1-8
-        textcolor(ch - '1');
+        set_color(ch - '1');
     } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
-        textcolor(ch - '1' - 16 + 8);
+        set_color(ch - '1' - 16 + 8);
     } else if (ch >= 'a' && ch <= 'z') {
-        *(char*)(0x400 + 40 * cur_y + cur_x) = get_char(ch);
+        unsigned int offset = 40 * cur_y + cur_x;
+        *(char*)(0x400u + offset) = get_char(ch);
+        *(char*)(0xd800u + offset) = color;
     } else if (ch >= 'A' && ch <= 'Z') {
         mode = KEYMAP_MODE;
         enter_keymap_mode(ch - 'A');

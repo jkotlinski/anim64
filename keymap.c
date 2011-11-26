@@ -38,7 +38,10 @@ void cursor_moved() {
 }
 
 void init_keymap() {
-    memset(keymap, 0x48, sizeof(keymap));
+    char i;
+    for (i = 0; i < sizeof(keymap); ++i) {
+        keymap[i] = 'a' + i;
+    }
 }
 
 void draw_keymap() {
@@ -58,7 +61,7 @@ void draw_keymap() {
 void enter_keymap_mode(char key_index) {
     clrscr();
     gotoxy(0, 9);
-    cprintf("assign key %c", key_index + 'A');
+    cprintf("reassign %c", key_index + 'A');
     gotoxy(0, 11);
     cputs("return = invert");
     gotoxy(0, 12);
