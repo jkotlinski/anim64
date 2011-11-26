@@ -44,7 +44,17 @@ static void init() {
 
 #define PAINT_MODE 0
 #define KEYMAP_MODE 1
-char mode;
+static char mode;
+
+static char last_char = 'a';
+static char paint_char;
+static char painting;
+
+void punch() {
+    unsigned int offset = 40 * cur_y + cur_x;
+    *(char*)(0x400u + offset) = paint_char;
+    *(char*)(0xd800u + offset) = color;
+}
 
 static void move_cursor() {
     gotoxy(cur_x, cur_y);
@@ -56,35 +66,53 @@ void do_paint(char ch) {
     } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
         set_color(ch - '1' - 16 + 8);
     } else if (ch >= 'a' && ch <= 'z') {
-        unsigned int offset = 40 * cur_y + cur_x;
-        *(char*)(0x400u + offset) = get_char(ch);
-        *(char*)(0xd800u + offset) = color;
+        if (last_char == ch) {
+            ch = ' ';  // Paint!
+        } else {
+            last_char = ch;
+            paint_char = get_char(ch);
+        }
     } else if (ch >= 'A' && ch <= 'Z') {
         mode = KEYMAP_MODE;
+        last_char = ch - 'A' + 'a';
         enter_keymap_mode(ch - 'A');
-    } else switch (ch) {
+    }
+
+    switch (ch) {
         case CH_CURS_UP:
             if (cur_y > 0) {
                 --cur_y;
                 move_cursor();
+                if (painting) punch();
             }
             break;
         case CH_CURS_DOWN:
             if (cur_y < 24) {
                 ++cur_y;
                 move_cursor();
+                if (painting) punch();
             }
             break;
         case CH_CURS_LEFT:
             if (cur_x > 0) {
                 --cur_x;
                 move_cursor();
+                if (painting) punch();
             }
             break;
         case CH_CURS_RIGHT:
             if (cur_x < 39) {
                 ++cur_x;
                 move_cursor();
+                if (painting) punch();
+            }
+            break;
+        case ' ':
+            if (painting) {
+                painting = 0;
+            } else {
+                painting = 1;
+                punch();
             }
             break;
     }
@@ -100,6 +128,8 @@ void main() {
                 break;
             case KEYMAP_MODE:
                 if (do_keymap(ch)) {
+                    painting = 0;
+                    paint_char = get_char(last_char);
                     mode = PAINT_MODE;
                     clrscr();
                     move_cursor();
