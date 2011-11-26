@@ -40,7 +40,7 @@ void cursor_moved() {
 void init_keymap() {
     char i;
     for (i = 0; i < sizeof(keymap); ++i) {
-        keymap[i] = 'a' + i;
+        keymap[i] = 1 + i;
     }
 }
 
@@ -59,11 +59,12 @@ void draw_keymap() {
 }
 
 void enter_keymap_mode(char key_index) {
+    *(char*)0xd018 = 0x14;  // Point video to 0x400.
     clrscr();
     memset((char*)0xd800, COLOR_YELLOW, 40 * 25);
     gotoxy(0, 9);
     textcolor(COLOR_CYAN);
-    cprintf("reassign %c", key_index + 'A');
+    cprintf("reassign %c", key_index + 1);
     gotoxy(0, 11);
     cputs("return = invert");
     gotoxy(0, 12);

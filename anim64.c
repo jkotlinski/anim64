@@ -23,8 +23,6 @@ THE SOFTWARE. */
 
 #include "keymap.h"
 
-#define SCREEN (char*)0x400u
-
 static unsigned char cur_x;
 static unsigned char cur_y;
 
@@ -34,7 +32,11 @@ static void set_color(char c) {
     color = c;
 }
 
+#define VIDEO_BASE ((char*)0x2000)
+
 static void init() {
+    *(char*)0xd018 = 0x84;  // Point video to 0x2000.
+    memset(VIDEO_BASE, 0x20, 40 * 25);
     clrscr();
     bordercolor(0);
     set_color(1);
@@ -49,8 +51,8 @@ static char mode;
 
 static char color_buffer[40 * 25];
 
-static char last_char = 'a';
-static char paint_char = 'a';
+static char last_char = 1;
+static char paint_char = 1;
 static char painting;
 
 static unsigned int offset() {
@@ -59,12 +61,12 @@ static unsigned int offset() {
 
 static void punch(char ch) {
     const unsigned int i = offset();
-    *(char*)(0x400u + i) = ch;
+    VIDEO_BASE[i] = ch;
     *(char*)(0xd800u + i) = color;
 }
 
 static char screen_char() {
-    return *(char*)(0x400u + offset());
+    return VIDEO_BASE[offset()];
 }
 
 static void move_cursor() {
@@ -106,6 +108,9 @@ static void do_paint(char ch) {
     }
 
     switch (ch) {
+        case CH_ENTER:
+            memset((char*)0x2000, 40, 40 * 25);
+            break;
         case CH_CURS_UP:
             if (cur_y > 0) {
                 pre_cur_move();
@@ -154,6 +159,7 @@ void main() {
                 break;
             case KEYMAP_MODE:
                 if (do_keymap(ch)) {
+                    *(char*)0xd018 = 0x84;  // Point video to 0x2000.
                     mode = PAINT_MODE;
                     memcpy((char*)0xd800, color_buffer, sizeof(color_buffer));
                     set_color(color);
