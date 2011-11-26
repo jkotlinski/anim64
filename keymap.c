@@ -107,3 +107,7 @@ char do_keymap(char key) {
     }
     return 0;
 }
+
+char get_char(char key) {
+    return keymap[key - 'a'];
+}

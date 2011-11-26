@@ -27,4 +27,6 @@ void enter_keymap_mode(char key_index);
 
 char do_keymap(char ch);
 
+char get_char(char key);
+
 #endif  // KEYMAP_H

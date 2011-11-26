@@ -24,6 +24,9 @@ THE SOFTWARE. */
 
 #define SCREEN (char*)0x400u
 
+static char cur_x;
+static char cur_y;
+
 void init() {
     clrscr();
     bordercolor(0);
@@ -36,14 +39,45 @@ void init() {
 #define KEYMAP_MODE 1
 char mode;
 
+static void move_cursor() {
+    gotoxy(cur_x, cur_y);
+}
+
 void do_paint(char ch) {
     if (ch >= '1' && ch <= '8') {  // textcolor 1-8
         textcolor(ch - '1');
     } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
         textcolor(ch - '1' - 16 + 8);
+    } else if (ch >= 'a' && ch <= 'z') {
+        *(char*)(0x400 + 40 * cur_y + cur_x) = get_char(ch);
     } else if (ch >= 'A' && ch <= 'Z') {
         mode = KEYMAP_MODE;
         enter_keymap_mode(ch - 'A');
+    } else switch (ch) {
+        case CH_CURS_UP:
+            if (cur_y > 0) {
+                --cur_y;
+                move_cursor();
+            }
+            break;
+        case CH_CURS_DOWN:
+            if (cur_y < 24) {
+                ++cur_y;
+                move_cursor();
+            }
+            break;
+        case CH_CURS_LEFT:
+            if (cur_x > 0) {
+                --cur_x;
+                move_cursor();
+            }
+            break;
+        case CH_CURS_RIGHT:
+            if (cur_x < 39) {
+                ++cur_x;
+                move_cursor();
+            }
+            break;
     }
 }
 
@@ -59,6 +93,7 @@ void main() {
                 if (do_keymap(ch)) {
                     mode = PAINT_MODE;
                     clrscr();
+                    move_cursor();
                 }
                 break;
         }
