@@ -68,7 +68,7 @@ static void move_cursor() {
     gotoxy(cur_x, cur_y);
 }
 
-static char hidden_screen_char;
+static char hidden_screen_char = ' ';
 
 static void pre_cur_move() {
     if (!painting) {
@@ -93,6 +93,7 @@ static void do_paint(char ch) {
         } else {
             last_char = ch;
             paint_char = get_char(ch);
+            punch(paint_char);
         }
     } else if (ch >= 'A' && ch <= 'Z') {
         mode = KEYMAP_MODE;
@@ -143,6 +144,7 @@ static void do_paint(char ch) {
 
 void main() {
     init();
+    punch(paint_char);
     while (1) {
         const char ch = cgetc();
         switch (mode) {
@@ -151,11 +153,11 @@ void main() {
                 break;
             case KEYMAP_MODE:
                 if (do_keymap(ch)) {
-                    painting = 0;
-                    paint_char = get_char(last_char);
                     mode = PAINT_MODE;
                     clrscr();
                     move_cursor();
+                    paint_char = get_char(last_char);
+                    punch(paint_char);
                 }
                 break;
         }
