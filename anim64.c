@@ -41,6 +41,9 @@ void do_paint(char ch) {
         textcolor(ch - '1');
     } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
         textcolor(ch - '1' - 16 + 8);
+    } else if (ch >= 'A' && ch <= 'Z') {
+        mode = KEYMAP_MODE;
+        enter_keymap_mode(ch - 'A');
     }
 }
 
@@ -48,26 +51,16 @@ void main() {
     init();
     while (1) {
         const char ch = cgetc();
-        if (ch == CH_ENTER) {
-            switch (mode) {
-                case KEYMAP_MODE:
+        switch (mode) {
+            case PAINT_MODE:
+                do_paint(ch);
+                break;
+            case KEYMAP_MODE:
+                if (do_keymap(ch)) {
                     mode = PAINT_MODE;
                     clrscr();
-                    break;
-                case PAINT_MODE:
-                    mode = KEYMAP_MODE;
-                    enter_keymap_mode();
-                    break;
-            }
-        } else {
-            switch (mode) {
-                case PAINT_MODE:
-                    do_paint(ch);
-                    break;
-                case KEYMAP_MODE:
-                    do_keymap(ch);
-                    break;
-            }
+                }
+                break;
         }
     }
 }

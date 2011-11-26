@@ -23,8 +23,8 @@ THE SOFTWARE. */
 
 void init_keymap();
 
-void enter_keymap_mode();
+void enter_keymap_mode(char key_index);
 
-void do_keymap(char ch);
+char do_keymap(char ch);
 
 #endif  // KEYMAP_H

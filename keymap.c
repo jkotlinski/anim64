@@ -23,25 +23,14 @@ THE SOFTWARE. */
 #include <conio.h>
 #include <string.h>
 
-char assign_key;
 
-char keymap['z' - 'a' + 1];
-char keymap_index;
+static char keymap['z' - 'a' + 1];
+static char keymap_index;
 
-char cur_x;
-char cur_y;
+static char cur_x;
+static char cur_y;
 
-char reversed;
-
-void update_assign_key(char key) {
-    assign_key = key;
-    gotoxy(12, 9);
-    cputc(assign_key);
-    keymap_index = key - 'a';
-    cur_x = keymap[keymap_index] & 0xf;
-    cur_y = keymap[keymap_index] >> 4;
-    gotoxy(cur_x, cur_y);
-}
+static char reversed;
 
 void cursor_moved() {
     keymap[keymap_index] = cur_x | (cur_y << 4);
@@ -66,47 +55,55 @@ void draw_keymap() {
     }
 }
 
-void enter_keymap_mode() {
+void enter_keymap_mode(char key_index) {
     clrscr();
     gotoxy(0, 9);
-    cputs("assign key:");
-    update_assign_key('a');
+    cprintf("assign key %c", key_index + 'A');
+    gotoxy(0, 11);
+    cputs("return = invert");
+    gotoxy(0, 12);
+    cputs("other = select");
+    keymap_index = key_index;
+    cur_x = keymap[key_index] & 0xf;
+    cur_y = keymap[key_index] >> 4;
+    gotoxy(cur_x, cur_y);
+
     draw_keymap();
 }
 
-void do_keymap(char key) {
-    if (key >= 'a' && key <= 'z') {
-        update_assign_key(key);
-    } else {
-        switch (key) {
-            case ' ':
-                reversed ^= 1;
-                draw_keymap();
-                break;
-            case CH_CURS_UP:
-                if (cur_y > 0) {
-                    --cur_y;
-                    cursor_moved();
-                }
-                break;
-            case CH_CURS_DOWN:
-                if (cur_y < 7) {
-                    ++cur_y;
-                    cursor_moved();
-                }
-                break;
-            case CH_CURS_LEFT:
-                if (cur_x > 0) {
-                    --cur_x;
-                    cursor_moved();
-                }
-                break;
-            case CH_CURS_RIGHT:
-                if (cur_x < 15) {
-                    ++cur_x;
-                    cursor_moved();
-                }
-                break;
-        }
+/* Return 1 if selected key, 0 if done */
+char do_keymap(char key) {
+    switch (key) {
+        case CH_ENTER:
+            reversed ^= 1;
+            draw_keymap();
+            break;
+        case CH_CURS_UP:
+            if (cur_y > 0) {
+                --cur_y;
+                cursor_moved();
+            }
+            break;
+        case CH_CURS_DOWN:
+            if (cur_y < 7) {
+                ++cur_y;
+                cursor_moved();
+            }
+            break;
+        case CH_CURS_LEFT:
+            if (cur_x > 0) {
+                --cur_x;
+                cursor_moved();
+            }
+            break;
+        case CH_CURS_RIGHT:
+            if (cur_x < 15) {
+                ++cur_x;
+                cursor_moved();
+            }
+            break;
+        default:
+            return 1;
     }
+    return 0;
 }
