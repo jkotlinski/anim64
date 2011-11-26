@@ -24,8 +24,8 @@ THE SOFTWARE. */
 
 #define SCREEN (char*)0x400u
 
-static char cur_x;
-static char cur_y;
+static unsigned char cur_x;
+static unsigned char cur_y;
 
 static char color;
 static void set_color(char c) {
@@ -47,20 +47,42 @@ static void init() {
 static char mode;
 
 static char last_char = 'a';
-static char paint_char;
+static char paint_char = 'a';
 static char painting;
 
-void punch() {
+static unsigned int offset() {
+    return 40 * cur_y + cur_x;
+}
+
+static void punch(char ch) {
+    *(char*)(0x400u + offset()) = ch;
+    *(char*)(0xd800u + offset()) = color;
+}
+
+static char screen_char() {
     unsigned int offset = 40 * cur_y + cur_x;
-    *(char*)(0x400u + offset) = paint_char;
-    *(char*)(0xd800u + offset) = color;
+    return *(char*)(0x400u + offset);
 }
 
 static void move_cursor() {
     gotoxy(cur_x, cur_y);
 }
 
-void do_paint(char ch) {
+static char hidden_screen_char;
+
+static void pre_cur_move() {
+    if (!painting) {
+        punch(hidden_screen_char);
+    }
+}
+
+static void post_cur_move() {
+    move_cursor();
+    hidden_screen_char = painting ? paint_char : screen_char();
+    punch(paint_char);
+}
+
+static void do_paint(char ch) {
     if (ch >= '1' && ch <= '8') {  // textcolor 1-8
         set_color(ch - '1');
     } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
@@ -81,30 +103,30 @@ void do_paint(char ch) {
     switch (ch) {
         case CH_CURS_UP:
             if (cur_y > 0) {
+                pre_cur_move();
                 --cur_y;
-                move_cursor();
-                if (painting) punch();
+                post_cur_move();
             }
             break;
         case CH_CURS_DOWN:
             if (cur_y < 24) {
+                pre_cur_move();
                 ++cur_y;
-                move_cursor();
-                if (painting) punch();
+                post_cur_move();
             }
             break;
         case CH_CURS_LEFT:
             if (cur_x > 0) {
+                pre_cur_move();
                 --cur_x;
-                move_cursor();
-                if (painting) punch();
+                post_cur_move();
             }
             break;
         case CH_CURS_RIGHT:
             if (cur_x < 39) {
+                pre_cur_move();
                 ++cur_x;
-                move_cursor();
-                if (painting) punch();
+                post_cur_move();
             }
             break;
         case ' ':
@@ -112,7 +134,8 @@ void do_paint(char ch) {
                 painting = 0;
             } else {
                 painting = 1;
-                punch();
+                hidden_screen_char = paint_char;
+                punch(paint_char);
             }
             break;
     }
