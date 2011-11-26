@@ -55,13 +55,13 @@ static unsigned int offset() {
 }
 
 static void punch(char ch) {
-    *(char*)(0x400u + offset()) = ch;
-    *(char*)(0xd800u + offset()) = color;
+    const unsigned int i = offset();
+    *(char*)(0x400u + i) = ch;
+    *(char*)(0xd800u + i) = color;
 }
 
 static char screen_char() {
-    unsigned int offset = 40 * cur_y + cur_x;
-    return *(char*)(0x400u + offset);
+    return *(char*)(0x400u + offset());
 }
 
 static void move_cursor() {
@@ -131,10 +131,7 @@ static void do_paint(char ch) {
             }
             break;
         case ' ':
-            if (painting) {
-                painting = 0;
-            } else {
-                painting = 1;
+            if (painting ^= 1) {
                 hidden_screen_char = paint_char;
                 punch(paint_char);
             }
