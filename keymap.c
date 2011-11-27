@@ -23,7 +23,6 @@ THE SOFTWARE. */
 #include <conio.h>
 #include <string.h>
 
-
 static char keymap['z' - 'a' + 1];
 static char keymap_index;
 
