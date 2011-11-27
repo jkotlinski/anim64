@@ -32,8 +32,8 @@ static char cur_y;
 
 static char reversed;
 
-void cursor_moved() {
-    keymap[keymap_index] = cur_x | (cur_y << 4);
+void update_mapping() {
+    keymap[keymap_index] = cur_x | (cur_y << 4) | (reversed << 7);
     gotoxy(cur_x, cur_y);
 }
 
@@ -83,29 +83,30 @@ char do_keymap(char key) {
         case CH_ENTER:
             reversed ^= 1;
             draw_keymap();
+            update_mapping();
             break;
         case CH_CURS_UP:
             if (cur_y > 0) {
                 --cur_y;
-                cursor_moved();
+                update_mapping();
             }
             break;
         case CH_CURS_DOWN:
             if (cur_y < 7) {
                 ++cur_y;
-                cursor_moved();
+                update_mapping();
             }
             break;
         case CH_CURS_LEFT:
             if (cur_x > 0) {
                 --cur_x;
-                cursor_moved();
+                update_mapping();
             }
             break;
         case CH_CURS_RIGHT:
             if (cur_x < 15) {
                 ++cur_x;
-                cursor_moved();
+                update_mapping();
             }
             break;
         default:
