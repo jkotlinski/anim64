@@ -51,7 +51,7 @@ static char mode;
 
 static char color_buffer[40 * 25];
 
-static char last_char = 1;
+static char last_char = 'a';
 static char paint_char = 1;
 static char painting;
 
