@@ -67,7 +67,7 @@ void enter_keymap_mode(char key_index) {
     memset((char*)0xd800, COLOR_YELLOW, 40 * 25);
     gotoxy(0, 9);
     textcolor(COLOR_CYAN);
-    cprintf("reassign %c", key_index + 1);
+    cprintf("remap %c", key_index + 1);
     gotoxy(0, 11);
     cputs("return = invert");
     gotoxy(0, 12);
