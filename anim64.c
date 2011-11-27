@@ -59,14 +59,18 @@ static unsigned int offset() {
     return 40 * cur_y + cur_x;
 }
 
-static void punch(char ch) {
+static void punch(char ch, char col) {
     const unsigned int i = offset();
     VIDEO_BASE[i] = ch;
-    *(char*)(0xd800u + i) = color;
+    *(char*)(0xd800u + i) = col;
 }
 
 static char screen_char() {
     return VIDEO_BASE[offset()];
+}
+
+static char screen_color() {
+    return *(char*)(0xd800u + offset());
 }
 
 static void move_cursor() {
@@ -74,31 +78,39 @@ static void move_cursor() {
 }
 
 static char hidden_screen_char = ' ';
+static char hidden_color;
+
+static void punch_paint() {
+    punch(paint_char, color);
+}
 
 static void pre_cur_move() {
     if (!painting) {
-        punch(hidden_screen_char);
+        punch(hidden_screen_char, hidden_color);
     }
 }
 
 static void post_cur_move() {
     move_cursor();
     hidden_screen_char = painting ? paint_char : screen_char();
-    punch(paint_char);
+    hidden_color = painting ? color : screen_color();
+    punch_paint();
 }
 
 static void do_paint(char ch) {
     if (ch >= '1' && ch <= '8') {  // textcolor 1-8
         set_color(ch - '1');
+        punch_paint();
     } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
         set_color(ch - '1' - 16 + 8);
+        punch_paint();
     } else if (ch >= 'a' && ch <= 'z') {
         if (last_char == ch) {
             ch = ' ';  // Paint!
         } else {
             last_char = ch;
             paint_char = get_char(ch);
-            punch(paint_char);
+            punch_paint();
         }
     } else if (ch >= 'A' && ch <= 'Z') {
         mode = KEYMAP_MODE;
@@ -142,7 +154,8 @@ static void do_paint(char ch) {
         case ' ':
             if (painting ^= 1) {
                 hidden_screen_char = paint_char;
-                punch(paint_char);
+                hidden_color = color;
+                punch_paint();
             }
             break;
     }
@@ -150,7 +163,7 @@ static void do_paint(char ch) {
 
 void main() {
     init();
-    punch(paint_char);
+    punch_paint();
     while (1) {
         const char ch = cgetc();
         switch (mode) {
@@ -165,7 +178,7 @@ void main() {
                     set_color(color);
                     move_cursor();
                     paint_char = get_char(last_char);
-                    punch(paint_char);
+                    punch_paint();
                 }
                 break;
         }
