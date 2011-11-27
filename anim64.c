@@ -106,12 +106,13 @@ static void do_paint(char ch) {
         punch_paint();
     } else if (ch >= 'a' && ch <= 'z') {
         if (last_char == ch) {
-            ch = ' ';  // Paint!
+            hidden_screen_char = paint_char;
+            hidden_color = color;
         } else {
             last_char = ch;
             paint_char = get_char(ch);
-            punch_paint();
         }
+        punch_paint();
     } else if (ch >= 'A' && ch <= 'Z') {
         mode = KEYMAP_MODE;
         last_char = ch - 'A' + 'a';
