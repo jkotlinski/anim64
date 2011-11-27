@@ -32,7 +32,7 @@ all:   	anim64
 	@echo $<
 	@$(AS) $(basename $<).s
 
-OBJS = anim64.o keymap.o sprites.o
+OBJS = anim64.o keymap.o
 
 -include $(OBJS:%.o=$(DEPDIR)/%.u)
 

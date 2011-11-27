@@ -74,6 +74,10 @@ static char screen_color() {
 }
 
 static void move_cursor() {
+    const unsigned int x = cur_x * 8 + 0x18;
+    *(char*)0xd000 = x;
+    *(char*)0xd010 = (x & 0x100) ? 1 : 0;
+    *(char*)0xd001 = cur_y * 8 + 0x32;
     gotoxy(cur_x, cur_y);
 }
 
@@ -120,9 +124,6 @@ static void do_paint(char ch) {
     }
 
     switch (ch) {
-        case CH_ENTER:
-            memset((char*)0x2000, 40, 40 * 25);
-            break;
         case CH_CURS_UP:
             if (cur_y > 0) {
                 pre_cur_move();
@@ -157,12 +158,14 @@ static void do_paint(char ch) {
                 hidden_color = color;
                 punch_paint();
             }
+            bordercolor(painting ? COLOR_RED : COLOR_BLACK);
             break;
     }
 }
 
 void main() {
     init();
+    move_cursor();
     punch_paint();
     while (1) {
         const char ch = cgetc();
