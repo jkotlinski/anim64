@@ -74,10 +74,6 @@ static char screen_color() {
 }
 
 static void move_cursor() {
-    const unsigned int x = cur_x * 8 + 0x18;
-    *(char*)0xd000 = x;
-    *(char*)0xd010 = (x & 0x100) ? 1 : 0;
-    *(char*)0xd001 = cur_y * 8 + 0x32;
     gotoxy(cur_x, cur_y);
 }
 
