@@ -53,5 +53,5 @@ run: anim64
 
 .PHONY:	clean
 clean:
-	rm -f *~ *.map *.o *.lbl *.prg *.lst *.a *.u
+	rm -f *~ *.map *.o *.lbl *.prg *.lst *.a *.u $(DEPDIR)/*
 	

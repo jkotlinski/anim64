@@ -36,30 +36,34 @@ void update_mapping() {
     gotoxy(cur_x, cur_y);
 }
 
-void init_keymap() {
-    char i;
-    for (i = 0; i < sizeof(keymap); ++i) {
-        keymap[i] = 1 + i;
-    }
-}
-
 void draw_keymap() {
     unsigned char x = 0;
     unsigned char y = 0;
     unsigned char ch = reversed ? 0x80 : 0;
+    char* ptr = (char*)0x400;
     for (y = 0; y < 8; ++y) {
-        char* ptr = (char*)(0x400 + y * 40);
         for (x = 0; x < 16; ++x) {
             *ptr = ch;
             ++ptr;
             ++ch;
         }
+        ptr += 40 - 16;
     }
 }
 
-void enter_keymap_mode(char key_index) {
-    *(char*)0xd018 = 0x14;  // Point video to 0x400.
+void init_keymap() {
+    char i;
+    for (i = 0; i < sizeof(keymap); ++i) {
+        keymap[i] = 1 + i;
+    }
+
     clrscr();
+    draw_keymap();
+}
+
+void enter_keymap_mode(char key_index) {
+    char cur_xy;
+    *(char*)0xd018 = 0x14;  // Point video to 0x400.
     memset((char*)0xd800, COLOR_YELLOW, 40 * 25);
     gotoxy(0, 9);
     textcolor(COLOR_CYAN);
@@ -69,11 +73,10 @@ void enter_keymap_mode(char key_index) {
     gotoxy(0, 12);
     cputs("other = select");
     keymap_index = key_index;
-    cur_x = keymap[key_index] & 0xf;
-    cur_y = keymap[key_index] >> 4;
+    cur_xy = keymap[key_index];
+    cur_x = cur_xy & 0xf;
+    cur_y = (cur_xy >> 4) & 7;
     gotoxy(cur_x, cur_y);
-
-    draw_keymap();
 }
 
 /* Return 1 if selected key, 0 if done */
