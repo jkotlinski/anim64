@@ -32,12 +32,19 @@ static void set_color(char c) {
     color = c;
 }
 
-#define VIDEO_BASE ((char*)0x8000)
+#define VIDEO_BASE (char*)0x8000
+char* screen_base = VIDEO_BASE;
+/* $8000 - $8fff: screen 0-3
+ * $9000 - $9fff: colors 0-3
+ */
+
+char curr_screen;
 
 static void init() {
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x04;  // Point video to 0x8000.
-    memset(VIDEO_BASE, 0x20, 40 * 25);
+    memset(VIDEO_BASE, 0x20, 0x1000);
+    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
     bordercolor(0);
     set_color(1);
     bgcolor(0);
@@ -61,12 +68,12 @@ static unsigned int offset() {
 
 static void punch(char ch, char col) {
     const unsigned int i = offset();
-    VIDEO_BASE[i] = ch;
+    screen_base[i] = ch;
     *(char*)(0xd800u + i) = col;
 }
 
 static char screen_char() {
-    return VIDEO_BASE[offset()];
+    return screen_base[offset()];
 }
 
 static char screen_color() {
@@ -97,6 +104,29 @@ static void post_cur_move() {
     punch_paint();
 }
 
+static void remember_colors() {
+    memcpy(screen_base + 0x1000, (void*)0xd800, 40 * 25);
+}
+
+static void update_screen_base() {
+    curr_screen &= 3;
+    screen_base = (char*)(0x8000 + curr_screen * 0x400);
+    *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
+    memcpy((void*)0xd800, screen_base + 0x1000, 40 * 25);
+}
+
+static void next_screen() {
+    remember_colors();
+    ++curr_screen;
+    update_screen_base();
+}
+
+static void prev_screen() {
+    remember_colors();
+    --curr_screen;
+    update_screen_base();
+}
+
 static void do_paint(char ch) {
     if (ch >= '1' && ch <= '8') {  // textcolor 1-8
         set_color(ch - '1');
@@ -118,9 +148,7 @@ static void do_paint(char ch) {
         last_char = ch - 'A' + 'a';
         memcpy(color_buffer, (char*)0xd800, sizeof(color_buffer));
         enter_keymap_mode(ch - 'A');
-    }
-
-    switch (ch) {
+    } else switch (ch) {
         case CH_CURS_UP:
             if (cur_y > 0) {
                 pre_cur_move();
@@ -156,6 +184,12 @@ static void do_paint(char ch) {
                 punch_paint();
             }
             bordercolor(painting ? COLOR_RED : COLOR_BLACK);
+            break;
+        case ',':
+            prev_screen();
+            break;
+        case '.':
+            next_screen();
             break;
     }
 }
