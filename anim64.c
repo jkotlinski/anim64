@@ -28,7 +28,6 @@ static unsigned char cur_y;
 
 static char color;
 static void set_color(char c) {
-    textcolor(c);
     color = c;
 }
 
@@ -45,10 +44,10 @@ static void init() {
     *(char*)0xd018 = 0x04;  // Point video to 0x8000.
     memset(VIDEO_BASE, 0x20, 0x1000);
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);
+    cursor(0);
     bordercolor(0);
     set_color(1);
     bgcolor(0);
-    cursor(1);
     init_keymap();
 }
 
@@ -80,10 +79,6 @@ static char screen_color() {
     return *(char*)(0xd800u + offset());
 }
 
-static void move_cursor() {
-    gotoxy(cur_x, cur_y);
-}
-
 static char hidden_screen_char = ' ';
 static char hidden_color;
 
@@ -98,7 +93,6 @@ static void pre_cur_move() {
 }
 
 static void post_cur_move() {
-    move_cursor();
     hidden_screen_char = painting ? paint_char : screen_char();
     hidden_color = painting ? color : screen_color();
     punch_paint();
@@ -116,15 +110,19 @@ static void update_screen_base() {
 }
 
 static void next_screen() {
+    pre_cur_move();
     remember_colors();
     ++curr_screen;
     update_screen_base();
+    post_cur_move();
 }
 
 static void prev_screen() {
+    pre_cur_move();
     remember_colors();
     --curr_screen;
     update_screen_base();
+    post_cur_move();
 }
 
 static void do_paint(char ch) {
@@ -196,7 +194,6 @@ static void do_paint(char ch) {
 
 void main() {
     init();
-    move_cursor();
     punch_paint();
     while (1) {
         const char ch = cgetc();
@@ -208,10 +205,10 @@ void main() {
                 if (do_keymap(ch)) {
                     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
                     *(char*)0xd018 = 0x04;  // Point video to 0x8000.
+                    cursor(0);
                     mode = PAINT_MODE;
                     memcpy((char*)0xd800, color_buffer, sizeof(color_buffer));
                     set_color(color);
-                    move_cursor();
                     paint_char = get_char(last_char);
                     punch_paint();
                 }

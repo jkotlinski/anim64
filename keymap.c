@@ -78,6 +78,7 @@ void enter_keymap_mode(char key_index) {
     cur_x = cur_xy & 0xf;
     cur_y = (cur_xy >> 4) & 7;
     gotoxy(cur_x, cur_y);
+    cursor(1);
 }
 
 /* Return 1 if selected key, 0 if done */
