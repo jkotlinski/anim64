@@ -126,13 +126,13 @@ static void prev_screen() {
 }
 
 static void do_paint(char ch) {
-    if (ch >= '1' && ch <= '8') {  // textcolor 1-8
+    if (ch >= '1' && ch <= '8') {  // Textcolor 1-8.
         set_color(ch - '1');
         punch_paint();
-    } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // textcolor 9-16
+    } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // Textcolor 9-16.
         set_color(ch - '1' - 16 + 8);
         punch_paint();
-    } else if (ch >= 'a' && ch <= 'z') {
+    } else if (ch >= 'a' && ch <= 'z') {  // Paint char.
         if (last_char == ch) {
             hidden_screen_char = paint_char;
             hidden_color = color;
@@ -141,7 +141,7 @@ static void do_paint(char ch) {
             paint_char = get_char(ch);
         }
         punch_paint();
-    } else if (ch >= 'A' && ch <= 'Z') {
+    } else if (ch >= 'A' && ch <= 'Z') {  // Remap char.
         mode = KEYMAP_MODE;
         last_char = ch - 'A' + 'a';
         memcpy(color_buffer, (char*)0xd800, sizeof(color_buffer));
@@ -175,7 +175,7 @@ static void do_paint(char ch) {
                 post_cur_move();
             }
             break;
-        case ' ':
+        case ' ':  // "Hold" paint.
             if (painting ^= 1) {
                 hidden_screen_char = paint_char;
                 hidden_color = color;
