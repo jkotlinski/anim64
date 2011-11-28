@@ -32,12 +32,12 @@ static void set_color(char c) {
     color = c;
 }
 
-#define VIDEO_BASE ((char*)0x2000)
+#define VIDEO_BASE ((char*)0x8000)
 
 static void init() {
-    *(char*)0xd018 = 0x84;  // Point video to 0x2000.
+    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+    *(char*)0xd018 = 0x04;  // Point video to 0x8000.
     memset(VIDEO_BASE, 0x20, 40 * 25);
-    clrscr();
     bordercolor(0);
     set_color(1);
     bgcolor(0);
@@ -172,7 +172,8 @@ void main() {
                 break;
             case KEYMAP_MODE:
                 if (do_keymap(ch)) {
-                    *(char*)0xd018 = 0x84;  // Point video to 0x2000.
+                    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+                    *(char*)0xd018 = 0x04;  // Point video to 0x8000.
                     mode = PAINT_MODE;
                     memcpy((char*)0xd800, color_buffer, sizeof(color_buffer));
                     set_color(color);

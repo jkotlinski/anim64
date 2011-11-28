@@ -63,6 +63,7 @@ void init_keymap() {
 
 void enter_keymap_mode(char key_index) {
     char cur_xy;
+    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
     memset((char*)0xd800, COLOR_YELLOW, 40 * 25);
     gotoxy(0, 9);
