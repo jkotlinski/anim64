@@ -19,6 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 #include <conio.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "keymap.h"
@@ -189,6 +190,26 @@ static void do_paint(char ch) {
         case '.':
             next_screen();
             break;
+        case CH_F1:
+            *(char*)0xd020 = 5;
+            {
+                FILE* f = fopen("foo", "r");
+                fread(VIDEO_BASE, 0x2000, 1, f);
+                curr_screen = 0;
+                update_screen_base();
+                fclose(f);
+            }
+            *(char*)0xd020 = 0;
+            break;
+        case CH_F2:
+            *(char*)0xd020 = 4;
+            {
+                FILE* f = fopen("foo", "w");
+                remember_colors();
+                fwrite(VIDEO_BASE, 0x2000, 1, f);
+                fclose(f);
+            }
+            *(char*)0xd020 = 0;
     }
 }
 
