@@ -54,7 +54,6 @@ static void init() {
 
 static char last_char = 'a';
 static char paint_char = 1;
-static char painting;
 
 static unsigned int offset() {
     return 40 * cur_y + cur_x;
@@ -82,14 +81,12 @@ static void punch_paint() {
 }
 
 static void pre_cur_move() {
-    if (!painting) {
-        punch(hidden_screen_char, hidden_color);
-    }
+    punch(hidden_screen_char, hidden_color);
 }
 
 static void post_cur_move() {
-    hidden_screen_char = painting ? paint_char : screen_char();
-    hidden_color = painting ? color : screen_color();
+    hidden_screen_char = screen_char();
+    hidden_color = screen_color();
     punch_paint();
 }
 
@@ -140,6 +137,14 @@ static unsigned char petscii_to_screen(unsigned char petscii) {
     }
 }
 
+static void paint(char ch) {
+    last_char = ch;
+    paint_char = petscii_to_screen(ch);
+    hidden_screen_char = paint_char;
+    hidden_color = color;
+    punch_paint();
+}
+
 static void do_paint(char ch) {
     if (ch >= '1' && ch <= '8') {  // Textcolor 1-8.
         set_color(ch - '1');
@@ -147,78 +152,64 @@ static void do_paint(char ch) {
     } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // Textcolor 9-16.
         set_color(ch - '1' - 16 + 8);
         punch_paint();
-    } else if (ch >= 'a' && ch <= 'z') {  // Paint char.
-        if (last_char == ch) {
-            hidden_screen_char = paint_char;
-            hidden_color = color;
-        } else {
-            last_char = ch;
-            paint_char = petscii_to_screen(ch);
-        }
-        punch_paint();
     } else switch (ch) {
-        case CH_CURS_UP:
-            if (cur_y > 0) {
-                pre_cur_move();
-                --cur_y;
-                post_cur_move();
-            }
-            break;
-        case CH_CURS_DOWN:
-            if (cur_y < 24) {
-                pre_cur_move();
-                ++cur_y;
-                post_cur_move();
-            }
-            break;
-        case CH_CURS_LEFT:
-            if (cur_x > 0) {
-                pre_cur_move();
-                --cur_x;
-                post_cur_move();
-            }
-            break;
-        case CH_CURS_RIGHT:
-            if (cur_x < 39) {
-                pre_cur_move();
-                ++cur_x;
-                post_cur_move();
-            }
-            break;
-        case ' ':  // "Hold" paint.
-            if (painting ^= 1) {
-                hidden_screen_char = paint_char;
-                hidden_color = color;
-                punch_paint();
-            }
-            bordercolor(painting ? COLOR_RED : COLOR_BLACK);
-            break;
-        case ',':
-            prev_screen();
-            break;
-        case '.':
-            next_screen();
-            break;
-        case CH_F1:
-            *(char*)0xd020 = 5;
-            {
-                FILE* f = fopen("foo", "r");
-                fread(VIDEO_BASE, 0x2000, 1, f);
-                curr_screen = 0;
-                update_screen_base();
-                fclose(f);
-            }
-            *(char*)0xd020 = 0;
-            break;
-        case CH_F2:
-            *(char*)0xd020 = 4;
-            {
-                FILE* f = fopen("foo", "w");
-                remember_colors();
-                fwrite(VIDEO_BASE, 0x2000, 1, f);
-                fclose(f);
-            }
-            *(char*)0xd020 = 0;
+            case CH_CURS_UP:
+                if (cur_y > 0) {
+                    pre_cur_move();
+                    --cur_y;
+                    post_cur_move();
+                }
+                break;
+            case CH_CURS_DOWN:
+                if (cur_y < 24) {
+                    pre_cur_move();
+                    ++cur_y;
+                    post_cur_move();
+                }
+                break;
+            case CH_CURS_LEFT:
+                if (cur_x > 0) {
+                    pre_cur_move();
+                    --cur_x;
+                    post_cur_move();
+                }
+                break;
+            case CH_CURS_RIGHT:
+                if (cur_x < 39) {
+                    pre_cur_move();
+                    ++cur_x;
+                    post_cur_move();
+                }
+                break;
+            case ',':
+                prev_screen();
+                break;
+            case '.':
+                next_screen();
+                break;
+            case CH_F1:
+                *(char*)0xd020 = 5;
+                {
+                    FILE* f = fopen("foo", "r");
+                    fread(VIDEO_BASE, 0x2000, 1, f);
+                    curr_screen = 0;
+                    update_screen_base();
+                    fclose(f);
+                }
+                *(char*)0xd020 = 0;
+                break;
+            case CH_F2:
+                *(char*)0xd020 = 4;
+                {
+                    FILE* f = fopen("foo", "w");
+                    remember_colors();
+                    fwrite(VIDEO_BASE, 0x2000, 1, f);
+                    fclose(f);
+                }
+                *(char*)0xd020 = 0;
+                break;
+            default:
+                paint(ch);
     }
 }
 
