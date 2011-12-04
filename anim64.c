@@ -50,14 +50,7 @@ static void init() {
     bordercolor(0);
     set_color(1);
     bgcolor(0);
-    init_keymap();
 }
-
-#define PAINT_MODE 0
-#define KEYMAP_MODE 1
-static char mode;
-
-static char color_buffer[40 * 25];
 
 static char last_char = 'a';
 static char paint_char = 1;
@@ -160,14 +153,9 @@ static void do_paint(char ch) {
             hidden_color = color;
         } else {
             last_char = ch;
-            paint_char = get_char(ch);
+            paint_char = petscii_to_screen(ch);
         }
         punch_paint();
-    } else if (ch >= 'A' && ch <= 'Z') {  // Remap char.
-        mode = KEYMAP_MODE;
-        last_char = ch - 'A' + 'a';
-        memcpy(color_buffer, (char*)0xd800, sizeof(color_buffer));
-        enter_keymap_mode(ch - 'A');
     } else switch (ch) {
         case CH_CURS_UP:
             if (cur_y > 0) {
@@ -235,40 +223,21 @@ static void do_paint(char ch) {
 }
 
 void main() {
+#define BLINK_PERIOD 1000
+    int loop = BLINK_PERIOD;
     init();
     punch_paint();
     while (1) {
-        if (kbhit()) {
-            const char ch = cgetc();
-            switch (mode) {
-                case PAINT_MODE:
-                    do_paint(ch);
-                    break;
-                case KEYMAP_MODE:
-                    if (do_keymap(ch)) {
-                        *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-                        *(char*)0xd018 = 0x04;  // Point video to 0x8000.
-                        cursor(0);
-                        mode = PAINT_MODE;
-                        memcpy((char*)0xd800, color_buffer, sizeof(color_buffer));
-                        set_color(color);
-                        paint_char = get_char(last_char);
-                        punch_paint();
-                    }
-                    break;
+        while (1) {
+            unsigned char now = clock();
+            while (now == clock()) {}
+            if (kbhit()) {
+                do_paint(cgetc());
+                loop = BLINK_PERIOD;
             }
-        } else {
-            int loop = 1000;
-            while (1) {
-                unsigned char now = clock();
-                while (now == clock()) {}
-                if (kbhit()) {
-                    break;
-                }
-                if (--loop == 0) {
-                    loop = 1000;
-                    punch(screen_char() ^ 0x80, color);
-                }
+            if (--loop == 0) {
+                loop = BLINK_PERIOD;
+                punch(screen_char() ^ 0x80, color);
             }
         }
     }
