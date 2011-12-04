@@ -27,6 +27,7 @@ THE SOFTWARE. */
 
 static unsigned char cur_x;
 static unsigned char cur_y;
+static unsigned char reverse;
 
 static char color;
 static void set_color(char c) {
@@ -139,7 +140,7 @@ static unsigned char petscii_to_screen(unsigned char petscii) {
 
 static void paint(char ch) {
     last_char = ch;
-    paint_char = petscii_to_screen(ch);
+    paint_char = petscii_to_screen(ch) | reverse;
     hidden_screen_char = paint_char;
     hidden_color = color;
     punch_paint();
@@ -208,6 +209,12 @@ static void do_paint(char ch) {
                 }
                 *(char*)0xd020 = 0;
                 break;
+            case 0x12:  // Reverse on.
+                reverse = 0x80u;
+                break;
+            case 0x92:  // Reverse off.
+                reverse = 0;
+                break;
             default:
                 paint(ch);
     }
@@ -216,6 +223,13 @@ static void do_paint(char ch) {
 void main() {
 #define BLINK_PERIOD 1000
     int loop = BLINK_PERIOD;
+    /*
+    while(1) {
+        if (kbhit()) {
+            printf("%x", cgetc());
+        }
+    }
+    */
     init();
     punch_paint();
     while (1) {
