@@ -177,10 +177,10 @@ static void do_paint(char ch) {
                     post_cur_move();
                 }
                 break;
-            case ',':
+            case CH_ENTER:
                 prev_screen();
                 break;
-            case '.':
+            case 0x80 | CH_ENTER:
                 next_screen();
                 break;
             case CH_F1:
