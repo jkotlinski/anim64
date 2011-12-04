@@ -29,10 +29,7 @@ static unsigned char cur_x;
 static unsigned char cur_y;
 static unsigned char reverse;
 
-static char color;
-static void set_color(char c) {
-    color = c;
-}
+static char color = 1;
 
 #define VIDEO_BASE (char*)0x8000
 char* screen_base = VIDEO_BASE;
@@ -49,7 +46,6 @@ static void init() {
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);
     cursor(0);
     bordercolor(0);
-    set_color(1);
     bgcolor(0);
 }
 
@@ -146,14 +142,13 @@ static void paint(char ch) {
     punch_paint();
 }
 
+void __fastcall__ switch_color(char c) {
+    color = c;
+    punch_paint();
+}
+
 static void do_paint(char ch) {
-    if (ch >= '1' && ch <= '8') {  // Textcolor 1-8.
-        set_color(ch - '1');
-        punch_paint();
-    } else if (ch >= '1' - 16 && ch <= '8' - 16) {  // Textcolor 9-16.
-        set_color(ch - '1' - 16 + 8);
-        punch_paint();
-    } else switch (ch) {
+    switch (ch) {
             case CH_CURS_UP:
                 if (cur_y > 0) {
                     pre_cur_move();
@@ -215,6 +210,25 @@ static void do_paint(char ch) {
             case 0x92:  // Reverse off.
                 reverse = 0;
                 break;
+
+            // Colors.
+            case 5: switch_color(COLOR_WHITE); break;
+            case 0x1c: switch_color(COLOR_RED); break;
+            case 0x1e: switch_color(COLOR_GREEN); break;
+            case 0x1f: switch_color(COLOR_BLUE); break;
+            case 0x81: switch_color(COLOR_ORANGE); break;
+            case 0x90: switch_color(COLOR_BLACK); break;
+            case 0x95: switch_color(COLOR_BROWN); break;
+            case 0x96: switch_color(COLOR_LIGHTRED); break;
+            case 0x97: switch_color(COLOR_GRAY1); break;
+            case 0x98: switch_color(COLOR_GRAY2); break;
+            case 0x99: switch_color(COLOR_LIGHTGREEN); break;
+            case 0x9a: switch_color(COLOR_LIGHTBLUE); break;
+            case 0x9b: switch_color(COLOR_GRAY3); break;
+            case 0x9c: switch_color(COLOR_PURPLE); break;
+            case 0x9e: switch_color(COLOR_YELLOW); break;
+            case 0x9f: switch_color(COLOR_CYAN); break;
+
             default:
                 paint(ch);
     }
@@ -223,13 +237,13 @@ static void do_paint(char ch) {
 void main() {
 #define BLINK_PERIOD 1000
     int loop = BLINK_PERIOD;
-    /*
+#if 0
     while(1) {
         if (kbhit()) {
             printf("%x", cgetc());
         }
     }
-    */
+#endif
     init();
     punch_paint();
     while (1) {
