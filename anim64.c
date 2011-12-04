@@ -21,6 +21,7 @@ THE SOFTWARE. */
 #include <conio.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "keymap.h"
 
@@ -126,6 +127,26 @@ static void prev_screen() {
     post_cur_move();
 }
 
+static unsigned char petscii_to_screen(unsigned char petscii) {
+    if (petscii < 32) {
+        return petscii | 128;
+    } else if (petscii < 64) {
+        return petscii;
+    } else if (petscii < 96) {
+        return petscii & ~64;
+    } else if (petscii < 128) {
+        return petscii & ~32;
+    } else if (petscii < 160) {
+        return petscii | 64;
+    } else if (petscii < 192) {
+        return petscii - 64;
+    } else if (petscii != 255) {
+        return petscii & ~128;
+    } else {
+        return 94;
+    }
+}
+
 static void do_paint(char ch) {
     if (ch >= '1' && ch <= '8') {  // Textcolor 1-8.
         set_color(ch - '1');
@@ -217,23 +238,38 @@ void main() {
     init();
     punch_paint();
     while (1) {
-        const char ch = cgetc();
-        switch (mode) {
-            case PAINT_MODE:
-                do_paint(ch);
-                break;
-            case KEYMAP_MODE:
-                if (do_keymap(ch)) {
-                    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-                    *(char*)0xd018 = 0x04;  // Point video to 0x8000.
-                    cursor(0);
-                    mode = PAINT_MODE;
-                    memcpy((char*)0xd800, color_buffer, sizeof(color_buffer));
-                    set_color(color);
-                    paint_char = get_char(last_char);
-                    punch_paint();
+        if (kbhit()) {
+            const char ch = cgetc();
+            switch (mode) {
+                case PAINT_MODE:
+                    do_paint(ch);
+                    break;
+                case KEYMAP_MODE:
+                    if (do_keymap(ch)) {
+                        *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+                        *(char*)0xd018 = 0x04;  // Point video to 0x8000.
+                        cursor(0);
+                        mode = PAINT_MODE;
+                        memcpy((char*)0xd800, color_buffer, sizeof(color_buffer));
+                        set_color(color);
+                        paint_char = get_char(last_char);
+                        punch_paint();
+                    }
+                    break;
+            }
+        } else {
+            int loop = 1000;
+            while (1) {
+                unsigned char now = clock();
+                while (now == clock()) {}
+                if (kbhit()) {
+                    break;
                 }
-                break;
+                if (--loop == 0) {
+                    loop = 1000;
+                    punch(screen_char() ^ 0x80, color);
+                }
+            }
         }
     }
 }
