@@ -238,26 +238,21 @@ void main() {
 #define BLINK_PERIOD 1000
     int loop = BLINK_PERIOD;
 #if 0
-    while(1) {
-        if (kbhit()) {
-            printf("%x", cgetc());
-        }
-    }
+    while(1) { if (kbhit()) { printf("%x", cgetc()); } }
 #endif
     init();
     punch_paint();
     while (1) {
-        while (1) {
-            unsigned char now = clock();
-            while (now == clock()) {}
-            if (kbhit()) {
-                do_paint(cgetc());
-                loop = BLINK_PERIOD;
-            }
-            if (--loop == 0) {
-                loop = BLINK_PERIOD;
-                punch(screen_char() ^ 0x80, color);
-            }
+        unsigned char now = clock();
+        while (now == clock()) {}
+        if (kbhit()) {
+            do_paint(cgetc());
+            loop = BLINK_PERIOD;
+        }
+        if (--loop == 0) {
+            // Blink.
+            punch(screen_char() ^ 0x80, color);
+            loop = BLINK_PERIOD;
         }
     }
 }
