@@ -49,7 +49,6 @@ static void init() {
     bgcolor(0);
 }
 
-static char last_char = 'a';
 static char paint_char = 1;
 
 static unsigned int offset() {
@@ -126,9 +125,8 @@ static unsigned char petscii_to_screen(unsigned char petscii) {
     }
 }
 
-static void paint(char ch) {
-    last_char = ch;
-    paint_char = petscii_to_screen(ch) | reverse;
+static void paint(char screen_code) {
+    paint_char = screen_code | reverse;
     hidden_screen_char = paint_char;
     hidden_color = color;
     punch_paint();
@@ -174,6 +172,14 @@ static void do_paint(char ch) {
                 break;
             case 0x80 | CH_ENTER:
                 change_screen(1);
+                break;
+            case ' ':
+                paint(paint_char);
+                break;
+            case CH_DEL:
+                hidden_screen_char = petscii_to_screen(' ') | reverse;
+                hidden_color = color;
+                do_paint(CH_CURS_LEFT);
                 break;
             case CH_F1:
                 *(char*)0xd020 = 5;
@@ -222,7 +228,7 @@ static void do_paint(char ch) {
             case 0x9f: switch_color(COLOR_CYAN); break;
 
             default:
-                paint(ch);
+                paint(petscii_to_screen(ch));
     }
 }
 
