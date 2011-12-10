@@ -227,28 +227,23 @@ static void handle_key(char key) {
         case 0x80 | CH_ENTER:
             change_screen(1);
             break;
-        case ' ':
-            paint(paint_char);
-            break;
         case CH_DEL:
             hidden_screen_char = petscii_to_screen(' ') | reverse;
             hidden_color = color;
             handle_key(CH_CURS_LEFT);
             break;
-        case CH_F1: load_anim(); break;
-        case CH_F2: save_anim(); break;
         case CH_F3:
             *(char*)0xd020 = ++screen_base[BORDER_OFFSET];
             break;
         case CH_F4:
             *(char*)0xd021 = ++screen_base[BG_OFFSET];
             break;
-        case 0x12:  // Reverse on.
-            reverse = 0x80u;
-            break;
-        case 0x92:  // Reverse off.
-            reverse = 0;
-            break;
+
+        case CH_F1: load_anim(); break;
+        case CH_F2: save_anim(); break;
+        case 0x12: reverse = 0x80u; break;
+        case 0x92: reverse = 0; break;
+        case ' ': paint(paint_char); break;
 
         // Colors.
         case 0x05: switch_color(COLOR_WHITE); break;
