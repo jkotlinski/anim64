@@ -42,11 +42,12 @@ char* screen_base = VIDEO_BASE;
 char curr_screen;
 
 static void init() {
+    clrscr();
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x04;  // Point video to 0x8000.
     memset(VIDEO_BASE, 0x20, 0x1000);
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);
-    cursor(0);
+    textcolor(COLOR_YELLOW);
     bordercolor(0);
     bgcolor(0);
 }
@@ -89,6 +90,7 @@ static void post_cur_move() {
 }
 
 static void remember_colors() {
+    pre_cur_move();
     memcpy(screen_base + 0x1000, (void*)0xd800, 40 * 25);
 }
 
@@ -98,15 +100,14 @@ static void update_screen_base() {
     memcpy((void*)0xd800, screen_base + 0x1000, 40 * 25);
     *(char*)0xd020 = screen_base[BORDER_OFFSET];
     *(char*)0xd021 = screen_base[BG_OFFSET];
+    post_cur_move();
 }
 
 static void change_screen(char step) {
-    pre_cur_move();
     remember_colors();
     curr_screen += step;
     curr_screen &= 3;
     update_screen_base();
-    post_cur_move();
 }
 
 static unsigned char petscii_to_screen(unsigned char petscii) {
@@ -136,24 +137,55 @@ static void paint(char screen_code) {
     punch_paint();
 }
 
-void __fastcall__ switch_color(char c) {
+void switch_color(char c) {
     color = c;
     punch_paint();
 }
 
-static void load_animation() {
-    FILE* f = fopen("foo", "r");
-    fread(VIDEO_BASE, 0x2000, 1, f);
-    curr_screen = 0;
-    update_screen_base();
-    fclose(f);
+static void switch_to_console_screen() {
+    remember_colors();
+    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
+    *(char*)0xd018 = 0x14;  // Point video to 0x400.
+    *(char*)0xd021 = COLOR_BLACK;
+    memset((char*)0xd800, COLOR_YELLOW, 0x400);
 }
 
-static void save_animation() {
-    FILE* f = fopen("foo", "w");
-    remember_colors();
-    fwrite(VIDEO_BASE, 0x2000, 1, f);
-    fclose(f);
+static void switch_to_gfx_screen() {
+    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+    update_screen_base();
+}
+
+static FILE* open(const char* prompt, const char* mode) {
+    switch_to_console_screen();
+    for (;;) {
+        FILE* f;
+        char path[32];
+        printf("\n%s>", prompt);
+        gets(path);
+        if (!*path) return NULL;
+        f = fopen(path, mode);
+        if (f) return f;
+        printf("err");
+    }
+}
+
+static void load_anim() {
+    FILE* f = open("load", "r");
+    if (f) {
+        fread(VIDEO_BASE, 0x2000, 1, f);
+        fclose(f);
+        curr_screen = 0;
+    }
+    switch_to_gfx_screen();
+}
+
+static void save_anim() {
+    FILE* f = open("save", "w");
+    if (f) {
+        fwrite(VIDEO_BASE, 0x2000, 1, f);
+        fclose(f);
+    }
+    switch_to_gfx_screen();
 }
 
 static void handle_key(char key) {
@@ -203,8 +235,8 @@ static void handle_key(char key) {
             hidden_color = color;
             handle_key(CH_CURS_LEFT);
             break;
-        case CH_F1: load_animation(); break;
-        case CH_F2: save_animation(); break;
+        case CH_F1: load_anim(); break;
+        case CH_F2: save_anim(); break;
         case CH_F3:
             *(char*)0xd020 = ++screen_base[BORDER_OFFSET];
             break;
