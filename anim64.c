@@ -137,98 +137,98 @@ void __fastcall__ switch_color(char c) {
     punch_paint();
 }
 
-static void do_paint(char ch) {
-    switch (ch) {
-            case CH_CURS_UP:
-                if (cur_y > 0) {
-                    pre_cur_move();
-                    --cur_y;
-                    post_cur_move();
-                }
-                break;
-            case CH_CURS_DOWN:
-                if (cur_y < 24) {
-                    pre_cur_move();
-                    ++cur_y;
-                    post_cur_move();
-                }
-                break;
-            case CH_CURS_LEFT:
-                if (cur_x > 0) {
-                    pre_cur_move();
-                    --cur_x;
-                    post_cur_move();
-                }
-                break;
-            case CH_CURS_RIGHT:
-                if (cur_x < 39) {
-                    pre_cur_move();
-                    ++cur_x;
-                    post_cur_move();
-                }
-                break;
-            case CH_ENTER:
-                change_screen(-1);
-                break;
-            case 0x80 | CH_ENTER:
-                change_screen(1);
-                break;
-            case ' ':
-                paint(paint_char);
-                break;
-            case CH_DEL:
-                hidden_screen_char = petscii_to_screen(' ') | reverse;
-                hidden_color = color;
-                do_paint(CH_CURS_LEFT);
-                break;
-            case CH_F1:
-                *(char*)0xd020 = 5;
-                {
-                    FILE* f = fopen("foo", "r");
-                    fread(VIDEO_BASE, 0x2000, 1, f);
-                    curr_screen = 0;
-                    update_screen_base();
-                    fclose(f);
-                }
-                *(char*)0xd020 = 0;
-                break;
-            case CH_F2:
-                *(char*)0xd020 = 4;
-                {
-                    FILE* f = fopen("foo", "w");
-                    remember_colors();
-                    fwrite(VIDEO_BASE, 0x2000, 1, f);
-                    fclose(f);
-                }
-                *(char*)0xd020 = 0;
-                break;
-            case 0x12:  // Reverse on.
-                reverse = 0x80u;
-                break;
-            case 0x92:  // Reverse off.
-                reverse = 0;
-                break;
+static void handle_key(char key) {
+    switch (key) {
+        case CH_CURS_UP:
+            if (cur_y > 0) {
+                pre_cur_move();
+                --cur_y;
+                post_cur_move();
+            }
+            break;
+        case CH_CURS_DOWN:
+            if (cur_y < 24) {
+                pre_cur_move();
+                ++cur_y;
+                post_cur_move();
+            }
+            break;
+        case CH_CURS_LEFT:
+            if (cur_x > 0) {
+                pre_cur_move();
+                --cur_x;
+                post_cur_move();
+            }
+            break;
+        case CH_CURS_RIGHT:
+            if (cur_x < 39) {
+                pre_cur_move();
+                ++cur_x;
+                post_cur_move();
+            }
+            break;
+        case CH_ENTER:
+            change_screen(-1);
+            break;
+        case 0x80 | CH_ENTER:
+            change_screen(1);
+            break;
+        case ' ':
+            paint(paint_char);
+            break;
+        case CH_DEL:
+            hidden_screen_char = petscii_to_screen(' ') | reverse;
+            hidden_color = color;
+            handle_key(CH_CURS_LEFT);
+            break;
+        case CH_F1:
+            *(char*)0xd020 = 5;
+            {
+                FILE* f = fopen("foo", "r");
+                fread(VIDEO_BASE, 0x2000, 1, f);
+                curr_screen = 0;
+                update_screen_base();
+                fclose(f);
+            }
+            *(char*)0xd020 = 0;
+            break;
+        case CH_F2:
+            *(char*)0xd020 = 4;
+            {
+                FILE* f = fopen("foo", "w");
+                remember_colors();
+                fwrite(VIDEO_BASE, 0x2000, 1, f);
+                fclose(f);
+            }
+            *(char*)0xd020 = 0;
+            break;
+        case 0x12:  // Reverse on.
+            reverse = 0x80u;
+            break;
+        case 0x92:  // Reverse off.
+            reverse = 0;
+            break;
 
             // Colors.
-            case 5: switch_color(COLOR_WHITE); break;
-            case 0x1c: switch_color(COLOR_RED); break;
-            case 0x1e: switch_color(COLOR_GREEN); break;
-            case 0x1f: switch_color(COLOR_BLUE); break;
-            case 0x81: switch_color(COLOR_ORANGE); break;
-            case 0x90: switch_color(COLOR_BLACK); break;
-            case 0x95: switch_color(COLOR_BROWN); break;
-            case 0x96: switch_color(COLOR_LIGHTRED); break;
-            case 0x97: switch_color(COLOR_GRAY1); break;
-            case 0x98: switch_color(COLOR_GRAY2); break;
-            case 0x99: switch_color(COLOR_LIGHTGREEN); break;
-            case 0x9a: switch_color(COLOR_LIGHTBLUE); break;
-            case 0x9b: switch_color(COLOR_GRAY3); break;
-            case 0x9c: switch_color(COLOR_PURPLE); break;
-            case 0x9e: switch_color(COLOR_YELLOW); break;
-            case 0x9f: switch_color(COLOR_CYAN); break;
+        case 5: switch_color(COLOR_WHITE); break;
+        case 0x1c: switch_color(COLOR_RED); break;
+        case 0x1e: switch_color(COLOR_GREEN); break;
+        case 0x1f: switch_color(COLOR_BLUE); break;
+        case 0x81: switch_color(COLOR_ORANGE); break;
+        case 0x90: switch_color(COLOR_BLACK); break;
+        case 0x95: switch_color(COLOR_BROWN); break;
+        case 0x96: switch_color(COLOR_LIGHTRED); break;
+        case 0x97: switch_color(COLOR_GRAY1); break;
+        case 0x98: switch_color(COLOR_GRAY2); break;
+        case 0x99: switch_color(COLOR_LIGHTGREEN); break;
+        case 0x9a: switch_color(COLOR_LIGHTBLUE); break;
+        case 0x9b: switch_color(COLOR_GRAY3); break;
+        case 0x9c: switch_color(COLOR_PURPLE); break;
+        case 0x9e: switch_color(COLOR_YELLOW); break;
+        case 0x9f: switch_color(COLOR_CYAN); break;
 
-            default:
-                paint(petscii_to_screen(ch));
+        default:
+                   paint(petscii_to_screen(key));
     }
 }
 
@@ -244,7 +244,7 @@ void main() {
         unsigned char now = clock();
         while (now == clock()) {}
         if (kbhit()) {
-            do_paint(cgetc());
+            handle_key(cgetc());
             loop = BLINK_PERIOD;
         }
         if (--loop == 0) {
