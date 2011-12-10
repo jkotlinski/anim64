@@ -31,7 +31,8 @@ static unsigned char reverse;
 
 static char color = 1;
 
-#define VIDEO_BASE (char*)0x8000
+#define VIDEO_BASE ((char*)0x8000)
+#define ANIM_DELAY_OFFSET 0x3fd
 #define BORDER_OFFSET 0x3fe
 #define BG_OFFSET 0x3ff
 char* screen_base = VIDEO_BASE;
@@ -169,12 +170,15 @@ static FILE* open(const char* prompt, const char* mode) {
     }
 }
 
+static unsigned char anim_delay;
+
 static void load_anim() {
     FILE* f = open("load", "r");
     if (f) {
         fread(VIDEO_BASE, 0x2000, 1, f);
         fclose(f);
         curr_screen = 0;
+        anim_delay = VIDEO_BASE[ANIM_DELAY_OFFSET];
     }
     switch_to_gfx_screen();
 }
@@ -182,6 +186,7 @@ static void load_anim() {
 static void save_anim() {
     FILE* f = open("save", "w");
     if (f) {
+        VIDEO_BASE[ANIM_DELAY_OFFSET] = anim_delay;
         fwrite(VIDEO_BASE, 0x2000, 1, f);
         fclose(f);
     }
@@ -209,8 +214,6 @@ static void anim_next_screen() {
     ++anim_screen;
     anim_screen &= 3;
 }
-
-static unsigned char anim_delay;
 
 static void animate() {
     char keyboard_state = 0;
