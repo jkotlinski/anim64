@@ -79,18 +79,18 @@ static void punch_paint() {
     punch(paint_char, color);
 }
 
-static void pre_cur_move() {
+static void hide_cursor() {
     punch(hidden_screen_char, hidden_color);
 }
 
-static void post_cur_move() {
+static void show_cursor() {
     hidden_screen_char = screen_char();
     hidden_color = screen_color();
     punch_paint();
 }
 
 static void remember_colors() {
-    pre_cur_move();
+    hide_cursor();
     memcpy(screen_base + 0x1000, (void*)0xd800, 40 * 25);
 }
 
@@ -100,7 +100,7 @@ static void update_screen_base() {
     memcpy((void*)0xd800, screen_base + 0x1000, 40 * 25);
     *(char*)0xd020 = screen_base[BORDER_OFFSET];
     *(char*)0xd021 = screen_base[BG_OFFSET];
-    post_cur_move();
+    show_cursor();
 }
 
 static void change_screen(char step) {
@@ -188,12 +188,25 @@ static void save_anim() {
     switch_to_gfx_screen();
 }
 
+static unsigned char anim_screen;
+static void anim_next_screen() {
+    unsigned char* base = (char*)(0x8000 + anim_screen * 0x400);
+    *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
+    memcpy((void*)0xd800, base + 0x1000, 40 * 25);
+    *(char*)0xd020 = base[BORDER_OFFSET];
+    *(char*)0xd021 = base[BG_OFFSET];
+    ++anim_screen;
+    anim_screen &= 3;
+}
+
 static void animate() {
-    unsigned char screen = curr_screen;
+    remember_colors();
+    anim_screen = 0;
     for (;;) {
-        change_screen(1);
-        // Waits until raster screen is at lower text border.
+        // *(char*)0xd020 = 0;
+        // Waits until raster screen is right below lower text border.
         while (*(char*)0xd012 != 0xfb) {}
+        // *(char*)0xd020 = 1;
         if (kbhit()) {
             if (cgetc() == CH_F6) {
                 // change_anim_speed();
@@ -201,8 +214,8 @@ static void animate() {
                 break;
             }
         }
+        anim_next_screen();
     }
-    curr_screen = screen;
     update_screen_base();
 }
 
@@ -213,30 +226,30 @@ static void handle_key(char key) {
             break;
         case CH_CURS_UP:
             if (cur_y > 0) {
-                pre_cur_move();
+                hide_cursor();
                 --cur_y;
-                post_cur_move();
+                show_cursor();
             }
             break;
         case CH_CURS_DOWN:
             if (cur_y < 24) {
-                pre_cur_move();
+                hide_cursor();
                 ++cur_y;
-                post_cur_move();
+                show_cursor();
             }
             break;
         case CH_CURS_LEFT:
             if (cur_x > 0) {
-                pre_cur_move();
+                hide_cursor();
                 --cur_x;
-                post_cur_move();
+                show_cursor();
             }
             break;
         case CH_CURS_RIGHT:
             if (cur_x < 39) {
-                pre_cur_move();
+                hide_cursor();
                 ++cur_x;
-                post_cur_move();
+                show_cursor();
             }
             break;
         case CH_ENTER:
