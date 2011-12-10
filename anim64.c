@@ -32,8 +32,10 @@ static unsigned char reverse;
 static char color = 1;
 
 #define VIDEO_BASE (char*)0x8000
+#define BORDER_OFFSET 0x3fe
+#define BG_OFFSET 0x3ff
 char* screen_base = VIDEO_BASE;
-/* $8000 - $8fff: screen 0-3
+/* $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
  */
 
@@ -94,6 +96,8 @@ static void update_screen_base() {
     screen_base = (char*)(0x8000 + curr_screen * 0x400);
     *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
     memcpy((void*)0xd800, screen_base + 0x1000, 40 * 25);
+    *(char*)0xd020 = screen_base[BORDER_OFFSET];
+    *(char*)0xd021 = screen_base[BG_OFFSET];
 }
 
 static void change_screen(char step) {
@@ -204,6 +208,12 @@ static void handle_key(char key) {
                 fclose(f);
             }
             *(char*)0xd020 = 0;
+            break;
+        case CH_F3:
+            *(char*)0xd020 = ++screen_base[BORDER_OFFSET];
+            break;
+        case CH_F4:
+            *(char*)0xd021 = ++screen_base[BG_OFFSET];
             break;
         case 0x12:  // Reverse on.
             reverse = 0x80u;
