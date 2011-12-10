@@ -210,8 +210,11 @@ static void anim_next_screen() {
     anim_screen &= 3;
 }
 
+static unsigned char anim_delay;
+
 static void animate() {
     char keyboard_state = 0;
+    char delay = anim_delay;;
 
     remember_colors();
     anim_screen = 0;
@@ -236,7 +239,10 @@ static void animate() {
         } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
             break;
         }
-        anim_next_screen();
+        if (delay-- == 0) {
+            anim_next_screen();
+            delay = anim_delay;
+        }
     }
 
     // Re-enable kernal timer interrupts.
@@ -279,10 +285,10 @@ static void handle_key(char key) {
             }
             break;
         case CH_ENTER:
-            change_screen(-1);
+            change_screen(1);
             break;
         case 0x80 | CH_ENTER:
-            change_screen(1);
+            change_screen(-1);
             break;
         case CH_DEL:
             hidden_screen_char = petscii_to_screen(' ') | reverse;
@@ -298,6 +304,8 @@ static void handle_key(char key) {
 
         case CH_F1: load_anim(); break;
         case CH_F2: save_anim(); break;
+        case CH_F5: ++anim_delay; break;  // Slower.
+        case CH_F6: if (anim_delay) --anim_delay; break;  // Faster.
         case CH_F7: animate(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
