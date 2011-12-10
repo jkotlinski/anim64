@@ -188,6 +188,24 @@ static void save_anim() {
     switch_to_gfx_screen();
 }
 
+static void animate() {
+    unsigned char screen = curr_screen;
+    for (;;) {
+        change_screen(1);
+        // Waits until raster screen is at lower text border.
+        while (*(char*)0xd012 != 0xfb) {}
+        if (kbhit()) {
+            if (cgetc() == CH_F6) {
+                // change_anim_speed();
+            } else {
+                break;
+            }
+        }
+    }
+    curr_screen = screen;
+    update_screen_base();
+}
+
 static void handle_key(char key) {
     switch (key) {
         default:
@@ -241,6 +259,7 @@ static void handle_key(char key) {
 
         case CH_F1: load_anim(); break;
         case CH_F2: save_anim(); break;
+        case CH_F7: animate(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
         case ' ': paint(paint_char); break;
@@ -266,7 +285,7 @@ static void handle_key(char key) {
 }
 
 void main() {
-#define BLINK_PERIOD 1000
+#define BLINK_PERIOD 30
     int loop = BLINK_PERIOD;
 #if 0
     while(1) { if (kbhit()) { printf("%x", cgetc()); } }
@@ -274,7 +293,7 @@ void main() {
     init();
     punch_paint();
     while (1) {
-        unsigned char now = clock();
+        unsigned long now = clock();
         while (now == clock()) {}
         if (kbhit()) {
             handle_key(cgetc());
