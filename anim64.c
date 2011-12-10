@@ -139,6 +139,9 @@ void __fastcall__ switch_color(char c) {
 
 static void handle_key(char key) {
     switch (key) {
+        default:
+            paint(petscii_to_screen(key));
+            break;
         case CH_CURS_UP:
             if (cur_y > 0) {
                 pre_cur_move();
@@ -209,8 +212,8 @@ static void handle_key(char key) {
             reverse = 0;
             break;
 
-            // Colors.
-        case 5: switch_color(COLOR_WHITE); break;
+        // Colors.
+        case 0x05: switch_color(COLOR_WHITE); break;
         case 0x1c: switch_color(COLOR_RED); break;
         case 0x1e: switch_color(COLOR_GREEN); break;
         case 0x1f: switch_color(COLOR_BLUE); break;
@@ -226,9 +229,6 @@ static void handle_key(char key) {
         case 0x9c: switch_color(COLOR_PURPLE); break;
         case 0x9e: switch_color(COLOR_YELLOW); break;
         case 0x9f: switch_color(COLOR_CYAN); break;
-
-        default:
-                   paint(petscii_to_screen(key));
     }
 }
 
