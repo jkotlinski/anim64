@@ -141,6 +141,21 @@ void __fastcall__ switch_color(char c) {
     punch_paint();
 }
 
+static void load_animation() {
+    FILE* f = fopen("foo", "r");
+    fread(VIDEO_BASE, 0x2000, 1, f);
+    curr_screen = 0;
+    update_screen_base();
+    fclose(f);
+}
+
+static void save_animation() {
+    FILE* f = fopen("foo", "w");
+    remember_colors();
+    fwrite(VIDEO_BASE, 0x2000, 1, f);
+    fclose(f);
+}
+
 static void handle_key(char key) {
     switch (key) {
         default:
@@ -188,27 +203,8 @@ static void handle_key(char key) {
             hidden_color = color;
             handle_key(CH_CURS_LEFT);
             break;
-        case CH_F1:
-            *(char*)0xd020 = 5;
-            {
-                FILE* f = fopen("foo", "r");
-                fread(VIDEO_BASE, 0x2000, 1, f);
-                curr_screen = 0;
-                update_screen_base();
-                fclose(f);
-            }
-            *(char*)0xd020 = 0;
-            break;
-        case CH_F2:
-            *(char*)0xd020 = 4;
-            {
-                FILE* f = fopen("foo", "w");
-                remember_colors();
-                fwrite(VIDEO_BASE, 0x2000, 1, f);
-                fclose(f);
-            }
-            *(char*)0xd020 = 0;
-            break;
+        case CH_F1: load_animation(); break;
+        case CH_F2: save_animation(); break;
         case CH_F3:
             *(char*)0xd020 = ++screen_base[BORDER_OFFSET];
             break;
