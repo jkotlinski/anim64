@@ -188,11 +188,22 @@ static void save_anim() {
     switch_to_gfx_screen();
 }
 
+/* Defined in colcpy.s. */
+void colcpy_9000();
+void colcpy_9400();
+void colcpy_9800();
+void colcpy_9c00();
+
 static unsigned char anim_screen;
 static void anim_next_screen() {
     unsigned char* base = (char*)(0x8000 + anim_screen * 0x400);
     *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
-    memcpy((void*)0xd800, base + 0x1000, 40 * 25);
+    switch (anim_screen) {
+        case 0: colcpy_9000(); break;
+        case 1: colcpy_9400(); break;
+        case 2: colcpy_9800(); break;
+        case 3: colcpy_9c00(); break;
+    }
     *(char*)0xd020 = base[BORDER_OFFSET];
     *(char*)0xd021 = base[BG_OFFSET];
     ++anim_screen;
@@ -200,22 +211,37 @@ static void anim_next_screen() {
 }
 
 static void animate() {
+    char keyboard_state = 0;
+
     remember_colors();
     anim_screen = 0;
+
+    // Disable kernal timer interrupts.
+    *(char*)0xdc0d = 0x7f;
+    // Scan all keyboard rows.
+    *(char*)0xdc00 = 0;
+
     for (;;) {
-        // *(char*)0xd020 = 0;
         // Waits until raster screen is right below lower text border.
-        while (*(char*)0xd012 != 0xfb) {}
         // *(char*)0xd020 = 1;
-        if (kbhit()) {
-            if (cgetc() == CH_F6) {
-                // change_anim_speed();
-            } else {
-                break;
+        while (*(char*)0xd012 != 0xfb) {}
+        // *(char*)0xd020 = 0;
+
+        // To exit animation, first all keys should be released, then
+        // some key should be pressed.
+        if (keyboard_state == 0) {
+            if (0xff == *(char*)0xdc01) {  // All keys released?
+                keyboard_state = 1;
             }
+        } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
+            break;
         }
         anim_next_screen();
     }
+
+    // Re-enable kernal timer interrupts.
+    *(char*)0xdc0d = 0x81;
+
     update_screen_base();
 }
 
