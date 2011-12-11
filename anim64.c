@@ -48,7 +48,7 @@ char curr_screen;
 static char has_music;
 
 static void load_music() {
-    FILE* f = fopen("music2", "r");
+    FILE* f = fopen("music", "r");
     if (fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f)) {
         has_music = 1;
     }
