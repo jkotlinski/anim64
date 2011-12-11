@@ -31,6 +31,9 @@ static unsigned char reverse;
 
 static char color = 1;
 
+#define MUSIC_START ((char*)0x1000)
+#define MUSIC_STOP ((char*)0x2800)
+
 #define VIDEO_BASE ((char*)0x8000)
 #define ANIM_DELAY_OFFSET 0x3fd
 #define BORDER_OFFSET 0x3fe
@@ -42,15 +45,30 @@ char* screen_base = VIDEO_BASE;
 
 char curr_screen;
 
+static char has_music;
+
+static void load_music() {
+    FILE* f = fopen("music.prg", "r");
+    if (!f) return;
+    puts("loading music...");
+    if (fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f)) {
+        has_music = 1;
+    }
+    fclose(f);
+}
+
 static void init() {
     clrscr();
-    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    *(char*)0xd018 = 0x04;  // Point video to 0x8000.
-    memset(VIDEO_BASE, 0x20, 0x1000);
-    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
     textcolor(COLOR_YELLOW);
     bordercolor(0);
     bgcolor(0);
+
+    load_music();
+
+    memset(VIDEO_BASE, 0x20, 0x1000);
+    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
+    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+    *(char*)0xd018 = 0x04;  // Point video to 0x8000.
 }
 
 static char paint_char = 1;
