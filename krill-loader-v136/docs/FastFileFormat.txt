@@ -1,0 +1,112 @@
+Fast File Formats
+
+These are high-level encoding schemes to speed up the loading of files on the 1541 using this particular loader.
+They are encoded in plain GCR and 100% compatible with high-level disk images such as d64 and d81.
+The loading of files on d81 images won't be upsped using this format, though - that is, the extra information provided by these formats is of no use and has to be sanely ignored by the loader.
+Compared to normal loading using this loader on a 1541, this encoding speeds up the mere loading time (not counting depacking) by one less revolution per track, meaning a speed-up of ~17%.
+
+There are 2 different formats used, one for separate file loading, and one for IFFL file loading.
+Please note that these files must not be file-copied to 1541 disks using standard file copiers not knowing this format. And also new files must not be copied onto a disk containing fast file format files by using plain save or file copy routines. Plain disk backup is possible. Dos commands such as validate and scratch are possible.
+Plain file-copying to non-1541 formats is allowed, but there will be no speedup for loading from non-1541 devices.
+
+
+Separate file loading:
+
+The two first bytes of each block's data of all files on the disk are used for extra management information, excluding the track/sector link and starting to count from block byte $02. The file's original data (including load address), in its original byte order, is continuously fit into the rest of the remaining 256-2-2 = 252 bytes. That makes an overhead of two bytes per original file block, in average, meaning an extra block for every file for its first 128 original blocks, and another one for the next 128 original file blocks.
+
+The two extra bytes of management information are, in this order:
+Block byte $02 (starting from $00):
+- bits 7-5: a track-unique file ID that is assigned to any file on disk, all three bits must not be 0 at the same time
+- bits 4-0: the number of blocks the file occupies on this block's track, starting from $00
+
+Block byte $03 (starting from $01):
+- bits 7-0: an index that uniquely describes the block's sequential position in the file, this is used to determine the block's loading position in the computer's memory
+
+Thus, a file block looks like this:
+Byte $00 - track link to next block
+Byte $01 - sector link to next block
+Byte $02 - track-unique file ID and number of file blocks occupied on this file's track
+Byte $03 - block index
+Bytes $04-$ff - data
+
+It follows that you cannot put files loaded with this loader on the directory track, and that a freshly-formatted disk has to contain data blocks that are filled with (or, to be exact, whose byte $02 is) $00.
+Furthermore, you can never have more than 7 files on one track, and no two files can share the same track-unique ID if they share one or more tracks. In reality, this is not problematic, unless you have a large number of very small files.
+Also, standard format files must not share tracks with fast file format files.
+
+
+IFFL file loading:
+
+Bytes $02 and $03 (starting from $00) of each block of the IFFL file is used for management information. So the overhead is the same as in the format described aboce.
+These two bytes are the block's 16-bit index in the file, in lo/hi order, and eor'ed with #$ff. It starts from $0000.
+
+Thus, a file block looks like this:
+Byte $00 - track link to next block
+Byte $01 - sector link to next block
+Byte $02 - lo-byte of block index, eor'ed with $ff
+Byte $03 - hi-byte of block index, eor'ed with $ff
+Bytes $04-$ff - data
+
+All non-IFFL files, such as the boot file, have to reside on track 1 and up, and the directory track. The IFFL file starts on the track with the lowest number that's not occupied by any non-IFFL files. The IFFL file's track order is strictly ascending, so it starts at track n and then goes on to track n+1, then n+2, etc. The directory track is skipped. It follows that standard files never share tracks with the IFFL file, and that a freshly-formatted disk has to contain data blocks that are filled with (or, to be exact, whose bytes $02 and $03 are) $00.
+
+
+Full on-the-fly decoding:
+
+aaaaabbb bbcccccd ddddeeee efffffgg ggghhhhh
+  0    7     d0    d1   d2    d3    d4   d5
+
+                  10010010 01101101 10110110
+                  01001001 10010010 01001001
+                  00100100
+aaaaabbb bbXXXXXX abXabXab XaaXaaXa bXbbXbbX
+  0    7             b0       b1       b2
+
+
+  -1,   -2,  -3,  -4,
+  -5,   -6,  -7,  -8,
+  -9,  0x8, 0x0, 0x1,
+  -13, 0xc, 0x4, 0x5,
+  -17, -18, 0x2, 0x3,
+  -21, 0xf, 0x6, 0x7,
+  -25, 0x9, 0xa, 0xb,
+  -29, 0xd, 0xe, -32
+
+
+256 * 10 = 2560
+2560 / 16 = 160
+
+160 / 256 = 62.5%
+
+160 * 256/4 = 10240 c/s
+123 * 64    = 7872 c/s
+
+-> 43.5% decoding overhead
+
+2560 / 12 = 213
+
+213 / 256 = 83.2%
+
+83.2% + 43.5% = 126.7%
+
+
+aaaaabbb bbcccccd ddddeeee efffffgg ggghhhhh|iiiiijjj jjkkkkkl llllmmmm mnnnnnoo oooppppp
+X..X..X. .X..X..X ..X..X.. X..X..X.|.X..X..X ..X..X.. X..X..X. .X..X..X
+           -----             |||||           -----           - ----
+
+76543210
+-..-.
+
+10010 -> 12, 13 -> 02, 03
+10110 -> 16, 17 -> 06, 07
+11010 -> 1a, 1b -> 0a, 0b
+11110 -> 1e, 1f -> 0e, fail -> 01111 -> 0f -> 05
+
+
+76543210
+.-..-
+
+01001 -> 9. 19 -> 08, 09
+01011 -> b, 1b -> 01, 07
+01101 -> d, 1d -> 0c, 0d
+01111 ->
+
+..-.. -> 4 -> fail

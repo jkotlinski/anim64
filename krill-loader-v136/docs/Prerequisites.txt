@@ -1,0 +1,40 @@
+Environment:
+
+Variable           Setting
+
+CC65_SRC           <cc65sourcepath>                              (only needed to build the dynlinking targets)
+CC65_INC           <cc65sourcepath>/include                      (only needed to build the dynlinking targets)
+
+Note:
+Under Cygwin, CC65_SRC must be in *NIX path format (e.g. /cygdrive/c/cc65),
+and CC65_INC must be in Windows path format with forward slashes (e.g. C:/cc65/include).
+
+
+Path:
+
+Name               Source                                        Path setting
+
+cc65source         http://www.cc65.org/                          <cc65source>    (only needed to build the dynlinking targets)
+ca65               http://www.cc65.org/                          <cc65path>/bin
+ld65               http://www.cc65.org/                          <cc65path>/bin
+ar65               http://www.cc65.org/                          <cc65path>/bin
+
+java               http://java.sun.com/                          <javapath>/bin  (needed to run the compressed file converter for Byteboozer and Taboo Levelcrush)
+javac              http://java.sun.com/                          <javapath>/bin  (needed to build the compressed file converter for Byteboozer and Taboo Levelcrush)
+
+make               http://www.gnu.org/software/make/             <makepath>
+gcc                http://gcc.gnu.org/                           <gccpath>       (needed to build cc1541)
+
+c1541              http://viceteam.org/                          <vicepath>      (only needed for 1581 disk image targets)
+vice               http://viceteam.org/                          <vicepath>
+plus4emu           http://plus4emu.sourceforge.net/              <plus4emupath>  (only needed if using the NO_VICE=1 make run switch on Plus/4 and MAC OS X)
+yape               http://yape.homeserver.hu/                    <yapepath>      (only needed if using the NO_VICE=1 make run switch on Plus/4 and Windows)
+
+dosbox             http://wwww.dosbox.com/                       <dosboxpath>    (needed on Win64 and MAX OS X to run tools/CRUSH.exe to compress files for Taboo Levelcrush)
+wine               http://www.winehq.org/                        <winepath>      (needed on non-Windows and non-MAC OS X systems to run tools/CRUSH.exe for Taboo Levelcrush compressed files)
+
+bb (ByteBoozer)    http://noname.c64.org/csdb/release/?id=33093  <bbpath>
+pucrunch           http://www.cs.tut.fi/~albert/Dev/pucrunch/    <pupath>
+exomizer           http://hem.bredband.net/magli143/exo/         <exopath>
+
+perl               http://www.perl.org/                          <perlpath>      (needed to generate a symbols file for the prg make target in loader/src)
