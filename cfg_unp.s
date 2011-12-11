@@ -2,7 +2,7 @@
 ; Default configuration (everything included)
 ;-------------------------------------------------------------------------------
 
-.define LONG_NAMES       1             ;Set to nonzero to use long names (pointer in
+.define LONG_NAMES       0             ;Set to nonzero to use long names (pointer in
                                 ;X,Y) or zero to use 2-letter names (letters
                                 ;in X,Y)
 .define BORDER_FLASHING  0             ;Set to nonzero to enable border flashing
