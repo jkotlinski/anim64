@@ -54,9 +54,6 @@ static void load_music() {
     fclose(f);
 }
 
-// Defined in loader.s.
-void initloader();
-
 static void init() {
     clrscr();
     textcolor(COLOR_YELLOW);
