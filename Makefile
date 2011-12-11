@@ -32,7 +32,7 @@ all:   	anim64
 	@echo $<
 	@$(AS) $(basename $<).s
 
-OBJS = anim64.o colcpy.o music.o loader.o
+OBJS = anim64.o colcpy.o music.o loader.o movie.o
 
 -include $(OBJS:%.o=$(DEPDIR)/%.u)
 

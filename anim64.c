@@ -23,6 +23,8 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
+#include "movie.h"
+
 static unsigned char cur_x;
 static unsigned char cur_y;
 static unsigned char reverse;
@@ -369,6 +371,11 @@ void main() {
 #endif
     init();
     punch_paint();
+
+    // Test.
+    switch_to_console_screen();
+    edit_movie();
+
     while (1) {
         unsigned long now = clock();
         while (now == clock()) {}
