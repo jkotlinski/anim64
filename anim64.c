@@ -55,12 +55,16 @@ static void load_music() {
     fclose(f);
 }
 
+// Defined in loader.s.
+void initloader();
+
 static void init() {
     clrscr();
     textcolor(COLOR_YELLOW);
     bordercolor(0);
     bgcolor(0);
 
+    initloader();
     load_music();
 
     memset(VIDEO_BASE, 0x20, 0x1000);

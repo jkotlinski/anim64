@@ -13,7 +13,7 @@
 
 .define processor 6502
 
-.export initloader
+.export _initloader
 .export loadfile
 
 .segment "CODE"
@@ -1329,7 +1329,7 @@ slowirq:        .byte 0                          ;Indicator of whether IRQs are
 ; Modifies: A,X,Y
 ;-------------------------------------------------------------------------------
 
-initloader:     sta $d07f                       ;Disable SCPU hardware regs
+_initloader:    sta $d07f                       ;Disable SCPU hardware regs
                 lda #$00
                 sta messages                    ;Disable KERNAL messages
                 sta fastloadstatus              ;Initial fastload status = off
