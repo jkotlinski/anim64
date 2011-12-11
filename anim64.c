@@ -48,9 +48,8 @@ char curr_screen;
 static char has_music;
 
 static void load_music() {
-    FILE* f = fopen("music.prg", "r");
+    FILE* f = fopen("music", "r");
     if (!f) return;
-    puts("loading music...");
     if (fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f)) {
         has_music = 1;
     }
@@ -221,21 +220,29 @@ static unsigned char anim_screen;
 static void anim_next_screen() {
     unsigned char* base = (char*)(0x8000 + anim_screen * 0x400);
     *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
+    *(char*)0xd020 = base[BORDER_OFFSET];
+    *(char*)0xd021 = base[BG_OFFSET];
     switch (anim_screen) {
         case 0: colcpy_9000(); break;
         case 1: colcpy_9400(); break;
         case 2: colcpy_9800(); break;
         case 3: colcpy_9c00(); break;
     }
-    *(char*)0xd020 = base[BORDER_OFFSET];
-    *(char*)0xd021 = base[BG_OFFSET];
     ++anim_screen;
     anim_screen &= 3;
 }
 
+// Defined in music.s.
+void init_music();
+void tick_music();
+
 static void animate() {
     char keyboard_state = 0;
     char delay = anim_delay;;
+
+    if (has_music) {
+        init_music();
+    }
 
     remember_colors();
     anim_screen = 0;
@@ -246,6 +253,10 @@ static void animate() {
     *(char*)0xdc00 = 0;
 
     for (;;) {
+        if (has_music) {
+            tick_music();
+        }
+
         // Waits until raster screen is right below lower text border.
         // *(char*)0xd020 = 1;
         while (*(char*)0xd012 != 0xfb) {}
