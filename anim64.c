@@ -23,8 +23,6 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
-#include "keymap.h"
-
 static unsigned char cur_x;
 static unsigned char cur_y;
 static unsigned char reverse;
@@ -35,9 +33,10 @@ static char color = 1;
 #define MUSIC_STOP ((char*)0x2800)
 
 #define VIDEO_BASE ((char*)0x8000)
-#define ANIM_DELAY_OFFSET 0x3fd
-#define BORDER_OFFSET 0x3fe
-#define BG_OFFSET 0x3ff
+#define BORDER_OFFSET (40 * 25)
+#define BG_OFFSET (40 * 25 + 1)
+#define ANIM_DELAY_OFFSET (40 * 25 + 2)
+#define FILE_SIZE (0x400 * 7 + 40 * 25)
 char* screen_base = VIDEO_BASE;
 /* $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
@@ -197,7 +196,7 @@ static unsigned char anim_delay;
 static void load_anim() {
     FILE* f = open("load", "r");
     if (f) {
-        fread(VIDEO_BASE, 0x2000, 1, f);
+        fread(VIDEO_BASE, FILE_SIZE, 1, f);
         fclose(f);
         curr_screen = 0;
         anim_delay = VIDEO_BASE[ANIM_DELAY_OFFSET];
@@ -209,7 +208,7 @@ static void save_anim() {
     FILE* f = open("save", "w");
     if (f) {
         VIDEO_BASE[ANIM_DELAY_OFFSET] = anim_delay;
-        fwrite(VIDEO_BASE, 0x2000, 1, f);
+        fwrite(VIDEO_BASE, FILE_SIZE, 1, f);
         fclose(f);
     }
     switch_to_gfx_screen();

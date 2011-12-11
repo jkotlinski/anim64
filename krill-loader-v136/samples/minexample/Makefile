@@ -87,7 +87,7 @@ PRINTF       = printf
 
 AS           = ca65
 LD           = ld65
-PU           = pucrunch
+PU           = ~/bin/pucrunch
 C1541        = c1541
 
 MKDIR        = mkdir -p
