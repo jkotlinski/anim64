@@ -63,9 +63,6 @@ static void init() {
     bordercolor(0);
     bgcolor(0);
 
-    /* Fast loader does not seem compatible with stdio fopen, fread, fwrite et.c.
-     * initloader();
-     */
     load_music();
 
     memset(VIDEO_BASE, 0x20, 0x1000);

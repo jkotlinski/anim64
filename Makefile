@@ -44,8 +44,8 @@ EXELIST=anim64
 anim64.d64:
 	$(C1541) -format anim64,AA  d64 anim64.d64 > /dev/null
 
-anim64: 		$(OBJS) $(CLIB) krill-loader-v136/build/loader-c64.a anim64.d64
-	@$(LD) -o $@.prg $(OBJS) $(CLIB) krill-loader-v136/build/loader-c64.a
+anim64: 		$(OBJS) $(CLIB) anim64.d64
+	@$(LD) -o $@.prg $(OBJS) $(CLIB)
 	@for exe in $(EXELIST); do\
 	    $(C1541) -attach anim64.d64 -delete $$exe.prg  > /dev/null;\
 	    $(C1541) -attach anim64.d64 -write $$exe.prg  > /dev/null;\
