@@ -32,6 +32,7 @@ static char selected_file;
 /* 0 = file name
  * 1 = duration
  * 2 = speed */
+#define MAX_COLUMN 2
 static char selected_column;
 
 #define DURATION_X (FILENAME_LENGTH + 1) 
@@ -45,8 +46,7 @@ static unsigned char update_color(unsigned char column, unsigned char row) {
     return color;
 }
 
-static void show_screen() {
-    unsigned char file_it;
+static void draw_headers() {
     textcolor(COLOR_BLUE);
     gotoxy(0, 0);
     cputs("file");
@@ -54,25 +54,38 @@ static void show_screen() {
     cputs("dur.");
     gotoxy(SPEED_X, 0);
     cputs("spd");
+}
+
+static void draw_row(unsigned char row) {
+    const char y = row + 1;
+    // Prints file name.
+    const char color = update_color(0, row);
     revers(1);
-    for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        const char y = file_it + 1;
-        // Prints file name.
-        const char color = update_color(0, file_it);
-        memset((char*)(0xd800 + y * 40), color, FILENAME_LENGTH);
-        memset((char*)(0x400 + y * 40), 0xa0, FILENAME_LENGTH);
-        gotoxy(0, y);
-        cputs(filename[file_it]);
-        // Prints duration.
-        update_color(1, file_it);
-        gotoxy(DURATION_X, y);
-        cprintf("%5i", duration[file_it]);
-        // Prints speed.
-        update_color(2, file_it);
-        gotoxy(SPEED_X, y);
-        cprintf("%3i", speed[file_it]);
-    }
+    memset((char*)(0xd800 + y * 40), color, FILENAME_LENGTH);
+    memset((char*)(0x400 + y * 40), 0xa0, FILENAME_LENGTH);
+    gotoxy(0, y);
+    cputs(filename[row]);
+    // Prints duration.
+    update_color(1, row);
+    gotoxy(DURATION_X, y);
+    cprintf("%5i", duration[row]);
+    // Prints speed.
+    update_color(2, row);
+    gotoxy(SPEED_X, y);
+    cprintf("%3i", speed[row]);
     revers(0);
+}
+
+static void draw_fields() {
+    unsigned char file_it;
+    for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
+        draw_row(file_it);
+    }
+}
+
+static void show_screen() {
+    draw_headers();
+    draw_fields();
 }
 
 static void init() {
@@ -92,10 +105,43 @@ void edit_movie() {
     show_screen();
     while (1) {
         if (kbhit()) {
-            gotoxy(0, 1);
-            revers(1);
-            gets(NULL);
-            revers(0);
+            switch (cgetc()) {
+                case CH_CURS_DOWN:
+                    if (selected_file < FILE_COUNT - 1) {
+                        ++selected_file;
+                        draw_row(selected_file - 1);
+                        draw_row(selected_file);
+                    }
+                    break;
+                case CH_CURS_UP:
+                    if (selected_file) {
+                        --selected_file;
+                        draw_row(selected_file + 1);
+                        draw_row(selected_file);
+                    }
+                    break;
+                case CH_CURS_RIGHT:
+                    if (selected_column < MAX_COLUMN) {
+                        ++selected_column;
+                        draw_row(selected_file);
+                    }
+                    break;
+                case CH_CURS_LEFT:
+                    if (selected_column) {
+                        --selected_column;
+                        draw_row(selected_file);
+                    }
+                    break;
+                case CH_ENTER:
+                    break;
+                /*
+                gotoxy(0, 1);
+                revers(1);
+                fgets(filename[0], FILENAME_LENGTH, stdin);
+                ++*(char*)0xd020;
+                revers(0);
+                */
+            }
         }
     }
 }

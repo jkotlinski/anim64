@@ -179,7 +179,7 @@ static FILE* open(const char* prompt, const char* mode) {
         FILE* f;
         char path[32];
         printf("\n%s>", prompt);
-        gets(path);
+        fgets(path, sizeof(path), stdin);
         if (!*path) return NULL;
         f = fopen(path, mode);
         if (f) return f;
