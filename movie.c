@@ -18,8 +18,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
+#include <assert.h>
 #include <conio.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define FILE_COUNT 24
@@ -68,7 +70,7 @@ static void draw_row(unsigned char row) {
     // Prints duration.
     update_color(1, row);
     gotoxy(DURATION_X, y);
-    cprintf("%5i", duration[row]);
+    cprintf("%5u", duration[row]);
     // Prints speed.
     update_color(2, row);
     gotoxy(SPEED_X, y);
@@ -98,6 +100,28 @@ static void init() {
         duration[file_it] = 100;
     }
     inited = 1;
+}
+
+static void edit_field() {
+    gotoy(selected_file + 1);
+    revers(1);
+    switch (selected_column) {
+        case 0:  // File.
+            gotox(0);
+            break;
+        case 1:  // Duration.
+            gotox(DURATION_X);
+            cclear(5);
+            gotox(DURATION_X);
+            cursor(1);
+            cscanf("%5u", &duration[selected_file]);
+            break;
+        case 2:  // Speed.
+            gotox(SPEED_X);
+            break;
+    }
+    revers(0);
+    draw_row(selected_file);
 }
 
 void edit_movie() {
@@ -133,6 +157,7 @@ void edit_movie() {
                     }
                     break;
                 case CH_ENTER:
+                    edit_field();
                     break;
                 /*
                 gotoxy(0, 1);
