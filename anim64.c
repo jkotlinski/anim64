@@ -339,6 +339,7 @@ static void handle_key(char key) {
         case CH_F5: ++anim_delay; break;  // Slower.
         case CH_F6: if (anim_delay) --anim_delay; break;  // Faster.
         case CH_F7: animate(); break;
+        case CH_F8: switch_to_console_screen(); edit_movie(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
         case ' ': paint(paint_char); break;
@@ -373,8 +374,7 @@ void main() {
     punch_paint();
 
     // Test.
-    // switch_to_console_screen();
-    // edit_movie();
+    handle_key(CH_F8);
 
     while (1) {
         unsigned long now = clock();
