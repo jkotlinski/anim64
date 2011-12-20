@@ -19,7 +19,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 #include <conio.h>
+#include <_heap.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
@@ -42,6 +44,7 @@ static char color = 1;
 char* screen_base = VIDEO_BASE;
 /* $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
+ * $a000 - $cfff: animation heap
  */
 
 char curr_screen;
@@ -56,7 +59,14 @@ static void load_music() {
     fclose(f);
 }
 
+static void init_heap() {
+    _heaporg = (unsigned*)0xa000;
+    _heapptr = (unsigned*)0xa000;
+    _heapend = (unsigned*)0xd000;
+}
+
 static void init() {
+    init_heap();
     clrscr();
     textcolor(COLOR_YELLOW);
     bordercolor(0);
@@ -374,7 +384,7 @@ void main() {
     punch_paint();
 
     // Test.
-    handle_key(CH_F8);
+    // handle_key(CH_F8);
 
     while (1) {
         unsigned long now = clock();

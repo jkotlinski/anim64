@@ -25,7 +25,7 @@ THE SOFTWARE. */
 #include <string.h>
 
 #define FILE_COUNT 24
-#define FILENAME_LENGTH 10
+#define FILENAME_LENGTH 8
 static char filename[FILE_COUNT][FILENAME_LENGTH];
 static unsigned int duration[FILE_COUNT];
 static unsigned char speed[FILE_COUNT];
@@ -119,7 +119,7 @@ static void edit_field() {
             gotox(0);
             cclear(FILENAME_LENGTH);
             gotox(0);
-            cscanf("%10s", &filename[selected_file]);
+            cscanf("%8s", &filename[selected_file]);
             break;
         case 1:  // Duration.
             gotox(DURATION_X);
