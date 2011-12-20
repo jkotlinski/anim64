@@ -67,17 +67,20 @@ static void draw_row(unsigned char row) {
     memset((char*)(0x400 + y * 40), 0xa0, FILENAME_LENGTH);
     gotoxy(0, y);
     cputs(filename[row]);
+    gotox(DURATION_X - 1);
+    revers(0);
     cclear(1);
+    revers(1);
     // Prints duration.
     update_color(1, row);
-    gotoxy(DURATION_X, y);
+    gotox(DURATION_X);
     cprintf("%5u", duration[row]);
     revers(0);
     cclear(1);
     revers(1);
     // Prints speed.
     update_color(2, row);
-    gotoxy(SPEED_X, y);
+    gotox(SPEED_X);
     cprintf("%3i", speed[row]);
     revers(0);
 }
@@ -110,10 +113,13 @@ static void edit_field() {
     gotoy(selected_file + 1);
     revers(1);
     cursor(1);
-    textcolor(COLOR_GREEN);
+    textcolor(COLOR_RED);
     switch (selected_column) {
         case 0:  // File.
             gotox(0);
+            cclear(FILENAME_LENGTH);
+            gotox(0);
+            cscanf("%10s", &filename[selected_file]);
             break;
         case 1:  // Duration.
             gotox(DURATION_X);
