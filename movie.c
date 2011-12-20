@@ -129,6 +129,13 @@ static void edit_field() {
             break;
         case 2:  // Speed.
             gotox(SPEED_X);
+            cclear(3);
+            gotox(SPEED_X);
+            {
+                unsigned int x;
+                cscanf("%3u", &x);
+                speed[selected_file] = (x & 0xff00u) ? 0xff : x;
+            }
             break;
     }
     draw_fields();
