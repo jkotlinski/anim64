@@ -179,7 +179,7 @@ static FILE* open(const char* prompt, const char* mode) {
         FILE* f;
         char path[32];
         printf("\n%s>", prompt);
-        fgets(path, sizeof(path), stdin);
+        gets(path);
         if (!*path) return NULL;
         f = fopen(path, mode);
         if (f) return f;
@@ -373,8 +373,8 @@ void main() {
     punch_paint();
 
     // Test.
-    switch_to_console_screen();
-    edit_movie();
+    // switch_to_console_screen();
+    // edit_movie();
 
     while (1) {
         unsigned long now = clock();
