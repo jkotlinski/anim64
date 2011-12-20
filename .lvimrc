@@ -1,5 +1,5 @@
 map <F3> :wall!<CR>:make rletest -j 2 run<CR>
-map <F4> :wall!<CR>:make -j 2 run<CR>
+map <F4> :wall!<CR>:make anim64 -j 2 run<CR>
 map <F5> :!x64 anim64.prg<CR>
 
 set tags+=~/.vim/cc65tags

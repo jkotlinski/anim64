@@ -18,11 +18,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
+#include <assert.h>
+
 unsigned int pack(char* src, char* dst, unsigned int src_size) {
+    const char* start = dst;
+    unsigned int run = 0;
+    char prev = *src;
+
     while (src_size--) {
-        *dst = *src;
+        const char curr = *(src++);
+        if (curr == prev) {
+            ++run;
+        } else {
+            // Run ended.
+write_remaining:
+            assert(run);
+            if (run == 1) {
+                *(dst++) = prev;
+            } else {
+                run -= 2;  // Always write at least two bytes.
+                *(dst++) = prev;
+                *(dst++) = prev;
+                if (run < 0x100) {
+                    *(dst++) = run;
+                } else {
+                    *(dst++) = 0xff;
+                    run -= 0xff;
+                    goto write_remaining;
+                }
+            }
+            run = 1;
+            prev = curr;
+        }
     }
-    return 0;
+    return dst - start;
 }
 
 unsigned int unpack(char* src, char* dst, unsigned int src_size) {

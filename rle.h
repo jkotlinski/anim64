@@ -21,10 +21,10 @@ THE SOFTWARE. */
 #ifndef RLE_H_
 #define RLE_H_
 
-/* Returns packed bytes. If no actual write should be done, pass null dst. */
+/* Returns packed bytes. */
 unsigned int pack(char* src, char* dst, unsigned int src_size);
 
-/* Returns unpacked bytes. If no actual write should be done, pass null dst. */
+/* Returns unpacked bytes. */
 unsigned int unpack(char* src, char* dst, unsigned int src_size);
 
 #endif  // RLE_H_

@@ -20,18 +20,28 @@ THE SOFTWARE. */
 
 #include "rle.h"
 
+#include <assert.h>
 #include <conio.h>
 #include <stdio.h>
+#include <string.h>
 
-#define SRC (char*)0x8000u
-#define DST (char*)0xa000u
+#define UNPACKED (char*)0x6000u
+#define UNPACKED2 (char*)0x8000u
+#define PACKED (char*)0xa000u
+
+void test_packunpack() {
+    unsigned int packsize = pack(UNPACKED, PACKED, 0x2000);
+    unsigned int unpacksize = unpack(PACKED, UNPACKED2, packsize);
+    printf("pack %#x %#x %#x => %#x\n", UNPACKED, PACKED, 0x2000, packsize);
+    printf("unpack %#x %#x %#x => %#x\n", PACKED, UNPACKED2, packsize, unpacksize);
+    assert(unpacksize == 0x2000);
+    assert(!memcmp(UNPACKED, UNPACKED2, 0x2000));
+}
 
 int main() {
     clrscr();
     textcolor(1);
-    printf("pack %#x %#x %#x => %#x\n",
-            SRC, DST, 0x2000,
-            pack(SRC, DST, 0x2000));
+    test_packunpack();
     while(1);
     return 0;
 }

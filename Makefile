@@ -56,9 +56,9 @@ rletest:	rle_test.o rle.o anim64.d64
 	@$(LD) -o rletest.prg rle_test.o rle.o $(CLIB)
 	$(C1541) -attach anim64.d64 -delete anim64.prg  > /dev/null;
 	$(C1541) -attach anim64.d64 -delete rletest.prg  > /dev/null;
-	$(C1541) -attach anim64.d64 -write rletest.prg  > /dev/null;\
+	$(C1541) -attach anim64.d64 -write rletest.prg  > /dev/null;
 
-run: anim64
+run: anim64.d64 anim64 rletest
 	x64 anim64.d64
 
 # --------------------------------------------------------------------------
