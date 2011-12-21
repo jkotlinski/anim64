@@ -77,6 +77,7 @@ static void init() {
 
     memset(VIDEO_BASE, 0x20, 0x1000);
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);
+    memset((void*)0xd800, 0, 0x400);  // Clear colors for better packing.
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x04;  // Point video to 0x8000.
 }
@@ -119,8 +120,14 @@ static void show_cursor() {
 }
 
 static void remember_colors() {
+    unsigned int i = 0x1000;
     hide_cursor();
     memcpy(screen_base + 0x1000, (void*)0xd800, 40 * 25);
+    // Get rid of noise from reading video area.
+    while (i < 0x1000 + 40 * 25) {
+        screen_base[i] &= 0xf;
+        ++i;
+    }
 }
 
 static void update_screen_base() {
@@ -350,7 +357,7 @@ static void handle_key(char key) {
         case CH_F5: ++anim_delay; break;  // Slower.
         case CH_F6: if (anim_delay) --anim_delay; break;  // Faster.
         case CH_F7: animate(); break;
-        case CH_F8: switch_to_console_screen(); edit_movie(); break;
+        case CH_F8: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
         case ' ': paint(paint_char); break;

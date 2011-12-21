@@ -24,6 +24,8 @@ THE SOFTWARE. */
 #include <stdlib.h>
 #include <string.h>
 
+#include "rle.h"
+
 #define FILE_COUNT 24
 #define FILENAME_LENGTH 8
 static char filename[FILE_COUNT][FILENAME_LENGTH];
@@ -144,6 +146,14 @@ static void edit_field() {
 void edit_movie() {
     init();
     show_screen();
+
+    /*
+    gotoxy(0, 0);
+
+    printf("%#x/%#x \n", rle_pack(0xa000, 0x8000, 0x2000), 0x2000);
+    assert(0x2000 == rle_unpack(0x8000, 0xa000));
+    */
+
     while (1) {
         if (kbhit()) {
             switch (cgetc()) {
@@ -176,6 +186,8 @@ void edit_movie() {
                 case CH_ENTER:
                     edit_field();
                     break;
+                case CH_F8:
+                    return;
                 /*
                 gotoxy(0, 1);
                 revers(1);
