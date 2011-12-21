@@ -32,7 +32,7 @@ all:   	anim64
 	@echo $<
 	@$(AS) $(basename $<).s
 
-OBJS = anim64.o colcpy.o music.o loader.o movie.o rle.o
+OBJS = anim64.o colcpy.o music.o loader.o movie.o rle.o rlepack.o rleunpack.o
 
 -include $(OBJS:%.o=$(DEPDIR)/%.u)
 
@@ -46,19 +46,12 @@ anim64.d64:
 
 anim64: 		$(OBJS) $(CLIB) anim64.d64
 	@$(LD) -o $@.prg $(OBJS) $(CLIB)
-	$(C1541) -attach anim64.d64 -delete rletest.prg  > /dev/null;
 	@for exe in $(EXELIST); do\
 	    $(C1541) -attach anim64.d64 -delete $$exe.prg  > /dev/null;\
 	    $(C1541) -attach anim64.d64 -write $$exe.prg  > /dev/null;\
 	done;
 
-rletest:	rle_test.o rle.o anim64.d64
-	@$(LD) -o rletest.prg rle_test.o rle.o $(CLIB)
-	$(C1541) -attach anim64.d64 -delete anim64.prg  > /dev/null;
-	$(C1541) -attach anim64.d64 -delete rletest.prg  > /dev/null;
-	$(C1541) -attach anim64.d64 -write rletest.prg  > /dev/null;
-
-run: anim64.d64 anim64 rletest
+run: anim64
 	x64 anim64.d64
 
 # --------------------------------------------------------------------------

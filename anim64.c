@@ -60,6 +60,7 @@ static void load_music() {
 }
 
 static void init_heap() {
+    // *(char*)1 &= ~1;  // Switch out BASIC.
     _heaporg = (unsigned*)0xa000;
     _heapptr = (unsigned*)0xa000;
     _heapend = (unsigned*)0xd000;
