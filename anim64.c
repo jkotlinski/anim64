@@ -176,7 +176,8 @@ static void paint(char screen_code) {
 
 void switch_color(char c) {
     color = c;
-    punch_paint();
+    hidden_color = c;
+    punch(hidden_screen_char, c);
 }
 
 static void switch_to_console_screen() {
@@ -312,7 +313,11 @@ static void handle_key(char key) {
     switch (key) {
         default:
             paint(petscii_to_screen(key));
-            handle_key(CH_CURS_RIGHT);
+            if ((key >= 'a' && key <= 'z') ||
+                    (key >= '0' && key <= '9') ||
+                    (key == (' ' | 0x80))) {
+                handle_key(CH_CURS_RIGHT);
+            }
             break;
         case CH_CURS_UP:
             if (cur_y > 0) {
