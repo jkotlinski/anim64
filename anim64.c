@@ -118,7 +118,6 @@ static void hide_cursor() {
 static void show_cursor() {
     hidden_screen_char = screen_char();
     hidden_color = screen_color();
-    punch_paint();
 }
 
 static void remember_colors() {
@@ -313,6 +312,7 @@ static void handle_key(char key) {
     switch (key) {
         default:
             paint(petscii_to_screen(key));
+            handle_key(CH_CURS_RIGHT);
             break;
         case CH_CURS_UP:
             if (cur_y > 0) {
@@ -349,9 +349,14 @@ static void handle_key(char key) {
             change_screen(-1);
             break;
         case CH_DEL:
-            hidden_screen_char = petscii_to_screen(' ') | reverse;
-            hidden_color = color;
-            handle_key(CH_CURS_LEFT);
+            {
+                const char at_right_end = (cur_x == 39);
+                handle_key(' ' | 0x80);
+                if (!at_right_end) {
+                    handle_key(CH_CURS_LEFT);
+                }
+                handle_key(CH_CURS_LEFT);
+            }
             break;
         case CH_F3:
             *(char*)0xd020 = ++screen_base[BORDER_OFFSET];
@@ -368,7 +373,7 @@ static void handle_key(char key) {
         case CH_F8: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
-        case ' ': paint(paint_char); break;
+        case ' ': paint(paint_char); handle_key(CH_CURS_RIGHT); break;
 
         // Colors.
         case 0x05: switch_color(COLOR_WHITE); break;
@@ -397,7 +402,6 @@ void main() {
     while(1) { if (kbhit()) { printf("%x", cgetc()); } }
 #endif
     init();
-    punch_paint();
 
     // Test.
     // handle_key(CH_F8);
@@ -407,9 +411,9 @@ void main() {
         while (now == clock()) {}
         if (kbhit()) {
             handle_key(cgetc());
-            loop = BLINK_PERIOD;
+            loop = 0;
         }
-        if (--loop == 0) {
+        if (loop-- == 0) {
             // Blink.
             punch(screen_char() ^ 0x80, color);
             loop = BLINK_PERIOD;
