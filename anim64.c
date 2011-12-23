@@ -26,6 +26,7 @@ THE SOFTWARE. */
 #include <time.h>
 
 #include "movie.h"
+#include "rle.h"
 
 static unsigned char cur_x;
 static unsigned char cur_y;
@@ -40,11 +41,12 @@ static char color = 1;
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
 #define ANIM_DELAY_OFFSET (40 * 25 + 2)
-#define FILE_SIZE (0x400 * 7 + 40 * 25)
+#define SAVE_SIZE (0x400 * 7 + 40 * 25)
+#define RLE_BUFFER (unsigned char*)0xa000u
 char* screen_base = VIDEO_BASE;
 /* $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
- * $a000 - $cfff: animation heap
+ * $a000 - $cfff: rle buffer
  */
 
 char curr_screen;
@@ -192,7 +194,6 @@ static void switch_to_gfx_screen() {
 }
 
 static FILE* open(const char* prompt, const char* mode) {
-    switch_to_console_screen();
     for (;;) {
         FILE* f;
         char path[32];
@@ -208,10 +209,13 @@ static FILE* open(const char* prompt, const char* mode) {
 static unsigned char anim_delay;
 
 static void load_anim() {
-    FILE* f = open("load", "r");
+    FILE* f;
+    switch_to_console_screen();
+    f = open("load", "r");
     if (f) {
-        fread(VIDEO_BASE, FILE_SIZE, 1, f);
+        fread(RLE_BUFFER, 1, 0x3000, f);
         fclose(f);
+        rle_unpack(VIDEO_BASE, RLE_BUFFER);
         curr_screen = 0;
         anim_delay = VIDEO_BASE[ANIM_DELAY_OFFSET];
     }
@@ -219,10 +223,14 @@ static void load_anim() {
 }
 
 static void save_anim() {
-    FILE* f = open("save", "w");
+    FILE* f;
+    switch_to_console_screen();
+    f = open("save", "w");
     if (f) {
+        unsigned int file_size;
         VIDEO_BASE[ANIM_DELAY_OFFSET] = anim_delay;
-        fwrite(VIDEO_BASE, FILE_SIZE, 1, f);
+        file_size = rle_pack(RLE_BUFFER, VIDEO_BASE, SAVE_SIZE);
+        fwrite(RLE_BUFFER, file_size, 1, f);
         fclose(f);
     }
     switch_to_gfx_screen();
