@@ -206,7 +206,7 @@ static FILE* open(const char* prompt, const char* mode) {
     }
 }
 
-static unsigned char anim_delay;
+static unsigned char anim_delay = 30;
 
 static void load_anim() {
     FILE* f;
@@ -264,7 +264,7 @@ void tick_music();
 
 static void animate() {
     char keyboard_state = 0;
-    char delay = anim_delay;;
+    char delay = 0;
 
     if (has_music) {
         init_music();
@@ -306,6 +306,21 @@ static void animate() {
     // Re-enable kernal timer interrupts.
     *(char*)0xdc0d = 0x81;
 
+    cgetc();
+
+    update_screen_base();
+}
+
+unsigned char copy_screen = -1;
+void paste_screen() {
+    if (copy_screen > 3) return;
+    remember_colors();
+    memcpy(VIDEO_BASE + 0x400 * curr_screen,
+            VIDEO_BASE + 0x400 * copy_screen,
+            0x400);
+    memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen,
+            VIDEO_BASE + 0x1000 + 0x400 * copy_screen,
+            0x400);
     update_screen_base();
 }
 
@@ -372,8 +387,8 @@ static void handle_key(char key) {
 
         case CH_F1: load_anim(); break;
         case CH_F2: save_anim(); break;
-        case CH_F5: ++anim_delay; break;  // Slower.
-        case CH_F6: if (anim_delay) --anim_delay; break;  // Faster.
+        case CH_F5: copy_screen = curr_screen; break;
+        case CH_F6: paste_screen(); break;
         case CH_F7: animate(); break;
         case CH_F8: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
