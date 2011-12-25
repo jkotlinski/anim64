@@ -28,9 +28,11 @@ THE SOFTWARE. */
 
 #define FILE_COUNT 24
 #define FILENAME_LENGTH 8
-static char filename[FILE_COUNT][FILENAME_LENGTH];
-static unsigned int duration[FILE_COUNT];
-static unsigned char speed[FILE_COUNT];
+static struct Movie {
+    char filename[FILE_COUNT][FILENAME_LENGTH];
+    unsigned int duration[FILE_COUNT];
+    unsigned char speed[FILE_COUNT];
+} movie;
 
 static char selected_file;
 /* 0 = file name
@@ -68,7 +70,7 @@ static void draw_row(unsigned char row) {
     memset((char*)(0xd800 + y * 40), color, FILENAME_LENGTH);
     memset((char*)(0x400 + y * 40), 0xa0, FILENAME_LENGTH);
     gotoxy(0, y);
-    cputs(filename[row]);
+    cputs(movie.filename[row]);
     gotox(DURATION_X - 1);
     revers(0);
     cclear(1);
@@ -76,14 +78,14 @@ static void draw_row(unsigned char row) {
     // Prints duration.
     update_color(1, row);
     gotox(DURATION_X);
-    cprintf("%5u", duration[row]);
+    cprintf("%5u", movie.duration[row]);
     revers(0);
     cclear(1);
     revers(1);
     // Prints speed.
     update_color(2, row);
     gotox(SPEED_X);
-    cprintf("%3i", speed[row]);
+    cprintf("%3i", movie.speed[row]);
     revers(0);
 }
 
@@ -99,6 +101,19 @@ static void show_screen() {
     draw_fields();
 }
 
+static void load_movie() {
+    FILE* f = fopen("movie", "r");
+    if (!f) return;
+    fread(&movie, sizeof(movie), 1, f);
+    fclose(f);
+}
+
+static void save_movie() {
+    FILE* f = fopen("movie", "w");
+    fwrite(&movie, sizeof(movie), 1, f);
+    fclose(f);
+}
+
 static void init() {
     char file_it;
     static char inited;
@@ -106,8 +121,9 @@ static void init() {
         return;
     }
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        duration[file_it] = 100;
+        movie.duration[file_it] = 100;
     }
+    load_movie();
     inited = 1;
 }
 
@@ -121,13 +137,13 @@ static void edit_field() {
             gotox(0);
             cclear(FILENAME_LENGTH);
             gotox(0);
-            cscanf("%8s", &filename[selected_file]);
+            cscanf("%8s", &movie.filename[selected_file]);
             break;
         case 1:  // Duration.
             gotox(DURATION_X);
             cclear(5);
             gotox(DURATION_X);
-            cscanf("%5u", &duration[selected_file]);
+            cscanf("%5u", &movie.duration[selected_file]);
             break;
         case 2:  // Speed.
             gotox(SPEED_X);
@@ -136,7 +152,7 @@ static void edit_field() {
             {
                 unsigned int x;
                 cscanf("%3u", &x);
-                speed[selected_file] = (x & 0xff00u) ? 0xff : x;
+                movie.speed[selected_file] = (x & 0xff00u) ? 0xff : x;
             }
             break;
     }
@@ -186,7 +202,9 @@ void edit_movie() {
                 case CH_ENTER:
                     edit_field();
                     break;
-                case CH_F8:
+                case CH_F1: load_movie(); break;
+                case CH_F2: save_movie(); break;
+                case CH_F7:  // Go to animation editor.
                     return;
                 /*
                 gotoxy(0, 1);
