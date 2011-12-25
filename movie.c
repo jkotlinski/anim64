@@ -101,15 +101,17 @@ static void show_screen() {
     draw_fields();
 }
 
+static const char* MOVIE_FILE = "movie";
+
 static void load_movie() {
-    FILE* f = fopen("movie", "r");
+    FILE* f = fopen(MOVIE_FILE, "r");
     if (!f) return;
     fread(&movie, sizeof(movie), 1, f);
     fclose(f);
 }
 
 static void save_movie() {
-    FILE* f = fopen("movie", "w");
+    FILE* f = fopen(MOVIE_FILE, "w");
     fwrite(&movie, sizeof(movie), 1, f);
     fclose(f);
 }
