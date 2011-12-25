@@ -306,9 +306,9 @@ static void animate() {
     // Re-enable kernal timer interrupts.
     *(char*)0xdc0d = 0x81;
 
-    cgetc();
-
     update_screen_base();
+
+    if (kbhit()) cgetc();
 }
 
 unsigned char copy_screen = -1;
@@ -389,8 +389,8 @@ static void handle_key(char key) {
         case CH_F2: save_anim(); break;
         case CH_F5: copy_screen = curr_screen; break;
         case CH_F6: paste_screen(); break;
-        case CH_F7: animate(); break;
-        case CH_F8: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
+        case CH_STOP: animate(); break;
+        case CH_F7: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
         case ' ': paint(paint_char); handle_key(CH_CURS_RIGHT); break;
