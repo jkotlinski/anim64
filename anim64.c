@@ -182,6 +182,7 @@ void switch_color(char c) {
 
 static void switch_to_console_screen() {
     remember_colors();
+    clrscr();
     *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
     *(char*)0xd021 = COLOR_BLACK;
