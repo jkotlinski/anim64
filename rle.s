@@ -50,7 +50,6 @@ destlen:	.res 2		; number of bytes written
 ; read a byte and increment source pointer
 rle_read:
 	lda (src),y
-	sta $d020
 	inc src
 	bne :+
 	inc src + 1
@@ -60,7 +59,6 @@ rle_read:
 ; write a byte and increment destination pointer
 rle_store:
 	sta (dest),y
-	sta $d020
 	inc dest
 	bne :+
 	inc dest + 1
