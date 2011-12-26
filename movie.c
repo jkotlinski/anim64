@@ -25,6 +25,10 @@ THE SOFTWARE. */
 #include <string.h>
 
 #include "rle.h"
+#include "player.h"
+
+#define RLE_BUFFER (unsigned char*)0xa000u
+#define VIDEO_BASE (unsigned char*)0x8000u
 
 #define FILE_COUNT 24
 #define FILENAME_LENGTH 8
@@ -111,9 +115,13 @@ static void load_movie() {
 }
 
 static void save_movie() {
-    FILE* f = fopen(MOVIE_FILE, "w");
+    FILE* f;
+    gotoxy(20, 0);
+    printf("save...");
+    f = fopen(MOVIE_FILE, "w");
     fwrite(&movie, sizeof(movie), 1, f);
     fclose(f);
+    printf("ok");
 }
 
 static void init() {
@@ -161,16 +169,22 @@ static void edit_field() {
     draw_fields();
 }
 
+static void run_anim() {
+    FILE* f = fopen(movie.filename[selected_file], "r");
+    if (!f) return;
+    fread(RLE_BUFFER, 1, 0x3000, f);
+    fclose(f);
+    rle_unpack(VIDEO_BASE, RLE_BUFFER);
+    play(movie.speed[selected_file], movie.duration[selected_file]);
+    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
+    *(char*)0xd018 = 0x14;  // Point video to 0x400.
+    clrscr();
+    draw_fields();
+}
+
 void edit_movie() {
     init();
     show_screen();
-
-    /*
-    gotoxy(0, 0);
-
-    printf("%#x/%#x \n", rle_pack(0xa000, 0x8000, 0x2000), 0x2000);
-    assert(0x2000 == rle_unpack(0x8000, 0xa000));
-    */
 
     while (1) {
         if (kbhit()) {
@@ -206,15 +220,9 @@ void edit_movie() {
                     break;
                 case CH_F1: load_movie(); break;
                 case CH_F2: save_movie(); break;
+                case CH_STOP: run_anim(); break;
                 case CH_F7:  // Go to animation editor.
                     return;
-                /*
-                gotoxy(0, 1);
-                revers(1);
-                fgets(filename[0], FILENAME_LENGTH, stdin);
-                ++*(char*)0xd020;
-                revers(0);
-                */
             }
         }
     }

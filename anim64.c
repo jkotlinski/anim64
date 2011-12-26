@@ -27,6 +27,7 @@ THE SOFTWARE. */
 
 #include "movie.h"
 #include "rle.h"
+#include "player.h"
 
 static unsigned char cur_x;
 static unsigned char cur_y;
@@ -34,13 +35,9 @@ static unsigned char reverse;
 
 static char color = 1;
 
-#define MUSIC_START ((char*)0x1000)
-#define MUSIC_STOP ((char*)0x2800)
-
 #define VIDEO_BASE ((char*)0x8000)
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
-#define ANIM_DELAY_OFFSET (40 * 25 + 2)
 #define SAVE_SIZE (0x400 * 7 + 40 * 25)
 #define RLE_BUFFER (unsigned char*)0xa000u
 char* screen_base = VIDEO_BASE;
@@ -50,16 +47,6 @@ char* screen_base = VIDEO_BASE;
  */
 
 char curr_screen;
-
-static char has_music;
-
-static void load_music() {
-    FILE* f = fopen("music", "r");
-    if (fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f)) {
-        has_music = 1;
-    }
-    fclose(f);
-}
 
 /* static void init_heap() {
     // *(char*)1 &= ~1;  // Switch out BASIC.
@@ -207,8 +194,6 @@ static FILE* open(const char* prompt, const char* mode) {
     }
 }
 
-static unsigned char anim_delay = 30;
-
 static void load_anim() {
     FILE* f;
     switch_to_console_screen();
@@ -218,7 +203,6 @@ static void load_anim() {
         fclose(f);
         rle_unpack(VIDEO_BASE, RLE_BUFFER);
         curr_screen = 0;
-        anim_delay = VIDEO_BASE[ANIM_DELAY_OFFSET];
     }
     switch_to_gfx_screen();
 }
@@ -229,87 +213,11 @@ static void save_anim() {
     f = open("save", "w");
     if (f) {
         unsigned int file_size;
-        VIDEO_BASE[ANIM_DELAY_OFFSET] = anim_delay;
         file_size = rle_pack(RLE_BUFFER, VIDEO_BASE, SAVE_SIZE);
         fwrite(RLE_BUFFER, file_size, 1, f);
         fclose(f);
     }
     switch_to_gfx_screen();
-}
-
-/* Defined in colcpy.s. */
-void colcpy_9000();
-void colcpy_9400();
-void colcpy_9800();
-void colcpy_9c00();
-
-static unsigned char anim_screen;
-static void anim_next_screen() {
-    unsigned char* base = (char*)(0x8000 + anim_screen * 0x400);
-    *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
-    *(char*)0xd020 = base[BORDER_OFFSET];
-    *(char*)0xd021 = base[BG_OFFSET];
-    switch (anim_screen) {
-        case 0: colcpy_9000(); break;
-        case 1: colcpy_9400(); break;
-        case 2: colcpy_9800(); break;
-        case 3: colcpy_9c00(); break;
-    }
-    ++anim_screen;
-    anim_screen &= 3;
-}
-
-// Defined in music.s.
-void init_music();
-void tick_music();
-
-static void animate() {
-    char keyboard_state = 0;
-    char delay = 0;
-
-    if (has_music) {
-        init_music();
-    }
-
-    remember_colors();
-    anim_screen = 0;
-
-    // Disable kernal timer interrupts.
-    *(char*)0xdc0d = 0x7f;
-    // Scan all keyboard rows.
-    *(char*)0xdc00 = 0;
-
-    for (;;) {
-        if (has_music) {
-            tick_music();
-        }
-
-        // Waits until raster screen is right below lower text border.
-        // *(char*)0xd020 = 1;
-        while (*(char*)0xd012 != 0xfb) {}
-        // *(char*)0xd020 = 0;
-
-        // To exit animation, first all keys should be released, then
-        // some key should be pressed.
-        if (keyboard_state == 0) {
-            if (0xff == *(char*)0xdc01) {  // All keys released?
-                keyboard_state = 1;
-            }
-        } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
-            break;
-        }
-        if (delay-- == 0) {
-            anim_next_screen();
-            delay = anim_delay;
-        }
-    }
-
-    // Re-enable kernal timer interrupts.
-    *(char*)0xdc0d = 0x81;
-
-    update_screen_base();
-
-    if (kbhit()) cgetc();
 }
 
 unsigned char copy_screen = -1;
@@ -390,7 +298,7 @@ static void handle_key(char key) {
         case CH_F2: save_anim(); break;
         case CH_F5: copy_screen = curr_screen; break;
         case CH_F6: paste_screen(); break;
-        case CH_STOP: animate(); break;
+        case CH_STOP: remember_colors(); play(30, 65535u); update_screen_base(); break;
         case CH_F7: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
