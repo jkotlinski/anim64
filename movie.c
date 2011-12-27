@@ -189,8 +189,51 @@ static void run_anim() {
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
     *(char*)0xd020 = 0;
     *(char*)0xd021 = 0;
-    clrscr();
-    draw_fields();
+    show_screen();
+}
+
+static void handle_key(unsigned char key) {
+    switch (key) {
+        default:
+            if (key >= '0' && key <= '9' && selected_column > 0) {
+                edit_field();
+            }
+            break;
+        case CH_CURS_DOWN:
+            if (selected_file < FILE_COUNT - 1) {
+                ++selected_file;
+                draw_row(selected_file - 1);
+                draw_row(selected_file);
+            }
+            break;
+        case CH_CURS_UP:
+            if (selected_file) {
+                --selected_file;
+                draw_row(selected_file + 1);
+                draw_row(selected_file);
+            }
+            break;
+        case CH_CURS_RIGHT:
+            if (selected_column < MAX_COLUMN) {
+                ++selected_column;
+                draw_row(selected_file);
+            }
+            break;
+        case CH_CURS_LEFT:
+            if (selected_column) {
+                --selected_column;
+                draw_row(selected_file);
+            }
+            break;
+        case CH_ENTER:
+            edit_field();
+            break;
+        case CH_F1: load_movie(); break;
+        case CH_F2: save_movie(); break;
+        case CH_STOP: run_anim(); break;
+        case CH_F7:  // Go to animation editor.
+                      return;
+    }
 }
 
 void edit_movie() {
@@ -198,43 +241,6 @@ void edit_movie() {
     show_screen();
 
     while (1) {
-        if (kbhit()) {
-            switch (cgetc()) {
-                case CH_CURS_DOWN:
-                    if (selected_file < FILE_COUNT - 1) {
-                        ++selected_file;
-                        draw_row(selected_file - 1);
-                        draw_row(selected_file);
-                    }
-                    break;
-                case CH_CURS_UP:
-                    if (selected_file) {
-                        --selected_file;
-                        draw_row(selected_file + 1);
-                        draw_row(selected_file);
-                    }
-                    break;
-                case CH_CURS_RIGHT:
-                    if (selected_column < MAX_COLUMN) {
-                        ++selected_column;
-                        draw_row(selected_file);
-                    }
-                    break;
-                case CH_CURS_LEFT:
-                    if (selected_column) {
-                        --selected_column;
-                        draw_row(selected_file);
-                    }
-                    break;
-                case CH_ENTER:
-                    edit_field();
-                    break;
-                case CH_F1: load_movie(); break;
-                case CH_F2: save_movie(); break;
-                case CH_STOP: run_anim(); break;
-                case CH_F7:  // Go to animation editor.
-                    return;
-            }
-        }
+        if (kbhit()) handle_key(cgetc());
     }
 }
