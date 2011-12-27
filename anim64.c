@@ -218,6 +218,7 @@ static void save_anim() {
         fclose(f);
     }
     switch_to_gfx_screen();
+    invalidate_packed_anims();
 }
 
 unsigned char copy_screen = -1;
@@ -295,7 +296,7 @@ static void handle_key(char key) {
             break;
 
         case CH_F1: load_anim(); break;
-        case CH_F2: save_anim(); break;
+        case CH_F2: invalidate_packed_anims(); save_anim(); break;
         case CH_F5: copy_screen = curr_screen; break;
         case CH_F6: paste_screen(); break;
         case CH_STOP: remember_colors(); play(30, 65535u, 0); update_screen_base(); break;

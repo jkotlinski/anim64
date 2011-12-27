@@ -36,6 +36,7 @@ static struct Movie {
     char filename[FILE_COUNT][FILENAME_LENGTH];
     unsigned int duration[FILE_COUNT];
     unsigned char speed[FILE_COUNT];
+    unsigned char* start[FILE_COUNT];
 } movie;
 
 static char selected_file;
@@ -179,12 +180,42 @@ static unsigned int skip_music_frames(unsigned char file) {
     return frames;
 }
 
+static char packed_anims_valid;
+
+void invalidate_packed_anims() {
+    packed_anims_valid = 0;
+}
+
+// Pack the different anims into RLE buffer.
+void pack_anims() {
+    unsigned char* rle_ptr = RLE_BUFFER;
+    unsigned char anim_it;
+    if (packed_anims_valid) {
+        return;
+    }
+    for (anim_it = 0; anim_it < FILE_COUNT; ++anim_it) {
+        FILE* f;
+        movie.start[anim_it] = NULL;
+        if (!movie.filename[anim_it][0]) {
+            continue;
+        }
+        f = fopen(movie.filename[anim_it], "r");
+        if (!f) {
+            continue;
+        }
+        movie.start[anim_it] = rle_ptr;
+        rle_ptr += fread(rle_ptr, 1, 0x3000, f);
+        fclose(f);
+    }
+    packed_anims_valid = 1;
+}
+
 static void run_anim() {
-    FILE* f = fopen(movie.filename[selected_file], "r");
-    if (!f) return;
-    fread(RLE_BUFFER, 1, 0x3000, f);
-    fclose(f);
-    rle_unpack(VIDEO_BASE, RLE_BUFFER);
+    const unsigned char* rle_data = movie.start[selected_file];
+    if (rle_data == NULL) {
+        return;
+    }
+    rle_unpack(VIDEO_BASE, rle_data);
     play(movie.speed[selected_file], movie.duration[selected_file], skip_music_frames(selected_file));
     *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
@@ -230,8 +261,8 @@ static char handle_key(unsigned char key) {
             edit_field();
             break;
         case CH_F1: load_movie(); break;
-        case CH_F2: save_movie(); break;
-        case CH_STOP: run_anim(); break;
+        case CH_F2: pack_anims(); save_movie(); break;
+        case CH_STOP: pack_anims(); run_anim(); break;
         case CH_F7:  // Go to animation editor.
                       return 1;
     }
