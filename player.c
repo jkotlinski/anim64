@@ -108,6 +108,7 @@ static void play(unsigned char speed, unsigned int duration, unsigned int skipmu
 
     // Re-enable kernal timer interrupts.
     *(char*)0xdc0d = 0x81;
+    *(char*)0xd418 = 0;  // Mute sound.
 
     if (kbhit()) cgetc();
 }
