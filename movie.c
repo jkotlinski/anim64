@@ -192,7 +192,7 @@ static void run_anim() {
     show_screen();
 }
 
-static void handle_key(unsigned char key) {
+static char handle_key(unsigned char key) {
     switch (key) {
         default:
             if (key >= '0' && key <= '9' && selected_column > 0) {
@@ -232,15 +232,18 @@ static void handle_key(unsigned char key) {
         case CH_F2: save_movie(); break;
         case CH_STOP: run_anim(); break;
         case CH_F7:  // Go to animation editor.
-                      return;
+                      return 1;
     }
+    return 0;
 }
 
 void edit_movie() {
     init();
     show_screen();
 
-    while (1) {
-        if (kbhit()) handle_key(cgetc());
+    for (;;) {
+        if (kbhit() && handle_key(cgetc())) {
+            break;
+        }
     }
 }

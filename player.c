@@ -64,7 +64,7 @@ void tick_music();
 
 static void play(unsigned char speed, unsigned int duration, unsigned int skipmusicframes) {
     char keyboard_state = 0;
-    char delay = 0;
+    char delay = speed;
 
     if (has_music) {
         init_music();
