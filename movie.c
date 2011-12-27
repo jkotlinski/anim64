@@ -169,15 +169,26 @@ static void edit_field() {
     draw_fields();
 }
 
+static unsigned int skip_music_frames(unsigned char file) {
+    unsigned int frames = 0;
+    unsigned char file_it;
+    for (file_it = 0; file_it < file; ++file_it) {
+        frames += movie.duration[file];
+    }
+    return frames;
+}
+
 static void run_anim() {
     FILE* f = fopen(movie.filename[selected_file], "r");
     if (!f) return;
     fread(RLE_BUFFER, 1, 0x3000, f);
     fclose(f);
     rle_unpack(VIDEO_BASE, RLE_BUFFER);
-    play(movie.speed[selected_file], movie.duration[selected_file]);
+    play(movie.speed[selected_file], movie.duration[selected_file], skip_music_frames(selected_file));
     *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
+    *(char*)0xd020 = 0;
+    *(char*)0xd021 = 0;
     clrscr();
     draw_fields();
 }

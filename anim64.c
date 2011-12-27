@@ -298,7 +298,7 @@ static void handle_key(char key) {
         case CH_F2: save_anim(); break;
         case CH_F5: copy_screen = curr_screen; break;
         case CH_F6: paste_screen(); break;
-        case CH_STOP: remember_colors(); play(30, 65535u); update_screen_base(); break;
+        case CH_STOP: remember_colors(); play(30, 65535u, 0); update_screen_base(); break;
         case CH_F7: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
