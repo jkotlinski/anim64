@@ -68,11 +68,12 @@ static void draw_headers() {
 
 static void draw_row(unsigned char row) {
     const char y = row + 1;
+    const unsigned int offs = y * 40;
     // Prints file name.
     const char color = update_color(0, row);
     revers(1);
-    memset((char*)(0xd800 + y * 40), color, FILENAME_LENGTH);
-    memset((char*)(0x400 + y * 40), 0xa0, FILENAME_LENGTH);
+    memset((char*)(0xd800 + offs), color, FILENAME_LENGTH);
+    memset((char*)(0x400 + offs), 0xa0, FILENAME_LENGTH);
     gotoxy(0, y);
     cputs(movie.filename[row]);
     gotox(DURATION_X - 1);
