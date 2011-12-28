@@ -26,7 +26,8 @@ void exit_play();
 
 // Plays animation at 0x8000 with given speed and duration.
 // speed: 0 = fastest, 255 = slowest
-void play_anim(unsigned char speed, unsigned int duration);
+// Returns 0 if timed out, 1 if keyboard was pressed.
+unsigned char play_anim(unsigned char speed, unsigned int duration);
 
 #define MUSIC_START ((char*)0x1000)
 #define MUSIC_STOP ((char*)0x2800)

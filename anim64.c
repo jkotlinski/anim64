@@ -303,7 +303,8 @@ static void handle_key(char key) {
         case CH_STOP:
             remember_colors();
             init_play(0);
-            play_anim(30, 65535u);
+#define DELAY 0
+            play_anim(DELAY, 65535u);
             exit_play();
             update_screen_base();
             break;

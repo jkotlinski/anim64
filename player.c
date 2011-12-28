@@ -78,8 +78,6 @@ void init_play(unsigned int skipmusicframes) {
         tick_music();
     }
 
-    anim_screen = 0;
-
     // Disable kernal timer interrupts.
     *(char*)0xdc0d = 0x7f;
     // Scan all keyboard rows.
@@ -103,9 +101,13 @@ void exit_play() {
     if (kbhit()) cgetc();
 }
 
-void play_anim(unsigned char speed, unsigned int duration) {
+// Returns 0 if timed out, 1 if keyboard was pressed.
+unsigned char play_anim(unsigned char speed, unsigned int duration) {
     char keyboard_state = 0;
     char delay = speed;
+
+    anim_screen = 0;
+    caught_irqs = 1;
 
     while (duration--) {
         // Waits until raster screen is right below lower text border.
@@ -121,12 +123,13 @@ void play_anim(unsigned char speed, unsigned int duration) {
                 keyboard_state = 1;
             }
         } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
-            break;
+            return 1;
         }
         if (delay-- == 0) {
             anim_next_screen();
             delay = speed;
         }
     }
+    return 0;
 }
 

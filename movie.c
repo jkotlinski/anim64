@@ -103,6 +103,7 @@ static void draw_fields() {
 }
 
 static void show_screen() {
+    clrscr();
     draw_headers();
     draw_fields();
 }
@@ -210,14 +211,21 @@ void pack_anims() {
     packed_anims_valid = 1;
 }
 
-static void run_anim() {
-    const unsigned char* rle_data = movie.start[selected_file];
-    if (rle_data == NULL) {
-        return;
+static void run_anims(unsigned char file_it) {
+    init_play(skip_music_frames(file_it));
+    for (;;) {
+        const unsigned char* rle_data = movie.start[file_it];
+        if (rle_data == NULL) {
+            file_it = 0;
+            continue;
+        }
+        rle_unpack(VIDEO_BASE, rle_data);
+        if (play_anim(movie.speed[file_it], movie.duration[file_it])) {
+            break;
+        }
+        ++file_it;
+        file_it %= FILE_COUNT;
     }
-    rle_unpack(VIDEO_BASE, rle_data);
-    init_play(skip_music_frames(selected_file));
-    play_anim(movie.speed[selected_file], movie.duration[selected_file]);
     exit_play();
     *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
@@ -264,7 +272,7 @@ static char handle_key(unsigned char key) {
             break;
         case CH_F1: load_movie(); break;
         case CH_F2: pack_anims(); save_movie(); break;
-        case CH_STOP: pack_anims(); run_anim(); break;
+        case CH_STOP: pack_anims(); run_anims(selected_file); break;
         case CH_F7:  // Go to animation editor.
                       return 1;
     }
