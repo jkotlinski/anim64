@@ -266,6 +266,11 @@ static void handle_key(char key) {
                 hide_cursor();
                 ++cur_x;
                 show_cursor();
+            } else if (cur_y < 24) {
+                hide_cursor();
+                cur_x = 0;
+                show_cursor();
+                handle_key(CH_CURS_DOWN);
             }
             break;
         case CH_ENTER:
@@ -277,7 +282,7 @@ static void handle_key(char key) {
         case CH_DEL:
             {
                 const char at_right_end = (cur_x == 39);
-                handle_key(' ' | 0x80);
+                handle_key(' ');
                 if (!at_right_end) {
                     handle_key(CH_CURS_LEFT);
                 }
