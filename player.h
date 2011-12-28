@@ -21,9 +21,12 @@ THE SOFTWARE. */
 #ifndef PLAYER_H_
 #define PLAYER_H_
 
+void init_play(unsigned int skipmusicframes);
+void exit_play();
+
 // Plays animation at 0x8000 with given speed and duration.
 // speed: 0 = fastest, 255 = slowest
-void play(unsigned char speed, unsigned int duration, unsigned int skipmusicframes);
+void play_anim(unsigned char speed, unsigned int duration);
 
 #define MUSIC_START ((char*)0x1000)
 #define MUSIC_STOP ((char*)0x2800)

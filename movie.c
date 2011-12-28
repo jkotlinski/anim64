@@ -216,7 +216,9 @@ static void run_anim() {
         return;
     }
     rle_unpack(VIDEO_BASE, rle_data);
-    play(movie.speed[selected_file], movie.duration[selected_file], skip_music_frames(selected_file));
+    init_play(skip_music_frames(selected_file));
+    play_anim(movie.speed[selected_file], movie.duration[selected_file]);
+    exit_play();
     *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
     *(char*)0xd020 = 0;
