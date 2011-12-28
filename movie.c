@@ -118,13 +118,13 @@ static void load_movie() {
 }
 
 static void save_movie() {
-    FILE* f;
-    gotoxy(20, 0);
-    printf("save...");
-    f = fopen(MOVIE_FILE, "w");
-    fwrite(&movie, sizeof(movie), 1, f);
+    FILE* f = fopen(MOVIE_FILE, "w");
+    if (!f || !fwrite(&movie, sizeof(movie), 1, f)) {
+        puts("err");
+    } else {
+        puts("ok");
+    }
     fclose(f);
-    printf("ok");
 }
 
 static void init() {
@@ -271,7 +271,12 @@ static char handle_key(unsigned char key) {
             edit_field();
             break;
         case CH_F1: load_movie(); break;
-        case CH_F2: pack_anims(); save_movie(); break;
+        case CH_F2:
+            gotoxy(20, 0);
+            printf("save...");
+            pack_anims();
+            save_movie();
+            break;
         case CH_STOP: pack_anims(); run_anims(selected_file); break;
         case CH_F7:  // Go to animation editor.
                       return 1;
