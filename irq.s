@@ -25,6 +25,12 @@ _caught_irqs:
     .byte 0
 
 _irq_handler:
+    pha
+    txa
+    pha
+    tya
+    pha
+
     ; Calls music subroutine.
     lda #0
     tax
@@ -34,4 +40,10 @@ _irq_handler:
     inc _caught_irqs
 
     asl $d019  ; Acknowledges interrupt.
-    jmp $ea81  ; Restores A/X/Y, ends IRQ.
+
+    pla
+    tay
+    pla
+    tax
+    pla
+    rti

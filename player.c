@@ -80,20 +80,25 @@ void init_play(unsigned int skipmusicframes) {
 
     // Disable kernal timer interrupts.
     *(char*)0xdc0d = 0x7f;
+
+    *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
+
     // Scan all keyboard rows.
     *(char*)0xdc00 = 0;
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
 
     *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
     *(char*)0xd012 = RASTER_LINE;  // raster line
-    *(voidFn*)0x314 = irq_handler;  // set irq handler pointer
+    *(voidFn*)0xfffe = irq_handler;  // set irq handler pointer
+
     *(char*)0xd01a = 1;  // enable raster interrupts
 }
 
 void exit_play() {
     *(char*)0xd01a = 0;  // disable raster interrupts
     caught_irqs = 0;
-    *(voidFn*)0x314 = (voidFn)0xea31;  // set irq handler pointer
+    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
+    *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
     // Re-enable kernal timer interrupts.
     *(char*)0xdc0d = 0x81;
     *(char*)0xd418 = 0;  // Mute sound.
