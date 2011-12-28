@@ -238,11 +238,7 @@ static void handle_key(char key) {
     switch (key) {
         default:
             paint(petscii_to_screen(key));
-            if ((key >= 'a' && key <= 'z') ||
-                    (key >= '0' && key <= '9') ||
-                    (key == (' ' | 0x80))) {
-                handle_key(CH_CURS_RIGHT);
-            }
+            handle_key(CH_CURS_RIGHT);
             break;
         case CH_CURS_UP:
             if (cur_y > 0) {
@@ -294,6 +290,11 @@ static void handle_key(char key) {
         case CH_F4:
             *(char*)0xd021 = ++screen_base[BG_OFFSET];
             break;
+        case ' ':
+        case 0x80 | ' ':
+            paint(key);
+            handle_key(CH_CURS_RIGHT);
+            break;
 
         case CH_F1: load_anim(); break;
         case CH_F2: invalidate_packed_anims(); save_anim(); break;
@@ -303,7 +304,6 @@ static void handle_key(char key) {
         case CH_F7: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
-        case ' ': paint(paint_char); handle_key(CH_CURS_RIGHT); break;
 
         // Colors.
         case 0x05: switch_color(COLOR_WHITE); break;
