@@ -62,6 +62,23 @@ static void load_music() {
 void init_music();
 void tick_music();
 
+// Defined in irq.s.
+typedef void (*voidFn)(void);
+void irq_handler();
+
+#define RASTER_LINE 0xfb
+
+static void init_irq() {
+    // *(char*)0xdc0d = 0x7f;  // disable interrupts
+    *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
+    *(char*)0xd012 = RASTER_LINE;  // raster line
+    *(voidFn*)0x314 = irq_handler;  // set irq handler pointer
+    *(char*)0xd01a = 1;  // enable raster interrupts
+    // init done!
+}
+
+extern char caught_irqs;  // Defined in irq.s.
+
 static void play(unsigned char speed, unsigned int duration, unsigned int skipmusicframes) {
     char keyboard_state = 0;
     char delay = speed;
@@ -81,6 +98,8 @@ static void play(unsigned char speed, unsigned int duration, unsigned int skipmu
     *(char*)0xdc00 = 0;
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
 
+    init_irq();
+
     while (duration--) {
         if (has_music) {
             tick_music();
@@ -88,7 +107,8 @@ static void play(unsigned char speed, unsigned int duration, unsigned int skipmu
 
         // Waits until raster screen is right below lower text border.
         // *(char*)0xd020 = 1;
-        while (*(char*)0xd012 != 0xfb) {}
+        while (!caught_irqs) {}
+        --caught_irqs;
         // *(char*)0xd020 = 0;
 
         // To exit animation, first all keys should be released, then
@@ -106,6 +126,8 @@ static void play(unsigned char speed, unsigned int duration, unsigned int skipmu
         }
     }
 
+    *(char*)0xd01a = 0;  // disable raster interrupts
+    *(voidFn*)0x314 = (voidFn)0xea31;  // set irq handler pointer
     // Re-enable kernal timer interrupts.
     *(char*)0xdc0d = 0x81;
     *(char*)0xd418 = 0;  // Mute sound.
