@@ -19,7 +19,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 #include <conio.h>
-// #include <_heap.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,15 +47,7 @@ char* screen_base = VIDEO_BASE;
 
 char curr_screen;
 
-/* static void init_heap() {
-    // *(char*)1 &= ~1;  // Switch out BASIC.
-    _heaporg = (unsigned*)0xa000;
-    _heapptr = (unsigned*)0xa000;
-    _heapend = (unsigned*)0xd000;
-} */
-
 static void init() {
-    // init_heap();
     clrscr();
     textcolor(COLOR_YELLOW);
     bordercolor(0);
