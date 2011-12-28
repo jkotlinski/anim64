@@ -54,6 +54,8 @@ static void load_music() {
     FILE* f = fopen("music", "r");
     if (fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f)) {
         has_music = 1;
+    } else {
+        *(char*)0x1003 = 0x60;  // Insert dummy rts.
     }
     fclose(f);
 }
@@ -101,10 +103,6 @@ static void play(unsigned char speed, unsigned int duration, unsigned int skipmu
     init_irq();
 
     while (duration--) {
-        if (has_music) {
-            tick_music();
-        }
-
         // Waits until raster screen is right below lower text border.
         // *(char*)0xd020 = 1;
         while (!caught_irqs) {}
