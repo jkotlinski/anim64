@@ -211,15 +211,27 @@ void pack_anims() {
     packed_anims_valid = 1;
 }
 
+// Returns 1 if load succeeded, otherwise 0.
+static unsigned char unpack_anim(unsigned char file_it) {
+    const unsigned char* rle_data = movie.start[file_it];
+    if (rle_data == NULL) {
+        return 0;
+    }
+    rle_unpack(VIDEO_BASE, rle_data);
+    return 1;
+}
+
 static void run_anims(unsigned char file_it) {
     init_play(skip_music_frames(file_it));
     for (;;) {
-        const unsigned char* rle_data = movie.start[file_it];
-        if (rle_data == NULL) {
-            file_it = 0;
-            continue;
+        if (!unpack_anim(file_it)) {
+            if (file_it == 0) {
+                break;
+            } else {
+                file_it = 0;
+                continue;
+            }
         }
-        rle_unpack(VIDEO_BASE, rle_data);
         if (play_anim(movie.speed[file_it], movie.duration[file_it])) {
             break;
         }
@@ -290,6 +302,8 @@ void edit_movie() {
 
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
+            pack_anims();
+            unpack_anim(selected_file);
             break;
         }
     }
