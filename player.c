@@ -48,15 +48,15 @@ static void anim_next_screen() {
     anim_screen &= 3;
 }
 
-static char has_music;
-
 static void load_music() {
     FILE* f = fopen("music", "r");
-    if (fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f)) {
-        has_music = 1;
-    } else {
-        *(char*)0x1003 = 0x60;  // Insert dummy rts.
-    }
+
+    // In case fread fails, insert dummy rts at init+tick.
+#define RTS_OP 0x60
+    *(char*)0x1000 = RTS_OP;
+    *(char*)0x1003 = RTS_OP;
+
+    fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
     fclose(f);
 }
 
@@ -85,11 +85,9 @@ static void play(unsigned char speed, unsigned int duration, unsigned int skipmu
     char keyboard_state = 0;
     char delay = speed;
 
-    if (has_music) {
-        init_music();
-        while (skipmusicframes--) {
-            tick_music();
-        }
+    init_music();
+    while (skipmusicframes--) {
+        tick_music();
     }
 
     anim_screen = 0;
