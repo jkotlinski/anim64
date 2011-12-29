@@ -42,7 +42,8 @@ static char color = 1;
 char* screen_base = VIDEO_BASE;
 /* $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
- * $a000 - $cfff: rle buffer
+ * $a000 - $bfff: rle buffer
+ * $c000 - $cfff: unused
  */
 
 char curr_screen;
@@ -190,7 +191,7 @@ static void load_anim() {
     switch_to_console_screen();
     f = open("load", "r");
     if (f) {
-        fread(RLE_BUFFER, 1, 0x3000, f);
+        fread(RLE_BUFFER, 1, 0x2000, f);
         fclose(f);
         rle_unpack(VIDEO_BASE, RLE_BUFFER);
         curr_screen = 0;

@@ -27,7 +27,6 @@ THE SOFTWARE. */
 #include "rle.h"
 #include "player.h"
 
-#define RLE_BUFFER (unsigned char*)0xa000u
 #define VIDEO_BASE (unsigned char*)0x8000u
 
 #define FILE_COUNT 24
@@ -187,9 +186,21 @@ void invalidate_packed_anims() {
     packed_anims_valid = 0;
 }
 
-// Pack the different anims into RLE buffer.
+static void block_kernal() {
+    *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
+    *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
+}
+
+static void unblock_kernal() {
+    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
+    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
+}
+
+/* Pack the different anims into RLE buffer at $e000-$ffff.
+ * ($a000-$bfff is used for temporary storage.)
+ */
 void pack_anims() {
-    unsigned char* rle_ptr = RLE_BUFFER;
+    unsigned char* rle_ptr = (char*)0xa000;
     unsigned char anim_it;
     if (packed_anims_valid) {
         return;
@@ -204,14 +215,20 @@ void pack_anims() {
         if (!f) {
             continue;
         }
-        movie.start[anim_it] = rle_ptr;
-        rle_ptr += fread(rle_ptr, 1, 0x3000, f);
+        movie.start[anim_it] = rle_ptr + (0xe000 - 0xa000);
+        rle_ptr += fread(rle_ptr, 1, 0x2000, f);
         fclose(f);
     }
     packed_anims_valid = 1;
+
+    // Moves RLE data from a000-bfff to e000-ffff.
+    block_kernal();
+    memcpy((char*)0xe000, (char*)0xa000, 0x2000);
+    unblock_kernal();
 }
 
 // Returns 1 if load succeeded, otherwise 0.
+// NOTE: Kernal must be blocked when calling this function!
 static unsigned char unpack_anim(unsigned char file_it) {
     const unsigned char* rle_data = movie.start[file_it];
     if (rle_data == NULL) {
@@ -303,7 +320,9 @@ void edit_movie() {
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
             pack_anims();
+            block_kernal();
             unpack_anim(selected_file);
+            unblock_kernal();
             break;
         }
     }

@@ -26,6 +26,14 @@ THE SOFTWARE. */
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
 
+/* $8000 - $8fff: screen 0-3, + border/screen color
+ * $9000 - $9fff: colors 0-3
+ * $a000 - $afff: screen 4-7
+ * $b000 - $bfff: colors 4-7
+ * $c000 - $cfff: unused
+ * $e000 - $ffff: rle buffer
+ */
+
 /* Defined in colcpy.s. */
 void colcpy_9000();
 void colcpy_9400();
@@ -78,9 +86,7 @@ void init_play(unsigned int skipmusicframes) {
         tick_music();
     }
 
-    // Disable kernal timer interrupts.
-    *(char*)0xdc0d = 0x7f;
-
+    *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
     *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
 
     // Scan all keyboard rows.
@@ -97,10 +103,9 @@ void init_play(unsigned int skipmusicframes) {
 void exit_play() {
     *(char*)0xd01a = 0;  // disable raster interrupts
     caught_irqs = 0;
-    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
     *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
-    // Re-enable kernal timer interrupts.
-    *(char*)0xdc0d = 0x81;
+    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
+    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
     *(char*)0xd418 = 0;  // Mute sound.
 
     if (kbhit()) cgetc();
