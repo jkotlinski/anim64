@@ -23,12 +23,6 @@
 .export _ticks_per_frame
 .export _anim_screen
 
-; Defined in colcpy.s.
-.import _colcpy_9000
-.import _colcpy_9400
-.import _colcpy_9800
-.import _colcpy_9c00
-
 _anim_screen:
     .byte 0
 
@@ -40,18 +34,6 @@ frame_delay:
 
 _caught_irqs:
     .byte 0
-
-color_copy:
-    lda _anim_screen
-    bne :+
-    jmp _colcpy_9000
-:   cmp #1
-    bne :+
-    jmp _colcpy_9400
-:   cmp #2
-    bne :+
-    jmp _colcpy_9800
-:   jmp _colcpy_9c00
 
 anim_next_screen:
     ; *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
@@ -68,7 +50,6 @@ anim_next_screen:
     lda _anim_screen
     asl  ; *= $4
     asl
-    clc  ; += 83
     adc #$83
     sta :+ + 2
     sta :++ + 2
@@ -77,7 +58,43 @@ anim_next_screen:
 :   lda $83e9
     sta $d021
 
-    jsr color_copy
+    ; --------- Color copy - setup.
+    lda _anim_screen
+    asl  ; *= 4
+    asl
+    adc #$90
+    tax
+    stx @colcpy_d8_src + 2
+    inx
+    stx @colcpy_d9_src + 2
+    inx
+    stx @colcpy_da_src + 2
+    inx
+    stx @colcpy_db_src + 2
+
+    ; Color copy - main loop.
+    ldy #0
+@loop:
+@colcpy_d8_src:
+    lda $9000, y
+    sta $d800, y
+@colcpy_d9_src:
+    lda $9100, y
+    sta $d900, y
+    iny
+    bne @loop
+    ; Since the copy is very slow, we copy upper half first just to make sure it's done
+    ; at the time the raster gets there.
+@loop2:
+@colcpy_da_src:
+    lda $9200, y
+    sta $da00, y
+@colcpy_db_src:
+    lda $9300, y
+    sta $db00, y
+    iny
+    bne @loop2
+    ; ------------ Color copy - done!
 
     ; anim_screen = (anim_screen + 1) & 3;
     ldx _anim_screen
