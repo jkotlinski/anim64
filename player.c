@@ -25,14 +25,6 @@ THE SOFTWARE. */
 
 #include "irq.h"
 
-/* $8000 - $8fff: screen 0-3, + border/screen color
- * $9000 - $9fff: colors 0-3
- * $a000 - $afff: screen 4-7
- * $b000 - $bfff: colors 4-7
- * $c000 - $cfff: unused
- * $e000 - $ffff: rle buffer
- */
-
 static void load_music() {
     FILE* f = fopen("music", "r");
 

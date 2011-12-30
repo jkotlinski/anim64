@@ -18,7 +18,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
-#include <assert.h>
 #include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +27,12 @@ THE SOFTWARE. */
 #include "player.h"
 
 #define VIDEO_BASE (unsigned char*)0x8000u
+
+/* $6000 - $7fff: temporary unpack area
+ * $8000 - $9fff: screen 0-7, + border/screen color
+ * $a000 - $cfff: rle buffer
+ * $e000 - $ffff: colors 0-7
+ */
 
 #define FILE_COUNT 24
 #define FILENAME_LENGTH 8
@@ -196,9 +201,7 @@ static void unblock_kernal() {
     *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
 }
 
-/* Pack the different anims into RLE buffer at $e000-$ffff.
- * ($a000-$bfff is used for temporary storage.)
- */
+/* Packs the different anims into RLE buffer at $a000-$cfff. */
 void pack_anims() {
     unsigned char* rle_ptr = (char*)0xa000;
     unsigned char anim_it;
@@ -215,16 +218,11 @@ void pack_anims() {
         if (!f) {
             continue;
         }
-        movie.start[anim_it] = rle_ptr + (0xe000 - 0xa000);
-        rle_ptr += fread(rle_ptr, 1, 0x2000, f);
+        movie.start[anim_it] = rle_ptr;
+        rle_ptr += fread(rle_ptr, 1, 0x3000, f);
         fclose(f);
     }
     packed_anims_valid = 1;
-
-    // Moves RLE data from a000-bfff to e000-ffff.
-    block_kernal();
-    memcpy((char*)0xe000, (char*)0xa000, 0x2000);
-    unblock_kernal();
 }
 
 // Returns 1 if load succeeded, otherwise 0.
