@@ -25,6 +25,9 @@ extern char ticks_per_frame;
 extern char caught_irqs;  // Increased by 1 every VBL.
 extern char anim_screen;  // Set to 0 before starting to play.
 
+extern char screen_ptr;
+extern char color_ptr;
+
 void irq_handler();
 
 #endif  // IRQ_H_

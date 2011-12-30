@@ -296,8 +296,8 @@ static void handle_key(char key) {
             remember_colors();
             init_play(0);
 #define DELAY 30
-            play_anim(DELAY);
-            wait_anim(65535);
+            play_anim(DELAY, 0x80, 0x90);
+            wait_anim(65535u);
             exit_play();
             update_screen_base();
             break;
