@@ -249,7 +249,8 @@ static void run_anims(unsigned char file_it) {
                 continue;
             }
         }
-        if (play_anim(movie.speed[file_it], movie.duration[file_it])) {
+        play_anim(movie.speed[file_it]);
+        if (wait_anim(movie.duration[file_it])) {
             break;
         }
         ++file_it;

@@ -85,13 +85,15 @@ void exit_play() {
 }
 
 // Returns 0 if timed out, 1 if keyboard was pressed.
-unsigned char play_anim(unsigned char speed, unsigned int duration) {
-    char keyboard_state = 0;
-
+void play_anim(unsigned char speed) {
     ticks_per_frame = speed;
 
     anim_screen = 0;
     caught_irqs = 1;
+}
+
+char wait_anim(unsigned int duration) {
+    char keyboard_state = 0;
 
     while (duration--) {
         // Waits until raster screen is right below lower text border.
