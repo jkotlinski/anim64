@@ -21,8 +21,9 @@ THE SOFTWARE. */
 #ifndef IRQ_H_
 #define IRQ_H_
 
-extern char frame_delay;
-extern char caught_irqs;
+extern char ticks_per_frame;
+extern char caught_irqs;  // Increased by 1 every VBL.
+extern char anim_screen;  // Set to 0 before starting to play.
 
 void irq_handler();
 

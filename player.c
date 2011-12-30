@@ -25,9 +25,6 @@ THE SOFTWARE. */
 
 #include "irq.h"
 
-#define BORDER_OFFSET (40 * 25)
-#define BG_OFFSET (40 * 25 + 1)
-
 /* $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
  * $a000 - $afff: screen 4-7
@@ -35,28 +32,6 @@ THE SOFTWARE. */
  * $c000 - $cfff: unused
  * $e000 - $ffff: rle buffer
  */
-
-/* Defined in colcpy.s. */
-void colcpy_9000();
-void colcpy_9400();
-void colcpy_9800();
-void colcpy_9c00();
-
-static unsigned char anim_screen;
-static void anim_next_screen() {
-    unsigned char* base = (char*)(0x8000 + anim_screen * 0x400);
-    *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
-    *(char*)0xd020 = base[BORDER_OFFSET];
-    *(char*)0xd021 = base[BG_OFFSET];
-    switch (anim_screen) {
-        case 0: colcpy_9000(); break;
-        case 1: colcpy_9400(); break;
-        case 2: colcpy_9800(); break;
-        case 3: colcpy_9c00(); break;
-    }
-    ++anim_screen;
-    anim_screen &= 3;
-}
 
 static void load_music() {
     FILE* f = fopen("music", "r");
@@ -113,7 +88,7 @@ void exit_play() {
 unsigned char play_anim(unsigned char speed, unsigned int duration) {
     char keyboard_state = 0;
 
-    frame_delay = speed;
+    ticks_per_frame = speed;
 
     anim_screen = 0;
     caught_irqs = 1;
@@ -133,10 +108,6 @@ unsigned char play_anim(unsigned char speed, unsigned int duration) {
             }
         } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
             return 1;
-        }
-        if (frame_delay-- == 0) {
-            anim_next_screen();
-            frame_delay = speed;
         }
     }
     return 0;
