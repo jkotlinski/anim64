@@ -23,6 +23,8 @@ THE SOFTWARE. */
 #include <stdio.h>
 #include <conio.h>
 
+#include "irq.h"
+
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
 
@@ -72,13 +74,9 @@ static void load_music() {
 void init_music();
 void tick_music();
 
-// Defined in irq.s.
 typedef void (*voidFn)(void);
-void irq_handler();
 
 #define RASTER_LINE 0xfb
-
-extern char caught_irqs;  // Defined in irq.s.
 
 void init_play(unsigned int skipmusicframes) {
     init_music();
@@ -114,7 +112,8 @@ void exit_play() {
 // Returns 0 if timed out, 1 if keyboard was pressed.
 unsigned char play_anim(unsigned char speed, unsigned int duration) {
     char keyboard_state = 0;
-    char delay = speed;
+
+    frame_delay = speed;
 
     anim_screen = 0;
     caught_irqs = 1;
@@ -135,9 +134,9 @@ unsigned char play_anim(unsigned char speed, unsigned int duration) {
         } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
             return 1;
         }
-        if (delay-- == 0) {
+        if (frame_delay-- == 0) {
             anim_next_screen();
-            delay = speed;
+            frame_delay = speed;
         }
     }
     return 0;

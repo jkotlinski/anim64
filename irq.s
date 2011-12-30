@@ -20,6 +20,10 @@
 
 .export _irq_handler
 .export _caught_irqs  ; counter
+.export _frame_delay
+
+_frame_delay:
+    .byte 0
 
 _caught_irqs:
     .byte 0
