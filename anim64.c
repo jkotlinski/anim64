@@ -38,12 +38,12 @@ static char color = 1;
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
 #define SAVE_SIZE (0x400 * 7 + 40 * 25)
-#define RLE_BUFFER (unsigned char*)0xa000u
+#define RLE_BUFFER (unsigned char*)0x6000u
 char* screen_base = VIDEO_BASE;
-/* $8000 - $8fff: screen 0-3, + border/screen color
+/* $6000 - $7fff: rle buffer
+ * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
- * $a000 - $bfff: rle buffer
- * $c000 - $cfff: unused
+ * $a000 - $bfff: unused
  */
 
 char curr_screen;
@@ -60,7 +60,7 @@ static void init() {
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);
     memset((void*)0xd800, 0, 0x400);  // Clear colors for better packing.
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    *(char*)0xd018 = 0x04;  // Point video to 0x8000.
+    *(char*)0xd018 = 4;  // Point video to 0x8000.
 }
 
 static char paint_char = 1;

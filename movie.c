@@ -28,10 +28,12 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $6000 - $7fff: temporary unpack area
- * $8000 - $9fff: screen 0-7, + border/screen color
- * $a000 - $cfff: rle buffer
- * $e000 - $ffff: colors 0-7
+/* $6000 - $7fff: rle buffer
+ * $8000 - $8fff: screen 0-3, + border/screen color
+ * $9000 - $9fff: color 0-3
+ * $a000 - $afff: screen 4-7, + border/screen color
+ * $b000 - $bfff: color 4-7
+ * $c000 - $cfff: unused
  */
 
 #define FILE_COUNT 24
@@ -191,19 +193,9 @@ void invalidate_packed_anims() {
     packed_anims_valid = 0;
 }
 
-static void block_kernal() {
-    *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
-    *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
-}
-
-static void unblock_kernal() {
-    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
-    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
-}
-
-/* Packs the different anims into RLE buffer at $a000-$cfff. */
+/* Packs the different anims into RLE buffer at $6000-$8fff. */
 void pack_anims() {
-    unsigned char* rle_ptr = (char*)0xa000;
+    unsigned char* rle_ptr = (char*)0x6000;
     unsigned char anim_it;
     if (packed_anims_valid) {
         return;
@@ -219,14 +211,13 @@ void pack_anims() {
             continue;
         }
         movie.start[anim_it] = rle_ptr;
-        rle_ptr += fread(rle_ptr, 1, 0x3000, f);
+        rle_ptr += fread(rle_ptr, 1, 0x2000, f);
         fclose(f);
     }
     packed_anims_valid = 1;
 }
 
 // Returns 1 if load succeeded, otherwise 0.
-// NOTE: Kernal must be blocked when calling this function!
 static unsigned char unpack_anim(unsigned char file_it) {
     const unsigned char* rle_data = movie.start[file_it];
     if (rle_data == NULL) {
@@ -319,9 +310,7 @@ void edit_movie() {
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
             pack_anims();
-            block_kernal();
             unpack_anim(selected_file);
-            unblock_kernal();
             break;
         }
     }
