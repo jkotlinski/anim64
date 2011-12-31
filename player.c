@@ -37,20 +37,11 @@ static void load_music() {
     fclose(f);
 }
 
-// Defined in music.s.
-void init_music();
-void tick_music();
-
 typedef void (*voidFn)(void);
 
 #define RASTER_LINE 0xfb
 
-void init_play(unsigned int skipmusicframes) {
-    init_music();
-    while (skipmusicframes--) {
-        tick_music();
-    }
-
+void init_play() {
     *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
     *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
 

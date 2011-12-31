@@ -25,6 +25,7 @@ THE SOFTWARE. */
 #include <time.h>
 
 #include "movie.h"
+#include "music.h"
 #include "rle.h"
 #include "player.h"
 
@@ -295,7 +296,8 @@ static void handle_key(char key) {
             break;
         case CH_STOP:
             remember_colors();
-            init_play(0);
+            init_music();
+            init_play();
 #define DELAY 30
             play_anim(DELAY, 0x80, 0x90);
             wait_anim(65535u);

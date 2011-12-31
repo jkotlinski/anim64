@@ -23,6 +23,7 @@ THE SOFTWARE. */
 #include <stdlib.h>
 #include <string.h>
 
+#include "music.h"
 #include "rle.h"
 #include "player.h"
 
@@ -229,7 +230,12 @@ static unsigned char unpack_anim(unsigned char file_it) {
 }
 
 static void run_anims(unsigned char file_it) {
-    init_play(skip_music_frames(file_it));
+    unsigned int frameskip_it = skip_music_frames(file_it);
+    init_music();
+    while (frameskip_it--) {
+        tick_music();
+    }
+    init_play();
     for (;;) {
         if (!unpack_anim(file_it)) {
             if (file_it == 0) {
