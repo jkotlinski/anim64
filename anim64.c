@@ -43,7 +43,8 @@ char* screen_base = VIDEO_BASE;
 /* $6000 - $7fff: rle buffer
  * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
- * $a000 - $bfff: unused
+ * $a000 - $cfff: unused
+ * $e000 - $ffff: unused
  */
 
 char curr_screen;

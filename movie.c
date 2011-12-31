@@ -34,6 +34,7 @@ THE SOFTWARE. */
  * $a000 - $afff: screen 4-7, + border/screen color
  * $b000 - $bfff: color 4-7
  * $c000 - $cfff: unused
+ * $e000 - $ffff: unused
  */
 
 #define FILE_COUNT 24
