@@ -215,7 +215,7 @@ void pack_anims() {
         movie.start[anim_it] = rle_ptr;
         rle_ptr += fread(rle_ptr, 1, 0x2000, f);
         fclose(f);
-        if (rle_ptr > 0x8000) {
+        if (rle_ptr > (unsigned char*)0x8000u) {
             return;  // Memory full!
         }
     }
