@@ -68,7 +68,11 @@ void exit_play() {
 void play_anim(unsigned char speed, unsigned char alt_screen) {
     ticks_per_frame = speed;
 
-    anim_screen = (alt_screen ? 8 : 0);
+    first_anim_screen = (alt_screen ? 8 : 0);
+    anim_screen = first_anim_screen;
+    last_anim_screen = alt_screen
+        ? 8 + *(char*)(0xa000u + 40 * 25 + 2)
+        : *(char*)(0x8000u + 40 * 25 + 2);
 
     caught_irqs = 1;
 

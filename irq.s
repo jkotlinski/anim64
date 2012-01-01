@@ -22,8 +22,12 @@
 .export _caught_irqs  ; counter
 .export _ticks_per_frame
 .export _anim_screen
+.export _first_anim_screen
+.export _last_anim_screen
 
 _anim_screen: .byte 0
+_first_anim_screen: .byte 0
+_last_anim_screen: .byte 0
 _ticks_per_frame: .byte 0
 frame_delay: .byte 0
 _caught_irqs: .byte 0
@@ -94,21 +98,14 @@ anim_next_screen:
     bne @loop2
     ; ------------ Color copy - done!
 
-    ; if (anim_screen & 3 == 3) {
-    ;   anim_screen &= ~3;
-    ; } else {
-    ;   ++anim_screen;
-    ; }
     lda _anim_screen
-    and #3
-    cmp #3
-    bne @inc_anim
-    lda _anim_screen
-    and #~3
-    sta _anim_screen
-    rts
-@inc_anim:
+    cmp _last_anim_screen
+    bcs @restart
     inc _anim_screen
+    rts
+@restart:
+    lda _first_anim_screen
+    sta _anim_screen
     rts
 
 _irq_handler:
