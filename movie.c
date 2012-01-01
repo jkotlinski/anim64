@@ -215,9 +215,6 @@ void pack_anims() {
         movie.start[anim_it] = rle_ptr;
         rle_ptr += fread(rle_ptr, 1, 0x2000, f);
         fclose(f);
-        if (rle_ptr > (unsigned char*)0x8000u) {
-            return;  // Memory full!
-        }
     }
     packed_anims_valid = 1;
 }
@@ -313,9 +310,7 @@ static char handle_key(unsigned char key) {
             break;
         case CH_STOP:
             pack_anims();
-            if (packed_anims_valid) {
-                run_anims(selected_file);
-            }
+            run_anims(selected_file);
             break;
         case CH_F7:  // Go to animation editor.
                       return 1;
