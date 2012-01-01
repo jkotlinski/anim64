@@ -220,24 +220,25 @@ void pack_anims() {
 }
 
 // Returns 1 if load succeeded, otherwise 0.
-static unsigned char unpack_anim(unsigned char file_it) {
+static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen) {
     const unsigned char* rle_data = movie.start[file_it];
     if (rle_data == NULL) {
         return 0;
     }
-    rle_unpack(VIDEO_BASE, rle_data);
+    rle_unpack((unsigned char*)(alt_screen ? 0xa000u : 0x8000u), rle_data);
     return 1;
 }
 
 static void run_anims(unsigned char file_it) {
     unsigned int frameskip_it = skip_music_frames(file_it);
+    unsigned char alt_screen = 0;
     init_music();
     while (frameskip_it--) {
         tick_music();
     }
     init_play();
     for (;;) {
-        if (!unpack_anim(file_it)) {
+        if (!unpack_anim(file_it, alt_screen)) {
             if (file_it == 0) {
                 break;
             } else {
@@ -245,12 +246,13 @@ static void run_anims(unsigned char file_it) {
                 continue;
             }
         }
-        play_anim(movie.speed[file_it], 0);
+        play_anim(movie.speed[file_it], alt_screen);
         if (wait_anim(movie.duration[file_it])) {
             break;
         }
         ++file_it;
         file_it %= FILE_COUNT;
+        alt_screen ^= 1;
     }
     exit_play();
     *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
@@ -317,7 +319,7 @@ void edit_movie() {
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
             pack_anims();
-            unpack_anim(selected_file);
+            unpack_anim(selected_file, 0);
             break;
         }
     }

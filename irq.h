@@ -23,9 +23,7 @@ THE SOFTWARE. */
 
 extern char ticks_per_frame;
 extern char caught_irqs;  // Increased by 1 every VBL.
-extern char anim_screen;  // 0 or 8.
-
-extern char screen_ptr;
+extern char anim_screen;  // 0 (normal screen) or 8 (alt screen).
 
 void irq_handler();
 

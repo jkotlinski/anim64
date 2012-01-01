@@ -47,13 +47,10 @@ void init_play() {
 
     // Scan all keyboard rows.
     *(char*)0xdc00 = 0;
-    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
 
     *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
     *(char*)0xd012 = RASTER_LINE;  // raster line
     *(voidFn*)0xfffe = irq_handler;  // set irq handler pointer
-
-    *(char*)0xd01a = 1;  // enable raster interrupts
 }
 
 void exit_play() {
@@ -71,15 +68,11 @@ void exit_play() {
 void play_anim(unsigned char speed, unsigned char alt_screen) {
     ticks_per_frame = speed;
 
-    if (alt_screen) {
-        screen_ptr = 0xa0;
-        anim_screen = 8;
-    } else {
-        screen_ptr = 0x80;
-        anim_screen = 0;
-    }
+    anim_screen = (alt_screen ? 8 : 0);
 
     caught_irqs = 1;
+
+    *(char*)0xd01a = 1;  // enable raster interrupts
 }
 
 char wait_anim(unsigned int duration) {

@@ -22,13 +22,11 @@
 .export _caught_irqs  ; counter
 .export _ticks_per_frame
 .export _anim_screen
-.export _screen_ptr
 
 _anim_screen: .byte 0
 _ticks_per_frame: .byte 0
 frame_delay: .byte 0
 _caught_irqs: .byte 0
-_screen_ptr: .byte 0
 
 ; _anim_screen will cycle 0..3 or 8..11.
 anim_next_screen:
@@ -40,6 +38,10 @@ anim_next_screen:
     asl
     ora #4
     sta $d018
+
+    ; Use graphics bank 2. ($8000-$bfff)
+    lda #$15
+    sta $dd00
 
     ; *(char*)0xd020 = base[BORDER_OFFSET];
     ; *(char*)0xd021 = base[BG_OFFSET];
