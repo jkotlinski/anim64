@@ -195,7 +195,7 @@ void invalidate_packed_anims() {
     packed_anims_valid = 0;
 }
 
-/* Packs the different anims into RLE buffer at $6000-$8fff. */
+/* Packs the different anims into RLE buffer. */
 void pack_anims() {
     unsigned char* rle_ptr = (char*)0x6000;
     unsigned char anim_it;
@@ -215,6 +215,9 @@ void pack_anims() {
         movie.start[anim_it] = rle_ptr;
         rle_ptr += fread(rle_ptr, 1, 0x2000, f);
         fclose(f);
+        if (rle_ptr > 0x8000) {
+            return;  // Memory full!
+        }
     }
     packed_anims_valid = 1;
 }
@@ -308,7 +311,12 @@ static char handle_key(unsigned char key) {
             pack_anims();
             save_movie();
             break;
-        case CH_STOP: pack_anims(); run_anims(selected_file); break;
+        case CH_STOP:
+            pack_anims();
+            if (packed_anims_valid) {
+                run_anims(selected_file);
+            }
+            break;
         case CH_F7:  // Go to animation editor.
                       return 1;
     }
