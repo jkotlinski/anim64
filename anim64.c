@@ -38,6 +38,7 @@ static char color = 1;
 #define VIDEO_BASE ((char*)0x8000)
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
+#define END_FRAME (40 * 25 + 2)
 #define SAVE_SIZE (0x400 * 7 + 40 * 25)
 #define RLE_BUFFER (unsigned char*)0x6000u
 char* screen_base = VIDEO_BASE;
@@ -48,7 +49,7 @@ char* screen_base = VIDEO_BASE;
  * $e000 - $ffff: unused
  */
 
-char curr_screen;
+signed char curr_screen;
 
 static void init() {
     clrscr();
@@ -59,6 +60,7 @@ static void init() {
     load_music();
 
     memset(VIDEO_BASE, 0x20, 0x1000);
+    *(VIDEO_BASE + END_FRAME) = 3;
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);
     memset((void*)0xd800, 0, 0x400);  // Clear colors for better packing.
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
@@ -124,7 +126,11 @@ static void update_screen_base() {
 static void change_screen(char step) {
     remember_colors();
     curr_screen += step;
-    curr_screen &= 3;
+    if (curr_screen > *(VIDEO_BASE + END_FRAME)) {
+        curr_screen = 0;
+    } else if (curr_screen < 0) {
+        curr_screen = *(VIDEO_BASE + END_FRAME);
+    }
     update_screen_base();
 }
 
@@ -288,6 +294,10 @@ static void handle_key(char key) {
             break;
         case CH_F4:
             *(char*)0xd021 = ++screen_base[BG_OFFSET];
+            break;
+        case CH_F8:
+            ++*(VIDEO_BASE + END_FRAME);
+            *(VIDEO_BASE + END_FRAME) &= 3;
             break;
         case ' ':
         case 0x80 | ' ':
