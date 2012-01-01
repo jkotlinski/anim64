@@ -30,6 +30,7 @@ frame_delay: .byte 0
 _caught_irqs: .byte 0
 _screen_ptr: .byte 0
 
+; _anim_screen will cycle 0..3 or 8..11.
 anim_next_screen:
     ; *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
     lda _anim_screen
@@ -45,8 +46,7 @@ anim_next_screen:
     lda _anim_screen
     asl  ; *= $4
     asl
-    adc _screen_ptr
-    adc #3
+    adc #$83
     sta :+ + 2
     sta :++ + 2
 :   lda $83e8
@@ -58,8 +58,7 @@ anim_next_screen:
     lda _anim_screen
     asl  ; *= 4
     asl
-    adc _screen_ptr
-    adc #$10
+    adc #$90
     tax
     stx @colcpy_d8_src + 2
     inx
