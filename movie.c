@@ -29,8 +29,7 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $5ffc - $5fff: onefiler marker ("play" or not?)
- * $6000 - $7fff: rle buffer
+/* $6000 - $7fff: rle buffer
  * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: color 0-3
  * $a000 - $afff: screen 4-7, + border/screen color
@@ -266,18 +265,6 @@ static void run_anims(unsigned char file_it) {
     show_screen();
 }
 
-static void save_onefiler() {
-    FILE* f;
-    memcpy((char*)0x5ffc, "play", 4);
-    f = fopen("player", "w");
-    // Writes loader address.
-    fputc(1, f);
-    fputc(8, f);
-    // Saves $801 - $7fff.
-    fwrite((char*)0x801, 0x7fff - 0x801, 1, f);
-    fclose(f);
-}
-
 static char handle_key(unsigned char key) {
     switch (key) {
         default:
@@ -319,13 +306,6 @@ static char handle_key(unsigned char key) {
             gotoxy(20, 0);
             printf("save...");
             save_movie();
-            break;
-        case CH_F5:
-            gotoxy(20, 0);
-            printf("compile...");
-            pack_anims();
-            save_onefiler();
-            puts("ok");
             break;
         case CH_STOP:
             pack_anims();
