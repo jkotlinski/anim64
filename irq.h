@@ -23,7 +23,7 @@ THE SOFTWARE. */
 
 extern char ticks_per_frame;
 extern char caught_irqs;  // Increased by 1 every VBL.
-extern char anim_screen;  // Set to 0 before starting to play.
+extern char anim_screen;  // 0 or 8.
 
 extern char screen_ptr;
 

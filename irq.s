@@ -93,13 +93,21 @@ anim_next_screen:
     bne @loop2
     ; ------------ Color copy - done!
 
-    ; anim_screen = (anim_screen + 1) & 3;
-    ldx _anim_screen
-    inx
-    txa
+    ; if (anim_screen & 3 == 3) {
+    ;   anim_screen &= ~3;
+    ; } else {
+    ;   ++anim_screen;
+    ; }
+    lda _anim_screen
     and #3
+    cmp #3
+    bne @inc_anim
+    lda _anim_screen
+    and #~3
     sta _anim_screen
-
+    rts
+@inc_anim:
+    inc _anim_screen
     rts
 
 _irq_handler:
