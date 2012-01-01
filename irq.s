@@ -22,14 +22,12 @@
 .export _caught_irqs  ; counter
 .export _ticks_per_frame
 .export _anim_screen
-.export _color_ptr
 .export _screen_ptr
 
 _anim_screen: .byte 0
 _ticks_per_frame: .byte 0
 frame_delay: .byte 0
 _caught_irqs: .byte 0
-_color_ptr: .byte 0
 _screen_ptr: .byte 0
 
 anim_next_screen:
@@ -60,7 +58,8 @@ anim_next_screen:
     lda _anim_screen
     asl  ; *= 4
     asl
-    adc _color_ptr
+    adc _screen_ptr
+    adc #$10
     tax
     stx @colcpy_d8_src + 2
     inx

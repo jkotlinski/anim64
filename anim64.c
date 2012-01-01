@@ -299,7 +299,7 @@ static void handle_key(char key) {
             init_music();
             init_play();
 #define DELAY 30
-            play_anim(DELAY, 0x80, 0x90);
+            play_anim(DELAY, 0x80);
             wait_anim(65535u);
             exit_play();
             update_screen_base();

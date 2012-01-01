@@ -68,11 +68,10 @@ void exit_play() {
 }
 
 // Returns 0 if timed out, 1 if keyboard was pressed.
-void play_anim(unsigned char speed, unsigned char screen_base, unsigned char color_base) {
+void play_anim(unsigned char speed, unsigned char screen_base) {
     ticks_per_frame = speed;
 
     screen_ptr = screen_base;
-    color_ptr = color_base;
 
     anim_screen = 0;
     caught_irqs = 1;
