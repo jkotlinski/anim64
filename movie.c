@@ -231,6 +231,7 @@ static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen
 
 static void run_anims(unsigned char file_it) {
     unsigned int frameskip_it = skip_music_frames(file_it);
+    unsigned int wait_duration = 0;
     unsigned char alt_screen = 0;
     init_music();
     while (frameskip_it--) {
@@ -246,10 +247,12 @@ static void run_anims(unsigned char file_it) {
                 continue;
             }
         }
-        play_anim(movie.speed[file_it], alt_screen);
-        if (wait_anim(movie.duration[file_it])) {
+        if (wait_anim(wait_duration)) {
             break;
         }
+        play_anim(movie.speed[file_it], alt_screen);
+        wait_duration = movie.duration[file_it];
+
         ++file_it;
         file_it %= FILE_COUNT;
         alt_screen ^= 1;
