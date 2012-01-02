@@ -31,10 +31,4 @@ void play_anim(unsigned char speed, unsigned char screen_base);
 // Returns 0 if timed out, 1 if keyboard was pressed.
 char wait_anim(unsigned int duration);
 
-#define MUSIC_START ((char*)0x1000)
-#define MUSIC_STOP ((char*)0x2800)
-
-// Loads "music" file to 0x1000.
-void load_music();
-
 #endif  // PLAYER_H_

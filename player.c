@@ -25,18 +25,6 @@ THE SOFTWARE. */
 
 #include "irq.h"
 
-static void load_music() {
-    FILE* f = fopen("music", "r");
-
-    // In case fread fails, insert dummy rts at init+tick.
-#define RTS_OP 0x60
-    *(char*)0x1000 = RTS_OP;
-    *(char*)0x1003 = RTS_OP;
-
-    fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
-    fclose(f);
-}
-
 typedef void (*voidFn)(void);
 
 #define RASTER_LINE 0xfb

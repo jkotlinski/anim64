@@ -24,6 +24,7 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
+#include "disk.h"
 #include "movie.h"
 #include "music.h"
 #include "rle.h"
@@ -57,7 +58,10 @@ static void init() {
     bordercolor(0);
     bgcolor(0);
 
-    load_music();
+    // Dummy music ops.
+#define RTS_OP 0x60
+    *(char*)0x1000 = RTS_OP;
+    *(char*)0x1003 = RTS_OP;
 
     memset(VIDEO_BASE, 0x20, 0x1000);
     *(VIDEO_BASE + END_FRAME) = 3;
@@ -181,23 +185,10 @@ static void switch_to_gfx_screen() {
     update_screen_base();
 }
 
-static FILE* open(const char* prompt, const char* mode) {
-    for (;;) {
-        FILE* f;
-        char path[32];
-        printf("\n%s>", prompt);
-        gets(path);
-        if (!*path) return NULL;
-        f = fopen(path, mode);
-        if (f) return f;
-        printf("err");
-    }
-}
-
 static void load_anim() {
     FILE* f;
     switch_to_console_screen();
-    f = open("load", "r");
+    f = prompt_open("load", "r");
     if (f) {
         fread(RLE_BUFFER, 1, 0x2000, f);
         fclose(f);
@@ -210,7 +201,7 @@ static void load_anim() {
 static void save_anim() {
     FILE* f;
     switch_to_console_screen();
-    f = open("save", "w");
+    f = prompt_open("save", "w");
     if (f) {
         unsigned int file_size;
         file_size = rle_pack(RLE_BUFFER, VIDEO_BASE, SAVE_SIZE);

@@ -32,7 +32,7 @@ all:   	anim64
 	@echo $<
 	@$(AS) $(basename $<).s
 
-OBJS = anim64.o music.o movie.o rle.o rlepack.o rleunpack.o player.o irq.o
+OBJS = anim64.o music.o movie.o rle.o rlepack.o rleunpack.o player.o irq.o disk.o
 
 -include $(OBJS:%.o=$(DEPDIR)/%.u)
 

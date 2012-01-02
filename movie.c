@@ -23,6 +23,7 @@ THE SOFTWARE. */
 #include <stdlib.h>
 #include <string.h>
 
+#include "disk.h"
 #include "music.h"
 #include "rle.h"
 #include "player.h"
@@ -265,6 +266,21 @@ static void run_anims(unsigned char file_it) {
     show_screen();
 }
 
+static void load_music() {
+    FILE* f;
+    clrscr();
+    gotoxy(0, 0);
+    textcolor(COLOR_YELLOW);
+    f = prompt_open("music", "r");
+
+#define MUSIC_START ((char*)0x1000)
+#define MUSIC_STOP ((char*)0x2800)
+    fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
+    fclose(f);
+
+    show_screen();
+}
+
 static char handle_key(unsigned char key) {
     switch (key) {
         default:
@@ -307,6 +323,7 @@ static char handle_key(unsigned char key) {
             printf("save...");
             save_movie();
             break;
+        case CH_F3: load_music(); break;
         case CH_STOP:
             pack_anims();
             run_anims(selected_file);
