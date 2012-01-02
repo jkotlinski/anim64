@@ -32,3 +32,7 @@ _tick_music:
     tax
     tay
     jmp $1003
+
+.segment "MUSIC"
+    ; Insert some dummy rts for $1000, $1003.
+    .res 4, $60 ; rts

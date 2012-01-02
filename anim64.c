@@ -58,13 +58,6 @@ static void init() {
     bordercolor(0);
     bgcolor(0);
 
-    if (!is_onefiler()) {
-        // Dummy music ops.
-#define RTS_OP 0x60
-        *(char*)0x1000 = RTS_OP;
-        *(char*)0x1003 = RTS_OP;
-    }
-
     memset(VIDEO_BASE, 0x20, 0x1000);
     *(VIDEO_BASE + END_FRAME) = 3;
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);

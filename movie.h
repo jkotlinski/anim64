@@ -18,10 +18,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
+#ifndef MOVIE_H_
+#define MOVIE_H_
+
 void edit_movie();
 
 void invalidate_packed_anims();
 
+void run_anims(unsigned char file_it);
+
 char is_onefiler();
 
-void run_anims(unsigned char file_it);
+#endif  /* MOVIE_H_ */
