@@ -126,7 +126,7 @@ static void show_screen() {
     draw_fields();
 }
 
-static const char* MOVIE_FILE = "movie";
+static const char* MOVIE_FILE = ".movie";
 
 static void load_movie() {
     FILE* f = fopen(MOVIE_FILE, "r");
@@ -153,7 +153,7 @@ static void init() {
     }
     /* Since movie is not in BSS, zero-init filename and speed explicitly. */
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        movie.filename[file_it][0] = '0';
+        movie.filename[file_it][0] = '\0';
         movie.duration[file_it] = 100;
         movie.speed[file_it] = 0;
     }
