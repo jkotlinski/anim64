@@ -21,3 +21,7 @@ THE SOFTWARE. */
 void edit_movie();
 
 void invalidate_packed_anims();
+
+char is_onefiler();
+
+void run_anims(unsigned char file_it);

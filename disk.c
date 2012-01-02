@@ -20,7 +20,13 @@ THE SOFTWARE. */
 
 #include "disk.h"
 
+#include <c64.h>
+#include <conio.h>
+
 FILE* prompt_open(const char* prompt, const char* mode) {
+    clrscr();
+    gotoxy(0, 0);
+    textcolor(COLOR_YELLOW);
     for (;;) {
         FILE* f;
         char path[32];

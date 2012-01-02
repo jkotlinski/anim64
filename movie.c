@@ -30,7 +30,8 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $6000 - $7fff: rle buffer
+/* $5ffc - $5fff: onefiler marker ("play" or not?)
+ * $6000 - $7fff: rle buffer
  * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: color 0-3
  * $a000 - $afff: screen 4-7, + border/screen color
@@ -41,12 +42,20 @@ THE SOFTWARE. */
 
 #define FILE_COUNT 24
 #define FILENAME_LENGTH 8
+#pragma bssseg (push,"DATA")
 static struct Movie {
     char filename[FILE_COUNT][FILENAME_LENGTH];
     unsigned int duration[FILE_COUNT];
     unsigned char speed[FILE_COUNT];
     unsigned char* start[FILE_COUNT];
 } movie;
+#pragma bssseg (pop)
+
+static const char onefiler_marker[4] = { 'c', 'h', 'a', 'r' };
+
+char is_onefiler() {
+    return !memcmp((char*)0x5ffc, onefiler_marker, sizeof(onefiler_marker));
+}
 
 static char selected_file;
 /* 0 = file name
@@ -139,11 +148,14 @@ static void save_movie() {
 static void init() {
     char file_it;
     static char inited;
-    if (inited) {
+    if (inited || is_onefiler()) {
         return;
     }
+    /* Since movie is not in BSS, zero-init filename and speed explicitly. */
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
+        movie.filename[file_it][0] = '0';
         movie.duration[file_it] = 100;
+        movie.speed[file_it] = 0;
     }
     load_movie();
     inited = 1;
@@ -230,7 +242,7 @@ static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen
     return 1;
 }
 
-static void run_anims(unsigned char file_it) {
+void run_anims(unsigned char file_it) {
     unsigned int frameskip_it = skip_music_frames(file_it);
     unsigned int wait_duration = 0;
     unsigned char alt_screen = 0;
@@ -267,11 +279,7 @@ static void run_anims(unsigned char file_it) {
 }
 
 static void load_music() {
-    FILE* f;
-    clrscr();
-    gotoxy(0, 0);
-    textcolor(COLOR_YELLOW);
-    f = prompt_open("music", "r");
+    FILE* f = prompt_open("music", "r");
 
 #define MUSIC_START ((char*)0x1000)
 #define MUSIC_STOP ((char*)0x2800)
@@ -279,6 +287,18 @@ static void load_music() {
     fclose(f);
 
     show_screen();
+}
+
+static void save_onefiler() {
+    FILE* f = prompt_open("demo", "w");
+    memcpy((char*)0x5ffc, onefiler_marker, sizeof(onefiler_marker));
+    // Writes load address.
+    fputc(1, f);
+    fputc(8, f);
+    // Saves $801 - $7fff.
+    fwrite((char*)0x801, 0x7fff - 0x801, 1, f);
+    fclose(f);
+    *(char*)0x5ffc = 0;
 }
 
 static char handle_key(unsigned char key) {
@@ -324,6 +344,11 @@ static char handle_key(unsigned char key) {
             save_movie();
             break;
         case CH_F3: load_music(); break;
+        case CH_F5:
+            pack_anims();
+            save_onefiler();
+            show_screen();
+            break;
         case CH_STOP:
             pack_anims();
             run_anims(selected_file);

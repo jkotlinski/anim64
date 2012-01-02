@@ -58,10 +58,12 @@ static void init() {
     bordercolor(0);
     bgcolor(0);
 
-    // Dummy music ops.
+    if (!is_onefiler()) {
+        // Dummy music ops.
 #define RTS_OP 0x60
-    *(char*)0x1000 = RTS_OP;
-    *(char*)0x1003 = RTS_OP;
+        *(char*)0x1000 = RTS_OP;
+        *(char*)0x1003 = RTS_OP;
+    }
 
     memset(VIDEO_BASE, 0x20, 0x1000);
     *(VIDEO_BASE + END_FRAME) = 3;
@@ -341,6 +343,10 @@ void main() {
     while(1) { if (kbhit()) { printf("%x", cgetc()); } }
 #endif
     init();
+
+    if (is_onefiler()) {
+        run_anims(0);
+    }
 
     // Test.
     // handle_key(CH_F8);
