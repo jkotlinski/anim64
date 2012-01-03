@@ -42,6 +42,9 @@ THE SOFTWARE. */
 #define FILE_COUNT 24
 #define FILENAME_LENGTH 8
 #pragma bssseg (push,"DATA")
+/* These variables are used in onefiler mode. They are put in DATA segment
+ * instead of BSS to keep them from being zero-initialized.
+ */
 static struct Movie {
     char filename[FILE_COUNT][FILENAME_LENGTH];
     unsigned int duration[FILE_COUNT];
