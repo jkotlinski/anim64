@@ -30,8 +30,7 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $5ffc - $5fff: onefiler marker ("play" or not?)
- * $6000 - $7fff: rle buffer
+/* $6000 - $7fff: rle buffer
  * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: color 0-3
  * $a000 - $afff: screen 4-7, + border/screen color
@@ -49,12 +48,13 @@ static struct Movie {
     unsigned char speed[FILE_COUNT];
     unsigned char* start[FILE_COUNT];
 } movie;
+static char is_onefiler_marker[4];
 #pragma bssseg (pop)
 
-static const char onefiler_marker[4] = { 'c', 'h', 'a', 'r' };
+static const char onefiler_magic[4] = { 'p', 'l', 'a', 'y' };
 
 char is_onefiler() {
-    return !memcmp((char*)0x5ffc, onefiler_marker, sizeof(onefiler_marker));
+    return !memcmp(is_onefiler_marker, onefiler_magic, sizeof(onefiler_magic));
 }
 
 static char selected_file;
@@ -291,14 +291,14 @@ static void load_music() {
 
 static void save_onefiler() {
     FILE* f = prompt_open("demo", "w");
-    memcpy((char*)0x5ffc, onefiler_marker, sizeof(onefiler_marker));
+    memcpy(is_onefiler_marker, onefiler_magic, sizeof(onefiler_magic));
     // Writes load address.
     fputc(1, f);
     fputc(8, f);
     // Saves $801 - $7fff.
     fwrite((char*)0x801, 0x7fff - 0x801, 1, f);
     fclose(f);
-    *(char*)0x5ffc = 0;
+    *is_onefiler_marker = 0;
 }
 
 static char handle_key(unsigned char key) {
