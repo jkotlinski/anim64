@@ -206,7 +206,11 @@ static void save_anim() {
         unsigned int file_size;
         file_size = rle_pack(RLE_BUFFER, VIDEO_BASE, SAVE_SIZE);
         fwrite(RLE_BUFFER, file_size, 1, f);
-        fclose(f);
+        if (EOF == fclose(f)) {
+            textcolor(COLOR_RED);
+            puts("disk full?");
+            cgetc();
+        }
     }
     switch_to_gfx_screen();
     invalidate_packed_anims();
