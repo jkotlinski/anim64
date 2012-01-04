@@ -299,14 +299,21 @@ static void load_music() {
 
 static void save_onefiler() {
     FILE* f = prompt_open("demo", "w");
+    if (f == NULL) {
+        return;
+    }
     memcpy(is_onefiler_marker, onefiler_magic, sizeof(onefiler_magic));
     // Writes load address.
     fputc(1, f);
     fputc(8, f);
     // Saves $801 - $7fff.
     fwrite((char*)0x801, 0x7fff - 0x801, 1, f);
-    fclose(f);
     *is_onefiler_marker = 0;
+    if (EOF == fclose(f)) {
+        textcolor(COLOR_RED);
+        puts("disk full?");
+        cgetc();
+    }
 }
 
 static char handle_key(unsigned char key) {
