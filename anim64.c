@@ -41,9 +41,14 @@ static char color = 1;
 #define BG_OFFSET (40 * 25 + 1)
 #define END_FRAME (40 * 25 + 2)
 #define SAVE_SIZE (0x400 * 7 + 40 * 25)
-#define RLE_BUFFER (unsigned char*)0x6000u
+
+/* The following two are defined by the linker. */
+extern unsigned char _RODATA_RUN__;
+extern unsigned char _RODATA_SIZE__;
+#define RLE_BUFFER (unsigned char*)((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__)
+
 char* screen_base = VIDEO_BASE;
-/* $6000 - $7fff: rle buffer
+/* RODATA - $7fff: rle buffer
  * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
  * $a000 - $cfff: unused
