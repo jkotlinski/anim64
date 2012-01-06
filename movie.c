@@ -30,7 +30,7 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $6000 - $7fff: rle buffer
+/* RAM end - $7fff: rle buffer
  * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: color 0-3
  * $a000 - $afff: screen 4-7, + border/screen color
@@ -212,11 +212,9 @@ void invalidate_packed_anims() {
 }
 
 /* The following two are defined by the linker. */
-extern unsigned char _RODATA_RUN__;
-extern unsigned char _RODATA_SIZE__;
-extern unsigned char _STACKSIZE__;
-// #define RLE_BUFFER (unsigned char*)(((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__) + ((unsigned)&_STACKSIZE__))
-#define RLE_BUFFER (unsigned char*)(0x6000)
+extern unsigned char _RAM_START__;
+extern unsigned char _RAM_SIZE__;
+#define RLE_BUFFER (unsigned char*)(((unsigned)&_RAM_START__) + ((unsigned)&_RAM_SIZE__))
 
 /* Packs the different anims into RLE buffer. */
 void pack_anims() {
