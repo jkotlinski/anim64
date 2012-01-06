@@ -20,18 +20,19 @@ THE SOFTWARE. */
 
 #include "effects.h"
 
-#define FX_FLASH 1
-
-void flash_colors() {
-    char* ptr = (char*)0xd800u;
-    while (ptr != (char*)(0xd800u + 40 * 25)) {
-        ++*ptr;
+static void flash_colors() {
+    static char flash_color;
+    unsigned char* ptr = (unsigned char*)0xd800u;
+    while (ptr != (unsigned char*)(0xd800u + 40 * 25)) {
+        *ptr = flash_color;
         ++ptr;
     }
+    ++flash_color;
 }
 
 void effect_tick(unsigned char anim_screen) {
     char* fx = (char*)(0x8000u + 0x400u * anim_screen + EFFECT_OFFSET);
+    /* char fx_param = *(char*)(0x8000u + 0x400u * anim_screen + EFFECT_PARAM_OFFSET); */
     switch (*fx) {
         case FX_FLASH:
             flash_colors();
