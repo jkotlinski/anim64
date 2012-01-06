@@ -25,6 +25,7 @@ THE SOFTWARE. */
 #include <time.h>
 
 #include "disk.h"
+#include "effects.h"
 #include "movie.h"
 #include "music.h"
 #include "rle.h"
@@ -40,7 +41,6 @@ static char color = 1;
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
 #define END_FRAME (40 * 25 + 2)
-#define EFFECT (40 * 25 + 3)
 #define SAVE_SIZE (0x400 * 7 + 40 * 25)
 
 /* The following two are defined by the linker. */
@@ -312,7 +312,8 @@ static void handle_key(char key) {
             break;
 
         case 0x13:  // HOME
-            ++*(VIDEO_BASE + EFFECT);
+            ++*(VIDEO_BASE + EFFECT_OFFSET);
+            *(VIDEO_BASE + EFFECT_OFFSET) %= EFFECT_COUNT;
             break;
         /* case 0x93:  // CLR (shift + HOME)
             break; */
