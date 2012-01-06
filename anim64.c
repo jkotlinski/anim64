@@ -47,10 +47,11 @@ static char color = 1;
 extern unsigned char _RODATA_RUN__;
 extern unsigned char _RODATA_SIZE__;
 extern unsigned char _STACKSIZE__;
-#define RLE_BUFFER (unsigned char*)(((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__) + ((unsigned)&_STACKSIZE__))
+// #define RLE_BUFFER (unsigned char*)(((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__) + ((unsigned)&_STACKSIZE__))
+#define RLE_BUFFER (unsigned char*)(0x6000)
 
 char* screen_base = VIDEO_BASE;
-/* RODATA - $7fff: rle buffer
+/* $6000 - $7fff: rle buffer
  * $8000 - $8fff: screen 0-3, + border/screen color
  * $9000 - $9fff: colors 0-3
  * $a000 - $cfff: unused
