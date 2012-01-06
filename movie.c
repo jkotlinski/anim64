@@ -214,7 +214,8 @@ void invalidate_packed_anims() {
 /* The following two are defined by the linker. */
 extern unsigned char _RODATA_RUN__;
 extern unsigned char _RODATA_SIZE__;
-#define RLE_BUFFER (unsigned char*)((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__)
+extern unsigned char _STACKSIZE__;
+#define RLE_BUFFER (unsigned char*)(((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__) + ((unsigned)&_STACKSIZE__))
 
 /* Packs the different anims into RLE buffer. */
 void pack_anims() {
@@ -234,7 +235,7 @@ void pack_anims() {
             continue;
         }
         movie.start[anim_it] = rle_ptr;
-        rle_ptr += fread(rle_ptr, 1, 0x2000, f);
+        rle_ptr += fread(rle_ptr, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
         fclose(f);
     }
     packed_anims_valid = 1;

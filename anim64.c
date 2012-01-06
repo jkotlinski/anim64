@@ -46,7 +46,8 @@ static char color = 1;
 /* The following two are defined by the linker. */
 extern unsigned char _RODATA_RUN__;
 extern unsigned char _RODATA_SIZE__;
-#define RLE_BUFFER (unsigned char*)((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__)
+extern unsigned char _STACKSIZE__;
+#define RLE_BUFFER (unsigned char*)(((unsigned)&_RODATA_RUN__) + ((unsigned)&_RODATA_SIZE__) + ((unsigned)&_STACKSIZE__))
 
 char* screen_base = VIDEO_BASE;
 /* RODATA - $7fff: rle buffer
@@ -191,7 +192,7 @@ static void load_anim() {
     switch_to_console_screen();
     f = prompt_open("load", "r");
     if (f) {
-        fread(RLE_BUFFER, 1, 0x2000, f);
+        fread(RLE_BUFFER, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
         fclose(f);
         rle_unpack(VIDEO_BASE, RLE_BUFFER);
         curr_screen = 0;
