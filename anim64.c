@@ -40,6 +40,7 @@ static char color = 1;
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
 #define END_FRAME (40 * 25 + 2)
+#define EFFECT (40 * 25 + 3)
 #define SAVE_SIZE (0x400 * 7 + 40 * 25)
 
 /* The following two are defined by the linker. */
@@ -309,6 +310,12 @@ static void handle_key(char key) {
             exit_play();
             update_screen_base();
             break;
+
+        case 0x13:  // HOME
+            ++*(VIDEO_BASE + EFFECT);
+            break;
+        /* case 0x93:  // CLR (shift + HOME)
+            break; */
 
         case CH_F1: load_anim(); break;
         case CH_F2: invalidate_packed_anims(); save_anim(); break;
