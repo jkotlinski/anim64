@@ -23,10 +23,11 @@ THE SOFTWARE. */
 
 #define EFFECT_OFFSET (40 * 25 + 3)
 #define EFFECT_PARAM_OFFSET (40 * 25 + 4)
-#define EFFECT_COUNT 2  /* effect 0 = off */
+#define EFFECT_COUNT 3  /* effect 0 = off */
 
 #define FX_OFF 0
 #define FX_FLASH 1
+#define FX_SHAKE_X 2
 
 void effect_tick(char anim_screen);  /* Called once in a while (max once per frame). */
 

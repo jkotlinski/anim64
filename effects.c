@@ -30,12 +30,24 @@ static void flash_colors() {
     ++flash_color;
 }
 
+static void shake_x() {
+    unsigned int i = 0;
+    while (++i < 200) {
+        static unsigned char mod;
+        *(char*)0xd016u = (*(char*)0xd016u & ~3) | (mod & 3);
+        mod += *(char*)0xd012u;
+    }
+}
+
 void effect_tick(unsigned char anim_screen) {
     char* fx = (char*)(0x8000u + 0x400u * anim_screen + EFFECT_OFFSET);
     /* char fx_param = *(char*)(0x8000u + 0x400u * anim_screen + EFFECT_PARAM_OFFSET); */
     switch (*fx) {
         case FX_FLASH:
             flash_colors();
+            break;
+        case FX_SHAKE_X:
+            shake_x();
             break;
         default:
             // Do nothing.
