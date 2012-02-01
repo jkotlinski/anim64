@@ -221,12 +221,14 @@ unsigned char copy_screen = -1;
 void paste_screen() {
     if (copy_screen > 3) return;
     remember_colors();
+    // Characters. Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
     memcpy(VIDEO_BASE + 0x400 * curr_screen,
             VIDEO_BASE + 0x400 * copy_screen,
-            0x400);
+            END_FRAME);
+    // Colors.
     memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen,
             VIDEO_BASE + 0x1000 + 0x400 * copy_screen,
-            0x400);
+            40 * 25);
     update_screen_base();
 }
 
