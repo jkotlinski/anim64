@@ -291,7 +291,10 @@ static void load_music() {
 
 #define MUSIC_START ((char*)0x1000)
 #define MUSIC_STOP ((char*)0x2800)
-    fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
+    if ((char)fgetc(f) == (char)MUSIC_START &&
+            (char)fgetc(f) == ((char)((int)MUSIC_START >> 8))) {
+        fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
+    }
     fclose(f);
 
     show_screen();
