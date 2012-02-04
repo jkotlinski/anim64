@@ -18,6 +18,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
+// #include <assert.h>
 #include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -235,6 +236,7 @@ void pack_anims() {
         }
         movie.start[anim_it] = rle_ptr;
         rle_ptr += fread(rle_ptr, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
+        // assert((unsigned int)rle_ptr <= 0x8000u);
         fclose(f);
     }
     packed_anims_valid = 1;
@@ -375,7 +377,9 @@ static char handle_key(unsigned char key) {
             run_anims(selected_file);
             break;
         case CH_F7:  // Go to animation editor.
-                      return 1;
+            pack_anims();
+            unpack_anim(selected_file, 0);
+            return 1;
     }
     return 0;
 }
