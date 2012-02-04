@@ -61,6 +61,37 @@ char is_onefiler() {
 }
 
 static char selected_file;
+
+static void read_filename() {
+    char* ptr = movie.filename[selected_file];
+    char chars = 7;
+    while (chars-- > 0) {
+        unsigned char c = cgetc();
+        if (c == CH_ENTER) {
+            break;
+        }
+        cputc(c);
+        *ptr = c;
+        ++ptr;
+    }
+    *ptr = 0;
+}
+
+static unsigned int read_digits(unsigned digits) {
+    unsigned int number = 0;
+    while (digits > 0) {
+        char c = cgetc();
+        if (c >= '0' && c <= '9') {
+            cputc(c);
+            number *= 10;
+            number += c - '0';
+        } else if (c == CH_ENTER) {
+            break;
+        }
+    }
+    return number;
+}
+
 /* 0 = file name
  * 1 = duration
  * 2 = speed */
@@ -180,21 +211,20 @@ static void edit_field() {
             gotox(0);
             cclear(FILENAME_LENGTH);
             gotox(0);
-            cscanf("%8s", &movie.filename[selected_file]);
+            read_filename();
             break;
         case 1:  // Duration.
             gotox(DURATION_X);
             cclear(5);
             gotox(DURATION_X);
-            cscanf("%5u", &movie.duration[selected_file]);
+            movie.duration[selected_file] = read_digits(5);
             break;
         case 2:  // Speed.
             gotox(SPEED_X);
             cclear(3);
             gotox(SPEED_X);
             {
-                unsigned int x;
-                cscanf("%3u", &x);
+                unsigned int x = read_digits(3);
                 movie.speed[selected_file] = (x & 0xff00u) ? 0xff : x;
             }
             break;
@@ -329,11 +359,6 @@ static void save_onefiler() {
 
 static char handle_key(unsigned char key) {
     switch (key) {
-        default:
-            if (key >= '0' && key <= '9' && selected_column > 0) {
-                edit_field();
-            }
-            break;
         case CH_CURS_DOWN:
             if (selected_file < FILE_COUNT - 1) {
                 ++selected_file;
