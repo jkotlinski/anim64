@@ -301,7 +301,9 @@ static void load_music() {
 }
 
 static void save_onefiler() {
-    FILE* f = prompt_open("demo", "w");
+    FILE* f;
+    _filetype = 'p';  // .prg
+    f = prompt_open("demo", "w");
     if (f == NULL) {
         return;
     }
@@ -317,6 +319,7 @@ static void save_onefiler() {
         puts("disk full?");
         cgetc();
     }
+    _filetype = 'u';  // Switch back to .usr
 }
 
 static char handle_key(unsigned char key) {
