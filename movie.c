@@ -23,6 +23,7 @@ THE SOFTWARE. */
 #include <stdlib.h>
 #include <string.h>
 
+#include "diff.h"
 #include "disk.h"
 #include "music.h"
 #include "rle.h"
@@ -278,10 +279,12 @@ void pack_anims() {
 // Returns 1 if load succeeded, otherwise 0.
 static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen) {
     const unsigned char* rle_data = movie.start[file_it];
+    unsigned char* screen_base = (alt_screen ? 0xa000u : 0x8000u);
     if (rle_data == NULL) {
         return 0;
     }
-    rle_unpack((unsigned char*)(alt_screen ? 0xa000u : 0x8000u), rle_data);
+    rle_unpack(screen_base, rle_data);
+    undiff(screen_base);
     return 1;
 }
 
