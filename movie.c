@@ -279,7 +279,7 @@ void pack_anims() {
 // Returns 1 if load succeeded, otherwise 0.
 static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen) {
     const unsigned char* rle_data = movie.start[file_it];
-    unsigned char* screen_base = (alt_screen ? 0xa000u : 0x8000u);
+    unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
     if (rle_data == NULL) {
         return 0;
     }
