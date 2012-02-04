@@ -165,6 +165,12 @@ static void init() {
     inited = 1;
 }
 
+static char packed_anims_valid;
+
+void invalidate_packed_anims() {
+    packed_anims_valid = 0;
+}
+
 static void edit_field() {
     gotoy(selected_file + 1);
     revers(1);
@@ -195,6 +201,7 @@ static void edit_field() {
             break;
     }
     draw_fields();
+    invalidate_packed_anims();
 }
 
 static unsigned int skip_music_frames(unsigned char file) {
@@ -204,12 +211,6 @@ static unsigned int skip_music_frames(unsigned char file) {
         frames += movie.duration[file];
     }
     return frames;
-}
-
-static char packed_anims_valid;
-
-void invalidate_packed_anims() {
-    packed_anims_valid = 0;
 }
 
 /* The following two are defined by the linker. */
