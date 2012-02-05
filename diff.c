@@ -27,8 +27,7 @@ static void xor_prev(unsigned char* screen_ptr) {
     unsigned int offset = 0;
     unsigned char* prev_ptr = screen_ptr - 0x400;
     while (offset < 40 * 25) {
-        unsigned char a = *prev_ptr;
-        *screen_ptr ^= a;
+        *screen_ptr ^= *prev_ptr;
         ++screen_ptr;
         ++prev_ptr;
         ++offset;
@@ -50,6 +49,7 @@ static void pack_color_nibbles(unsigned char* colorscreen_base) {
     }
 }
 
+// TODO: Write in assembly.
 static void unpack_color_nibbles(unsigned char* colorscreen_base) {
     unsigned char screen_it = 3;
     unsigned char* src = colorscreen_base + 4 * 40 * 25 / 2;
@@ -77,6 +77,7 @@ void diff(unsigned char* screen_base) {
     pack_color_nibbles(screen_base + 0x1000);
 }
 
+// TODO: Write in assembly.
 void undiff(unsigned char* screen_base) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
