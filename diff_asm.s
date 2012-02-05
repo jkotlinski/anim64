@@ -35,27 +35,29 @@ _xor_prev:
     stx rd + 2
     stx wr + 2
 
+    ; prev_ptr = screen_ptr - 0x400
+    ; also, keep screen_ptr MSB in x
     txa
     dex
     dex
     dex
     dex
     stx or + 2
-    tax
+    tax 
 
 loop:
-rd: lda $8400
-or: eor $8000
-wr: sta $8400
+rd: lda $8400  ; a = *screen_ptr
+or: eor $8000  ; a ^= *prev_ptr
+wr: sta $8400  ; *screen_ptr = a
 
-    inc rd + 1
+    inc rd + 1  ; ++screen_ptr
     inc wr + 1
-    inc or + 1
+    inc or + 1  ; ++prev_ptr
     bne loop
     inc rd + 2
     inc wr + 2
     inc or + 2
     txa
-    cmp or + 2
+    cmp or + 2  ; Has prev_ptr reached original screen_ptr?
     bne loop
-    rts
+    rts         ; Yes - done!
