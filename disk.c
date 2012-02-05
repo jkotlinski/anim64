@@ -30,12 +30,14 @@ FILE* prompt_open(const char* prompt, const char* mode) {
     for (;;) {
         FILE* f;
         char path[32];
-        printf("\n%s>", prompt);
+        cputc('\n');
+        cputs(prompt);
+        cputc('>');
         gets(path);
         if (!*path) return NULL;
         f = fopen(path, mode);
         if (f) return f;
-        printf("err");
+        cputs("err");
     }
 }
 

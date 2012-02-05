@@ -120,6 +120,25 @@ static void draw_headers() {
     cputs("spd");
 }
 
+static void print_digits(unsigned int number, char digits) {
+    char buf[5];
+    char it;
+    char filler = ' ';
+    for (it = 0; it < digits; ++it) {
+        buf[it] = number % 10;
+        number /= 10;
+    }
+    while (digits--) {
+        char digit = buf[digits];
+        if (digit || !digits) {
+            cputc('0' + digit);
+            filler = '0';
+        } else {
+            cputc(filler);
+        }
+    }
+}
+
 static void draw_row(unsigned char row) {
     const char y = row + 1;
     const unsigned int offs = y * 40;
@@ -137,14 +156,14 @@ static void draw_row(unsigned char row) {
     // Prints duration.
     update_color(1, row);
     gotox(DURATION_X);
-    cprintf("%5u", movie.duration[row]);
+    print_digits(movie.duration[row], 5);
     revers(0);
     cclear(1);
     revers(1);
     // Prints speed.
     update_color(2, row);
     gotox(SPEED_X);
-    cprintf("%3i", movie.speed[row]);
+    print_digits(movie.speed[row], 3);
     revers(0);
 }
 
@@ -394,7 +413,7 @@ static char handle_key(unsigned char key) {
         case CH_F1: load_movie(); break;
         case CH_F2:
             gotoxy(20, 0);
-            printf("save...");
+            cputs("save...");
             save_movie();
             break;
         case CH_F3: load_music(); break;
