@@ -43,7 +43,7 @@ static char color = 1;
 #define BG_OFFSET (40 * 25 + 1)
 #define END_FRAME (40 * 25 + 2)
 #define VERSION (40 * 25 + 3)
-#define SAVE_SIZE (0x400 * 7 + 40 * 25)
+#define SAVE_SIZE (0x400 * 4 + 4 * 40 * 25 / 2)
 
 /* The following two are defined by the linker. */
 extern unsigned char _RAM_START__;

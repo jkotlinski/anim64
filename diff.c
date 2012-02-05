@@ -35,6 +35,35 @@ static void xor_prev(unsigned char* screen_ptr) {
     }
 }
 
+static void pack_color_nibbles(unsigned char* colorscreen_base) {
+    unsigned char screen_it;
+    unsigned char* dst = colorscreen_base;
+    for (screen_it = 0; screen_it < 4; ++screen_it) {
+        unsigned char* src = colorscreen_base + screen_it * 0x400;
+        unsigned int i = 0;
+        while (i < (40 * 25) / 2) {
+            *dst++ = (*src++ << 4) | *src++;
+            ++i;
+        }
+    }
+}
+
+static void unpack_color_nibbles(unsigned char* colorscreen_base) {
+    unsigned char screen_it = 3;
+    unsigned char* src = colorscreen_base + 4 * 40 * 25 / 2;
+    while (1) {
+        unsigned char* dst = colorscreen_base + screen_it * 0x400 + 40 * 25;
+        unsigned int i = 0;
+        while (i < (40 * 25) / 2) {
+            const unsigned char val = *--src;
+            *--dst = val & 0xf;
+            *--dst = val >> 4;
+            ++i;
+        }
+        if (!screen_it--) break;
+    }
+}
+
 void diff(unsigned char* screen_base) {
     unsigned char screen_it = screen_base[END_FRAME];
     while (screen_it) {
@@ -43,12 +72,14 @@ void diff(unsigned char* screen_base) {
         xor_prev(screen_ptr + 0x1000);  // Colors.
         --screen_it;
     }
+    pack_color_nibbles(screen_base + 0x1000);
 }
 
 void undiff(unsigned char* screen_base) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
     if (screen_base[VERSION] != 1) return;
+    unpack_color_nibbles(screen_base + 0x1000);
     while (screen_it <= end_frame) {
         unsigned char* screen_ptr = screen_base + screen_it * 0x400;
         xor_prev(screen_ptr);  // Characters.
