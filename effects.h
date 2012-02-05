@@ -21,8 +21,8 @@ THE SOFTWARE. */
 #ifndef EFFECTS_H_
 #define EFFECTS_H_
 
-#define EFFECT_OFFSET (40 * 25 + 3)
-#define EFFECT_PARAM_OFFSET (40 * 25 + 4)
+#define EFFECT_OFFSET (40 * 25 + 4)
+#define EFFECT_PARAM_OFFSET (40 * 25 + 5)
 #define EFFECT_COUNT 3  /* effect 0 = off */
 
 #define FX_OFF 0
