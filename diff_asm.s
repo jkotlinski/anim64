@@ -40,7 +40,7 @@ _xor_prev:
     dex
     dex
     dex
-	stx or + 2
+    stx or + 2
     tax
 
 loop:
