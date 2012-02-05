@@ -35,6 +35,8 @@ static void xor_prev(unsigned char* screen_ptr) {
     }
 }
 
+#pragma codeseg("LOWCODE")  // Just to make RAM segment smaller.
+
 static void pack_color_nibbles(unsigned char* colorscreen_base) {
     unsigned char screen_it;
     unsigned char* dst = colorscreen_base;
