@@ -22,24 +22,11 @@ THE SOFTWARE. */
 
 #define END_FRAME (40 * 25 + 2)
 
-static void sub_prev(unsigned char* screen_ptr) {
+static void xor_prev(unsigned char* screen_ptr) {
     unsigned int offset = 0;
     unsigned char* prev_ptr = screen_ptr - 0x400;
     while (offset < 40 * 25) {
-        *screen_ptr -= *prev_ptr;
-        ++screen_ptr;
-        ++prev_ptr;
-        ++offset;
-    }
-}
-
-static void add_prev(unsigned char* screen_ptr) {
-    unsigned int offset = 0;
-    unsigned char* prev_ptr = screen_ptr - 0x400;
-    while (offset < 40 * 25) {
-        *screen_ptr += *prev_ptr;
-        ++screen_ptr;
-        ++prev_ptr;
+        *screen_ptr++ ^= *prev_ptr++;
         ++offset;
     }
 }
@@ -47,8 +34,9 @@ static void add_prev(unsigned char* screen_ptr) {
 void diff(unsigned char* screen_base) {
     unsigned char screen_it = screen_base[END_FRAME];
     while (screen_it) {
-        sub_prev(screen_base + screen_it * 0x400);  // Characters.
-        sub_prev(screen_base + 0x1000 + screen_it * 0x400);  // Colors.
+        unsigned char* screen_ptr = screen_base + screen_it * 0x400;
+        xor_prev(screen_ptr);  // Characters.
+        xor_prev(screen_ptr + 0x1000);  // Colors.
         --screen_it;
     }
 }
@@ -57,8 +45,9 @@ void undiff(unsigned char* screen_base) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
     while (screen_it <= end_frame) {
-        add_prev(screen_base + screen_it * 0x400);  // Characters.
-        add_prev(screen_base + 0x1000 + screen_it * 0x400);  // Colors.
+        unsigned char* screen_ptr = screen_base + screen_it * 0x400;
+        xor_prev(screen_ptr);  // Characters.
+        xor_prev(screen_ptr + 0x1000);  // Colors.
         ++screen_it;
     }
 }
