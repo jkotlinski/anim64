@@ -42,6 +42,7 @@ static char color = 1;
 #define BORDER_OFFSET (40 * 25)
 #define BG_OFFSET (40 * 25 + 1)
 #define END_FRAME (40 * 25 + 2)
+#define VERSION (40 * 25 + 3)
 #define SAVE_SIZE (0x400 * 7 + 40 * 25)
 
 /* The following two are defined by the linker. */
@@ -207,6 +208,7 @@ static void save_anim() {
     f = prompt_open("save", "w");
     if (f) {
         unsigned int file_size;
+        VIDEO_BASE[VERSION] = 1;
         diff(VIDEO_BASE);
         file_size = rle_pack(RLE_BUFFER, VIDEO_BASE, SAVE_SIZE);
         fwrite(RLE_BUFFER, file_size, 1, f);

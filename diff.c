@@ -21,12 +21,16 @@ THE SOFTWARE. */
 #include "diff.h"
 
 #define END_FRAME (40 * 25 + 2)
+#define VERSION (40 * 25 + 3)
 
 static void xor_prev(unsigned char* screen_ptr) {
     unsigned int offset = 0;
     unsigned char* prev_ptr = screen_ptr - 0x400;
     while (offset < 40 * 25) {
-        *screen_ptr++ ^= *prev_ptr++;
+        unsigned char a = *prev_ptr;
+        *screen_ptr ^= a;
+        ++screen_ptr;
+        ++prev_ptr;
         ++offset;
     }
 }
@@ -44,6 +48,7 @@ void diff(unsigned char* screen_base) {
 void undiff(unsigned char* screen_base) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
+    if (screen_base[VERSION] != 1) return;
     while (screen_it <= end_frame) {
         unsigned char* screen_ptr = screen_base + screen_it * 0x400;
         xor_prev(screen_ptr);  // Characters.
