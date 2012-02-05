@@ -232,6 +232,7 @@ static void edit_field() {
             cclear(FILENAME_LENGTH);
             gotox(0);
             read_filename();
+            invalidate_packed_anims();
             break;
         case 1:  // Duration.
             gotox(DURATION_X);
@@ -250,7 +251,6 @@ static void edit_field() {
             break;
     }
     draw_fields();
-    invalidate_packed_anims();
 }
 
 static unsigned int skip_music_frames(unsigned char file) {
