@@ -26,6 +26,7 @@ extern char caught_irqs;  // Increased by 1 every VBL.
 extern char anim_screen;  // 0 (normal screen) or 8 (alt screen).
 extern char first_anim_screen;
 extern char last_anim_screen;
+extern volatile char switched_frame;
 
 void irq_handler();
 

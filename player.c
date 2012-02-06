@@ -65,7 +65,9 @@ void play_anim(unsigned char speed, unsigned char alt_screen) {
 
     caught_irqs = 1;
 
+    switched_frame = 0;
     *(char*)0xd01a = 1;  // enable raster interrupts
+    while (!switched_frame);
 }
 
 char wait_anim(unsigned int duration) {

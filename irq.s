@@ -24,6 +24,7 @@
 .export _anim_screen
 .export _first_anim_screen
 .export _last_anim_screen
+.export _switched_frame
 
 _anim_screen: .byte 0
 _first_anim_screen: .byte 0
@@ -31,6 +32,7 @@ _last_anim_screen: .byte 0
 _ticks_per_frame: .byte 0
 frame_delay: .byte 0
 _caught_irqs: .byte 0
+_switched_frame: .byte 0
 
 ; _anim_screen will cycle 0..3 or 8..11.
 anim_next_screen:
@@ -46,6 +48,8 @@ anim_next_screen:
     ; Use graphics bank 2. ($8000-$bfff)
     lda #$15
     sta $dd00
+
+    sta _switched_frame
 
     ; *(char*)0xd020 = base[BORDER_OFFSET];
     ; *(char*)0xd021 = base[BG_OFFSET];
