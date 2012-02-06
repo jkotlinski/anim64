@@ -289,7 +289,7 @@ void pack_anims() {
         fclose(f);
         if ((unsigned int)rle_ptr > 0x8000u) {
             puts("out of mem");
-            return;
+            while (1);
         }
     }
     packed_anims_valid = 1;
