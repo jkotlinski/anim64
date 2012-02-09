@@ -36,8 +36,8 @@ THE SOFTWARE. */
  * $9000 - $9fff: color 0-3
  * $a000 - $afff: screen 4-7, + border/screen color
  * $b000 - $bfff: color 4-7
- * $c000 - $cfff: unused
- * $e000 - $ffff: unused
+ * $c000 - $cfff: rle buffer
+ * $e000 - $ffff: rle buffer
  */
 
 #define FILE_COUNT 24
@@ -110,9 +110,8 @@ static unsigned int skip_music_frames() {
 }
 
 /* The following two are defined by the linker. */
-extern unsigned char _EDITRAM_START__;
-extern unsigned char _EDITRAM_SIZE__;
-#define RLE_BUFFER (unsigned char*)(((unsigned)&_EDITRAM_START__) + ((unsigned)&_EDITRAM_SIZE__))
+extern unsigned char _EDITRAM_LAST__;
+extern unsigned char _RAM_LAST__;
 
 // Returns 1 if load succeeded, otherwise 0.
 static unsigned char unpack_anim(char file_it, unsigned char alt_screen) {
@@ -370,7 +369,7 @@ void load_selected_anim() {
         cputs("err");
         return; 
     }
-    fread(RLE_BUFFER, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
+    fread(&_EDITRAM_LAST__, 1, 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
     fclose(f);
     loaded_anim = selected_file;
 }
@@ -441,7 +440,7 @@ static char handle_key(unsigned char key) {
             break;
         case CH_STOP:
             load_selected_anim();
-            rle_unpack((char*)0xa000u, RLE_BUFFER);
+            rle_unpack((char*)0xa000u, &_EDITRAM_LAST__);
             undiff((char*)0xa000u);
             skip_music_frames();
             init_play();
@@ -452,7 +451,7 @@ static char handle_key(unsigned char key) {
             break;
         case CH_F7:  // Go to animation editor.
             load_selected_anim();
-            rle_unpack((char*)0x8000u, RLE_BUFFER);
+            rle_unpack((char*)0x8000u, &_EDITRAM_LAST__);
             undiff((char*)0x8000u);
             return 1;
     }
@@ -466,7 +465,7 @@ void edit_movie() {
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
             load_selected_anim();
-            rle_unpack((char*)0x8000u, RLE_BUFFER);
+            rle_unpack((char*)0x8000u, &_EDITRAM_LAST__);
             undiff((char*)0x8000u);
             break;
         }

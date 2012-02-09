@@ -46,9 +46,7 @@ static char color = 1;
 #define SAVE_SIZE (0x400 * 4 + 4 * 40 * 25 / 2)
 
 /* The following two are defined by the linker. */
-extern unsigned char _EDITRAM_START__;
-extern unsigned char _EDITRAM_SIZE__;
-#define RLE_BUFFER (unsigned char*)(((unsigned)&_EDITRAM_START__) + ((unsigned)&_EDITRAM_SIZE__))
+extern unsigned char _EDITRAM_LAST__;
 
 char* screen_base = VIDEO_BASE;
 /* RAM end - $7fff: rle buffer
@@ -196,9 +194,9 @@ static void load_anim() {
     switch_to_console_screen();
     f = prompt_open("load", "r");
     if (f) {
-        fread(RLE_BUFFER, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
+        fread(&_EDITRAM_LAST__, 1, 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
         fclose(f);
-        rle_unpack(VIDEO_BASE, RLE_BUFFER);
+        rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
         undiff(VIDEO_BASE);
         curr_screen = 0;
     }
@@ -213,8 +211,8 @@ static void save_anim() {
         unsigned int file_size;
         VIDEO_BASE[VERSION] = 1;
         diff(VIDEO_BASE);
-        file_size = rle_pack(RLE_BUFFER, VIDEO_BASE, SAVE_SIZE);
-        fwrite(RLE_BUFFER, file_size, 1, f);
+        file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        fwrite(&_EDITRAM_LAST__, file_size, 1, f);
         if (EOF == fclose(f)) {
             textcolor(COLOR_RED);
             puts("disk full?");
