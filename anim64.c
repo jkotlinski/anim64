@@ -64,9 +64,6 @@ static void init() {
     bordercolor(0);
     bgcolor(0);
 
-    memset(VIDEO_BASE, 0x20, 0x1000);
-    *(VIDEO_BASE + END_FRAME) = 3;
-    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
     memset((void*)0xd800, 0, 0x400);  // Clear colors for better packing.
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 4;  // Point video to 0x8000.
@@ -357,6 +354,10 @@ static void handle_key(char key) {
 void edit() {
 #define BLINK_PERIOD 30
     int loop = BLINK_PERIOD;
+
+    memset(VIDEO_BASE, 0x20, 0x1000);
+    *(VIDEO_BASE + END_FRAME) = 3;
+    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
 
     // Test.
     // handle_key(CH_F8);
