@@ -42,12 +42,16 @@ THE SOFTWARE. */
 
 #define FILE_COUNT 24
 #define FILENAME_LENGTH 8
+
+#pragma bssseg(push, "EDITCODE")
+char filename[FILE_COUNT][FILENAME_LENGTH];
+#pragma bssseg(pop)
+
 #pragma bssseg (push,"DATA")
 /* These variables are used in onefiler mode. They are put in DATA segment
  * instead of BSS to keep them from being zero-initialized.
  */
 static struct Movie {
-    char filename[FILE_COUNT][FILENAME_LENGTH];
     unsigned int duration[FILE_COUNT];
     unsigned char speed[FILE_COUNT];
     unsigned char* start[FILE_COUNT];
@@ -78,15 +82,17 @@ static const char* MOVIE_FILE = ".movie";
 static void load_movie() {
     FILE* f = fopen(MOVIE_FILE, "r");
     if (!f) return;
+    fread(&filename, sizeof(filename), 1, f);
     fread(&movie, sizeof(movie), 1, f);
     fclose(f);
 }
 
 static void save_movie() {
     FILE* f = fopen(MOVIE_FILE, "w");
-    if (!f || !fwrite(&movie, sizeof(movie), 1, f)) {
+    if (!f || !fwrite(&filename, sizeof(filename), 1, f)) {
         puts("err");
     } else {
+        fwrite(&movie, sizeof(movie), 1, f);
         puts("ok");
     }
     fclose(f);
@@ -162,7 +168,7 @@ static void load_music() {
 #pragma codeseg("EDITCODE")
 
 static void read_filename() {
-    char* ptr = movie.filename[selected_file];
+    char* ptr = filename[selected_file];
     char chars = 7;
     while (chars-- > 0) {
         unsigned char c = cgetc();
@@ -236,7 +242,7 @@ static void draw_row(unsigned char row) {
     memset((char*)(0xd800 + offs), color, FILENAME_LENGTH);
     memset((char*)(0x400 + offs), 0xa0, FILENAME_LENGTH);
     gotoxy(0, y);
-    cputs(movie.filename[row]);
+    cputs(filename[row]);
     gotox(DURATION_X - 1);
     revers(0);
     cclear(1);
@@ -280,7 +286,6 @@ static void init() {
     }
     /* Since movie is not in BSS, zero-init filename and speed explicitly. */
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        movie.filename[file_it][0] = '\0';
         movie.duration[file_it] = 100;
         movie.speed[file_it] = 1;
     }
@@ -360,7 +365,7 @@ void pack_anims() {
 void load_selected_anim() {
     FILE* f;
     if (loaded_anim == selected_file) return; 
-    f = fopen(movie.filename[selected_file], "r");
+    f = fopen(filename[selected_file], "r");
     if (!f) {
         cputs("err");
         return; 
