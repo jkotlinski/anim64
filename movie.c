@@ -40,7 +40,7 @@ THE SOFTWARE. */
  * $e000 - $ffff: rle buffer
  */
 
-#define FILE_COUNT 24
+#define FILE_COUNT 16
 #define FILENAME_LENGTH 8
 
 #pragma bssseg(push, "EDITCODE")
@@ -72,6 +72,8 @@ static char selected_column;
 #define SPEED_X (DURATION_X + 6)
 
 static const char* MOVIE_FILE = ".movie";
+
+#pragma codeseg("EDITCODE")
 
 static void load_movie() {
     FILE* f = fopen(MOVIE_FILE, "r");
@@ -106,6 +108,8 @@ static unsigned int skip_music_frames() {
 /* The following two are defined by the linker. */
 extern unsigned char _EDITRAM_LAST__;
 extern unsigned char _RAM_LAST__;
+
+#pragma codeseg("CODE")
 
 // Returns 1 if load succeeded, otherwise 0.
 static unsigned char unpack_anim(char file_it, unsigned char alt_screen) {
@@ -368,8 +372,40 @@ void load_selected_anim() {
     loaded_anim = selected_file;
 }
 
+static unsigned int get_file_length(unsigned char file) {
+    FILE* f;
+    unsigned int length = 0;
+    if (!filename[file][0]) return 0;
+    f = fopen(filename[file], "r");
+    length = fread(&_EDITRAM_LAST__, 1, (char*)0x8000 - &_EDITRAM_LAST__, f);
+    fclose(f);
+    return length;
+}
+
+static char calc_onefiler_starts() {
+    char* heap_start[3] = { 
+        &_RAM_LAST__,  // RAM end - 0x8000 
+        (char*)0xc000u,  // - 0xd000 
+        (char*)0xe000u   // - 0xefff 
+    };
+    static const unsigned char* const heap_end[3] = {
+        (char*)0x8000u, (char*)0xd000u, (char*)0xefffu
+    };
+    unsigned char file_it;
+    memset(movie.start, 0, sizeof(movie.start));
+    for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
+        unsigned int length = get_file_length(file_it);
+        printf("%i %s %#x\n", file_it, filename[file_it], length);
+    }
+    while(1);
+    return 0;
+}
+
 static void save_onefiler() {
     FILE* f;
+    if (!calc_onefiler_starts()) {
+        return;
+    }
     _filetype = 'p';  // .prg
     f = prompt_open("demo", "w");
     if (f == NULL) {
@@ -380,7 +416,7 @@ static void save_onefiler() {
     fputc(8, f);
     // Saves player program code.
     is_onefiler = 1;
-    fwrite((char*)0x801, &_RAM_LAST__ - 0x801, 1, f);
+    fwrite((char*)0x801, &_RAM_LAST__ - (char*)0x801, 1, f);
     if (EOF == fclose(f)) {
         textcolor(COLOR_RED);
         puts("disk full?");
