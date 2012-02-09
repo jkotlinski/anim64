@@ -94,11 +94,11 @@ static void save_movie() {
 
 static char packed_anims_valid;
 
-static unsigned int skip_music_frames(unsigned char file) {
+static unsigned int skip_music_frames() {
     unsigned int frames = 0;
     unsigned char file_it;
-    for (file_it = 0; file_it < file; ++file_it) {
-        frames += movie.duration[file];
+    for (file_it = 0; file_it < selected_file; ++file_it) {
+        frames += movie.duration[file_it];
     }
     return frames;
 }
@@ -122,26 +122,19 @@ static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen
 
 void show_screen();
 
-void run_anims(unsigned char file_it) {
-    unsigned int frameskip_it = skip_music_frames(file_it);
+extern volatile unsigned char caught_irqs;
+
+void play_movie() {
     unsigned int wait_duration = 0;
+    unsigned char file_it = 0;
     unsigned char alt_screen = 0;
     init_music();
-    while (frameskip_it--) {
-        tick_music();
-    }
     init_play();
     for (;;) {
-        if (!unpack_anim(file_it, alt_screen)) {
-            if (file_it == 0) {
-                break;
-            } else {
-                file_it = 0;
-                continue;
-            }
-        }
-        if (wait_anim(wait_duration)) {
-            break;
+        unpack_anim(file_it, alt_screen);
+        while (wait_duration--) {
+            while (!caught_irqs) {}
+            --caught_irqs;
         }
         play_anim(movie.speed[file_it], alt_screen);
         wait_duration = movie.duration[file_it];
@@ -150,12 +143,6 @@ void run_anims(unsigned char file_it) {
         file_it %= FILE_COUNT;
         alt_screen ^= 1;
     }
-    exit_play();
-    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
-    *(char*)0xd018 = 0x14;  // Point video to 0x400.
-    *(char*)0xd020 = 0;
-    *(char*)0xd021 = 0;
-    show_screen();
 }
 
 static void load_music() {
@@ -276,6 +263,10 @@ static void draw_fields() {
 }
 
 static void show_screen() {
+    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
+    *(char*)0xd018 = 0x14;  // Point video to 0x400.
+    *(char*)0xd021 = COLOR_BLACK;
+    memset((char*)0xd800, COLOR_YELLOW, 0x400);
     clrscr();
     draw_headers();
     draw_fields();
@@ -431,7 +422,13 @@ static char handle_key(unsigned char key) {
             break;
         case CH_STOP:
             pack_anims();
-            run_anims(selected_file);
+            unpack_anim(selected_file, 1);
+            skip_music_frames();
+            init_play();
+            play_anim(32, 1);
+            wait_anim(movie.duration[selected_file]);
+            exit_play();
+            show_screen();
             break;
         case CH_F7:  // Go to animation editor.
             pack_anims();

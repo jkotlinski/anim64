@@ -25,7 +25,7 @@ void edit_movie();
 
 void invalidate_packed_anims();
 
-void run_anims(unsigned char file_it);
+void play_movie();
 
 char is_onefiler();
 

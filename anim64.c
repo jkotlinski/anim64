@@ -315,8 +315,7 @@ static void handle_key(char key) {
             remember_colors();
             init_music();
             init_play();
-#define DELAY 30
-            play_anim(DELAY, 0);
+            play_anim(32, 0);
             wait_anim(65535u);
             exit_play();
             update_screen_base();
@@ -389,7 +388,7 @@ void main() {
     init();
 
     if (is_onefiler()) {
-        run_anims(0);
+        play_movie();
     }
     edit();
 }
