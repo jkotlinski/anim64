@@ -23,7 +23,7 @@ THE SOFTWARE. */
 #include <stdio.h>
 #include <conio.h>
 
-#include "effects.h"
+// #include "effects.h"
 #include "irq.h"
 
 typedef void (*voidFn)(void);

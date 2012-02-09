@@ -26,7 +26,7 @@ THE SOFTWARE. */
 
 #include "diff.h"
 #include "disk.h"
-#include "effects.h"
+// #include "effects.h"
 #include "movie.h"
 #include "music.h"
 #include "rle.h"
@@ -319,10 +319,10 @@ static void handle_key(char key) {
             update_screen_base();
             break;
 
-        case 0x13:  // HOME
+        /* case 0x13:  // HOME
             ++*(VIDEO_BASE + EFFECT_OFFSET);
             *(VIDEO_BASE + EFFECT_OFFSET) %= EFFECT_COUNT;
-            break;
+            break; */
         /* case 0x93:  // CLR (shift + HOME)
             break; */
 
