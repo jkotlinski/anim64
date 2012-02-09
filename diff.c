@@ -25,7 +25,7 @@ THE SOFTWARE. */
 #define END_FRAME (40 * 25 + 2)
 #define VERSION (40 * 25 + 3)
 
-#pragma codeseg("LOWCODE")  // Just to make RAM segment smaller.
+#pragma codeseg("EDITCODE")
 
 static void pack_color_nibbles(unsigned char* colorscreen_base) {
     unsigned char screen_it;
@@ -39,6 +39,19 @@ static void pack_color_nibbles(unsigned char* colorscreen_base) {
         }
     }
 }
+
+void diff(unsigned char* screen_base) {
+    unsigned char screen_it = screen_base[END_FRAME];
+    while (screen_it) {
+        unsigned char* screen_ptr = screen_base + screen_it * 0x400;
+        xor_prev(screen_ptr);  // Characters.
+        xor_prev(screen_ptr + 0x1000);  // Colors.
+        --screen_it;
+    }
+    pack_color_nibbles(screen_base + 0x1000);
+}
+
+#pragma codeseg("LOWCODE")
 
 // TODO: Write in assembly.
 static void unpack_color_nibbles(unsigned char* colorscreen_base) {
@@ -55,17 +68,6 @@ static void unpack_color_nibbles(unsigned char* colorscreen_base) {
         }
         if (!screen_it--) break;
     }
-}
-
-void diff(unsigned char* screen_base) {
-    unsigned char screen_it = screen_base[END_FRAME];
-    while (screen_it) {
-        unsigned char* screen_ptr = screen_base + screen_it * 0x400;
-        xor_prev(screen_ptr);  // Characters.
-        xor_prev(screen_ptr + 0x1000);  // Colors.
-        --screen_it;
-    }
-    pack_color_nibbles(screen_base + 0x1000);
 }
 
 void undiff(unsigned char* screen_base) {

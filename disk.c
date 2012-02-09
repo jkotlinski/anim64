@@ -23,6 +23,8 @@ THE SOFTWARE. */
 #include <c64.h>
 #include <conio.h>
 
+#pragma codeseg("EDITCODE")
+
 FILE* prompt_open(const char* prompt, const char* mode) {
     clrscr();
     gotoxy(0, 0);

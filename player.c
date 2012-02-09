@@ -42,6 +42,8 @@ void init_play() {
     *(voidFn*)0xfffe = irq_handler;  // set irq handler pointer
 }
 
+#pragma codeseg("EDITCODE")
+
 void exit_play() {
     *(char*)0xd01a = 0;  // disable raster interrupts
     caught_irqs = 0;

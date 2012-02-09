@@ -46,9 +46,9 @@ static char color = 1;
 #define SAVE_SIZE (0x400 * 4 + 4 * 40 * 25 / 2)
 
 /* The following two are defined by the linker. */
-extern unsigned char _RAM_START__;
-extern unsigned char _RAM_SIZE__;
-#define RLE_BUFFER (unsigned char*)(((unsigned)&_RAM_START__) + ((unsigned)&_RAM_SIZE__))
+extern unsigned char _EDITRAM_START__;
+extern unsigned char _EDITRAM_SIZE__;
+#define RLE_BUFFER (unsigned char*)(((unsigned)&_EDITRAM_START__) + ((unsigned)&_EDITRAM_SIZE__))
 
 char* screen_base = VIDEO_BASE;
 /* RAM end - $7fff: rle buffer
@@ -73,6 +73,9 @@ static void init() {
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 4;  // Point video to 0x8000.
 }
+
+#pragma codeseg("EDITCODE")
+#pragma rodataseg("EDITCODE")
 
 static char paint_char = 1;
 
@@ -354,17 +357,9 @@ static void handle_key(char key) {
     }
 }
 
-void main() {
+void edit() {
 #define BLINK_PERIOD 30
     int loop = BLINK_PERIOD;
-#if 0
-    while(1) { if (kbhit()) { printf("%x", cgetc()); } }
-#endif
-    init();
-
-    if (is_onefiler()) {
-        run_anims(0);
-    }
 
     // Test.
     // handle_key(CH_F8);
@@ -382,4 +377,19 @@ void main() {
             loop = BLINK_PERIOD;
         }
     }
+}
+
+#pragma codeseg("CODE")
+#pragma rodataseg("CODE")
+
+void main() {
+#if 0
+    while(1) { if (kbhit()) { printf("%x", cgetc()); } }
+#endif
+    init();
+
+    if (is_onefiler()) {
+        run_anims(0);
+    }
+    edit();
 }

@@ -63,6 +63,117 @@ char is_onefiler() {
 
 static char selected_file;
 
+
+/* 0 = file name
+ * 1 = duration
+ * 2 = speed */
+#define MAX_COLUMN 2
+static char selected_column;
+
+#define DURATION_X (FILENAME_LENGTH + 1) 
+#define SPEED_X (DURATION_X + 6)
+
+static const char* MOVIE_FILE = ".movie";
+
+static void load_movie() {
+    FILE* f = fopen(MOVIE_FILE, "r");
+    if (!f) return;
+    fread(&movie, sizeof(movie), 1, f);
+    fclose(f);
+}
+
+static void save_movie() {
+    FILE* f = fopen(MOVIE_FILE, "w");
+    if (!f || !fwrite(&movie, sizeof(movie), 1, f)) {
+        puts("err");
+    } else {
+        puts("ok");
+    }
+    fclose(f);
+}
+
+static char packed_anims_valid;
+
+static unsigned int skip_music_frames(unsigned char file) {
+    unsigned int frames = 0;
+    unsigned char file_it;
+    for (file_it = 0; file_it < file; ++file_it) {
+        frames += movie.duration[file];
+    }
+    return frames;
+}
+
+/* The following two are defined by the linker. */
+extern unsigned char _EDITRAM_START__;
+extern unsigned char _EDITRAM_SIZE__;
+#define RLE_BUFFER (unsigned char*)(((unsigned)&_EDITRAM_START__) + ((unsigned)&_EDITRAM_SIZE__))
+
+// Returns 1 if load succeeded, otherwise 0.
+static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen) {
+    const unsigned char* rle_data = movie.start[file_it];
+    unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
+    if (rle_data == NULL) {
+        return 0;
+    }
+    rle_unpack(screen_base, rle_data);
+    undiff(screen_base);
+    return 1;
+}
+
+void show_screen();
+
+void run_anims(unsigned char file_it) {
+    unsigned int frameskip_it = skip_music_frames(file_it);
+    unsigned int wait_duration = 0;
+    unsigned char alt_screen = 0;
+    init_music();
+    while (frameskip_it--) {
+        tick_music();
+    }
+    init_play();
+    for (;;) {
+        if (!unpack_anim(file_it, alt_screen)) {
+            if (file_it == 0) {
+                break;
+            } else {
+                file_it = 0;
+                continue;
+            }
+        }
+        if (wait_anim(wait_duration)) {
+            break;
+        }
+        play_anim(movie.speed[file_it], alt_screen);
+        wait_duration = movie.duration[file_it];
+
+        ++file_it;
+        file_it %= FILE_COUNT;
+        alt_screen ^= 1;
+    }
+    exit_play();
+    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
+    *(char*)0xd018 = 0x14;  // Point video to 0x400.
+    *(char*)0xd020 = 0;
+    *(char*)0xd021 = 0;
+    show_screen();
+}
+
+static void load_music() {
+    FILE* f = prompt_open("music", "r");
+
+#define MUSIC_START ((char*)0x1000)
+#define MUSIC_STOP ((char*)0x2800)
+    if ((char)fgetc(f) == (char)MUSIC_START &&
+            (char)fgetc(f) == ((char)((int)MUSIC_START >> 8))) {
+        fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
+    }
+    fclose(f);
+
+    show_screen();
+}
+
+#pragma codeseg("EDITCODE")
+
 static void read_filename() {
     char* ptr = movie.filename[selected_file];
     char chars = 7;
@@ -92,16 +203,6 @@ static unsigned int read_digits(unsigned digits) {
     }
     return number;
 }
-
-/* 0 = file name
- * 1 = duration
- * 2 = speed */
-#define MAX_COLUMN 2
-static char selected_column;
-
-#define DURATION_X (FILENAME_LENGTH + 1) 
-#define SPEED_X (DURATION_X + 6)
-
 static unsigned char update_color(unsigned char column, unsigned char row) {
     const unsigned char color = (row != selected_file || column != selected_column)
         ? (row & 1) ? COLOR_GRAY1 : COLOR_GRAY2
@@ -180,25 +281,6 @@ static void show_screen() {
     draw_fields();
 }
 
-static const char* MOVIE_FILE = ".movie";
-
-static void load_movie() {
-    FILE* f = fopen(MOVIE_FILE, "r");
-    if (!f) return;
-    fread(&movie, sizeof(movie), 1, f);
-    fclose(f);
-}
-
-static void save_movie() {
-    FILE* f = fopen(MOVIE_FILE, "w");
-    if (!f || !fwrite(&movie, sizeof(movie), 1, f)) {
-        puts("err");
-    } else {
-        puts("ok");
-    }
-    fclose(f);
-}
-
 static void init() {
     char file_it;
     static char inited;
@@ -209,13 +291,11 @@ static void init() {
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         movie.filename[file_it][0] = '\0';
         movie.duration[file_it] = 100;
-        movie.speed[file_it] = 0;
+        movie.speed[file_it] = 1;
     }
     load_movie();
     inited = 1;
 }
-
-static char packed_anims_valid;
 
 void invalidate_packed_anims() {
     packed_anims_valid = 0;
@@ -246,26 +326,15 @@ static void edit_field() {
             gotox(SPEED_X);
             {
                 unsigned int x = read_digits(3);
-                movie.speed[selected_file] = (x & 0xff00u) ? 0xff : x;
+                if (!x) x = 1;
+                if (x & 0xff00u) x = 0xff;
+                movie.speed[selected_file] = x;
             }
             break;
     }
     draw_fields();
 }
 
-static unsigned int skip_music_frames(unsigned char file) {
-    unsigned int frames = 0;
-    unsigned char file_it;
-    for (file_it = 0; file_it < file; ++file_it) {
-        frames += movie.duration[file];
-    }
-    return frames;
-}
-
-/* The following two are defined by the linker. */
-extern unsigned char _RAM_START__;
-extern unsigned char _RAM_SIZE__;
-#define RLE_BUFFER (unsigned char*)(((unsigned)&_RAM_START__) + ((unsigned)&_RAM_SIZE__))
 
 /* Packs the different anims into RLE buffer. */
 void pack_anims() {
@@ -293,68 +362,6 @@ void pack_anims() {
         }
     }
     packed_anims_valid = 1;
-}
-
-// Returns 1 if load succeeded, otherwise 0.
-static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen) {
-    const unsigned char* rle_data = movie.start[file_it];
-    unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
-    if (rle_data == NULL) {
-        return 0;
-    }
-    rle_unpack(screen_base, rle_data);
-    undiff(screen_base);
-    return 1;
-}
-
-void run_anims(unsigned char file_it) {
-    unsigned int frameskip_it = skip_music_frames(file_it);
-    unsigned int wait_duration = 0;
-    unsigned char alt_screen = 0;
-    init_music();
-    while (frameskip_it--) {
-        tick_music();
-    }
-    init_play();
-    for (;;) {
-        if (!unpack_anim(file_it, alt_screen)) {
-            if (file_it == 0) {
-                break;
-            } else {
-                file_it = 0;
-                continue;
-            }
-        }
-        if (wait_anim(wait_duration)) {
-            break;
-        }
-        play_anim(movie.speed[file_it], alt_screen);
-        wait_duration = movie.duration[file_it];
-
-        ++file_it;
-        file_it %= FILE_COUNT;
-        alt_screen ^= 1;
-    }
-    exit_play();
-    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
-    *(char*)0xd018 = 0x14;  // Point video to 0x400.
-    *(char*)0xd020 = 0;
-    *(char*)0xd021 = 0;
-    show_screen();
-}
-
-static void load_music() {
-    FILE* f = prompt_open("music", "r");
-
-#define MUSIC_START ((char*)0x1000)
-#define MUSIC_STOP ((char*)0x2800)
-    if ((char)fgetc(f) == (char)MUSIC_START &&
-            (char)fgetc(f) == ((char)((int)MUSIC_START >> 8))) {
-        fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
-    }
-    fclose(f);
-
-    show_screen();
 }
 
 static void save_onefiler() {
