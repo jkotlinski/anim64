@@ -385,7 +385,7 @@ void main() {
 #endif
     init();
 
-    if (is_onefiler()) {
+    if (is_onefiler) {
         play_movie();
     }
     edit();

@@ -27,6 +27,6 @@ void invalidate_loaded_anim();
 
 void play_movie();
 
-char is_onefiler();
+extern char is_onefiler;
 
 #endif  /* MOVIE_H_ */

@@ -56,14 +56,8 @@ static struct Movie {
     unsigned char speed[FILE_COUNT];
     unsigned char* start[FILE_COUNT];
 } movie;
-static char is_onefiler_marker[4];
+char is_onefiler;
 #pragma bssseg (pop)
-
-static const char onefiler_magic[4] = { 'p', 'l', 'a', 'y' };
-
-char is_onefiler() {
-    return !memcmp(is_onefiler_marker, onefiler_magic, sizeof(onefiler_magic));
-}
 
 static char selected_file;
 
@@ -280,7 +274,7 @@ static void show_screen() {
 static void init() {
     char file_it;
     static char inited;
-    if (inited || is_onefiler()) {
+    if (inited || is_onefiler) {
         return;
     }
     /* Since movie is not in BSS, zero-init filename and speed explicitly. */
@@ -381,13 +375,12 @@ static void save_onefiler() {
     if (f == NULL) {
         return;
     }
-    memcpy(is_onefiler_marker, onefiler_magic, sizeof(onefiler_magic));
     // Writes load address.
     fputc(1, f);
     fputc(8, f);
-    // Saves $801 - $7fff.
-    fwrite((char*)0x801, 0x7fff - 0x801, 1, f);
-    *is_onefiler_marker = 0;
+    // Saves player program code.
+    is_onefiler = 1;
+    fwrite((char*)0x801, &_RAM_LAST__ - 0x801, 1, f);
     if (EOF == fclose(f)) {
         textcolor(COLOR_RED);
         puts("disk full?");
