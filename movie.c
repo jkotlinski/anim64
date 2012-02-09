@@ -58,8 +58,6 @@ static struct Movie {
 char is_onefiler;
 #pragma bssseg (pop)
 
-const unsigned char* start[FILE_COUNT];
-
 static char selected_file;
 
 
@@ -111,6 +109,8 @@ extern unsigned char _EDITRAM_LAST__;
 extern unsigned char _RAM_LAST__;
 
 #pragma codeseg("CODE")
+
+unsigned char* start[FILE_COUNT];
 
 // Returns 1 if load succeeded, otherwise 0.
 static unsigned char unpack_anim(char file_it, unsigned char alt_screen) {
