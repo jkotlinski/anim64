@@ -92,7 +92,7 @@ static void save_movie() {
     fclose(f);
 }
 
-static char packed_anims_valid;
+static unsigned char loaded_anim = -1;
 
 static unsigned int skip_music_frames() {
     unsigned int frames = 0;
@@ -109,7 +109,7 @@ extern unsigned char _EDITRAM_SIZE__;
 #define RLE_BUFFER (unsigned char*)(((unsigned)&_EDITRAM_START__) + ((unsigned)&_EDITRAM_SIZE__))
 
 // Returns 1 if load succeeded, otherwise 0.
-static unsigned char unpack_anim(unsigned char file_it, unsigned char alt_screen) {
+static unsigned char unpack_anim(char file_it, unsigned char alt_screen) {
     const unsigned char* rle_data = movie.start[file_it];
     unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
     if (rle_data == NULL) {
@@ -288,8 +288,8 @@ static void init() {
     inited = 1;
 }
 
-void invalidate_packed_anims() {
-    packed_anims_valid = 0;
+void invalidate_loaded_anim() {
+    loaded_anim = -1;
 }
 
 static void edit_field() {
@@ -303,7 +303,7 @@ static void edit_field() {
             cclear(FILENAME_LENGTH);
             gotox(0);
             read_filename();
-            invalidate_packed_anims();
+            invalidate_loaded_anim();
             break;
         case 1:  // Duration.
             gotox(DURATION_X);
@@ -328,6 +328,7 @@ static void edit_field() {
 
 
 /* Packs the different anims into RLE buffer. */
+/*
 void pack_anims() {
     unsigned char* rle_ptr = RLE_BUFFER;
     unsigned char anim_it;
@@ -353,6 +354,20 @@ void pack_anims() {
         }
     }
     packed_anims_valid = 1;
+}
+*/
+
+void load_selected_anim() {
+    FILE* f;
+    if (loaded_anim == selected_file) return; 
+    f = fopen(movie.filename[selected_file], "r");
+    if (!f) {
+        cputs("err");
+        return; 
+    }
+    fread(RLE_BUFFER, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
+    fclose(f);
+    loaded_anim = selected_file;
 }
 
 static void save_onefiler() {
@@ -416,23 +431,24 @@ static char handle_key(unsigned char key) {
             break;
         case CH_F3: load_music(); break;
         case CH_F5:
-            pack_anims();
             save_onefiler();
             show_screen();
             break;
         case CH_STOP:
-            pack_anims();
-            unpack_anim(selected_file, 1);
+            load_selected_anim();
+            rle_unpack((char*)0xa000u, RLE_BUFFER);
+            undiff((char*)0xa000u);
             skip_music_frames();
             init_play();
-            play_anim(32, 1);
+            play_anim(movie.speed[selected_file], 1);
             wait_anim(movie.duration[selected_file]);
             exit_play();
             show_screen();
             break;
         case CH_F7:  // Go to animation editor.
-            pack_anims();
-            unpack_anim(selected_file, 0);
+            load_selected_anim();
+            rle_unpack((char*)0x8000u, RLE_BUFFER);
+            undiff((char*)0x8000u);
             return 1;
     }
     return 0;
@@ -444,8 +460,9 @@ void edit_movie() {
 
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
-            pack_anims();
-            unpack_anim(selected_file, 0);
+            load_selected_anim();
+            rle_unpack((char*)0x8000u, RLE_BUFFER);
+            undiff((char*)0x8000u);
             break;
         }
     }

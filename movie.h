@@ -23,7 +23,7 @@ THE SOFTWARE. */
 
 void edit_movie();
 
-void invalidate_packed_anims();
+void invalidate_loaded_anim();
 
 void play_movie();
 
