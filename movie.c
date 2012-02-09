@@ -45,7 +45,6 @@ THE SOFTWARE. */
 
 #pragma bssseg(push, "EDITCODE")
 char filename[FILE_COUNT][FILENAME_LENGTH];
-unsigned int filesize[FILE_COUNT];
 #pragma bssseg(pop)
 
 #pragma bssseg (push,"DATA")
@@ -55,10 +54,11 @@ unsigned int filesize[FILE_COUNT];
 static struct Movie {
     unsigned int duration[FILE_COUNT];
     unsigned char speed[FILE_COUNT];
-    const unsigned char* start[FILE_COUNT];
 } movie;
 char is_onefiler;
 #pragma bssseg (pop)
+
+const unsigned char* start[FILE_COUNT];
 
 static char selected_file;
 
@@ -114,7 +114,7 @@ extern unsigned char _RAM_LAST__;
 
 // Returns 1 if load succeeded, otherwise 0.
 static unsigned char unpack_anim(char file_it, unsigned char alt_screen) {
-    const unsigned char* rle_data = movie.start[file_it];
+    const unsigned char* rle_data = start[file_it];
     unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
     if (rle_data == NULL) {
         return 0;
@@ -329,37 +329,6 @@ static void edit_field() {
     draw_fields();
 }
 
-
-/* Packs the different anims into RLE buffer. */
-/*
-void pack_anims() {
-    unsigned char* rle_ptr = RLE_BUFFER;
-    unsigned char anim_it;
-    if (packed_anims_valid) {
-        return;
-    }
-    for (anim_it = 0; anim_it < FILE_COUNT; ++anim_it) {
-        FILE* f;
-        movie.start[anim_it] = NULL;
-        if (!movie.filename[anim_it][0]) {
-            continue;
-        }
-        f = fopen(movie.filename[anim_it], "r");
-        if (!f) {
-            continue;
-        }
-        movie.start[anim_it] = rle_ptr;
-        rle_ptr += fread(rle_ptr, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
-        fclose(f);
-        if ((unsigned int)rle_ptr > 0x8000u) {
-            puts("out of mem");
-            while (1);
-        }
-    }
-    packed_anims_valid = 1;
-}
-*/
-
 void load_selected_anim() {
     FILE* f;
     if (loaded_anim == selected_file) return; 
@@ -383,34 +352,33 @@ static unsigned int get_file_length(unsigned char file) {
     return length;
 }
 
-static char calc_onefiler_starts() {
+static char write_onefiler_anims(FILE* fout) {
     /* If pushed against the wall, there still is the opportunity to
-     * switch out the kernal.
+     * switch out the kernal and gain access to 0xe000 - 0xffff...
      */
-    unsigned char* heap_start[2] = { 
-        &_RAM_LAST__,  // RAM end - 0x8000 
-        (unsigned char*)0xc000u  // - 0xd000 
-        // (unsigned char*)0xe000u   // - 0xefff 
+    unsigned int heap_start[2] = { 
+        (unsigned int)&_RAM_LAST__,  // RAM end - 0x8000 
+        0xc000u  // - 0xd000 
     };
-    static const unsigned char* const heap_end[2] = {
-        (unsigned char*)0x8000u,
-        (unsigned char*)0xd000u
-        // (unsigned char*)0xffffu
-    };
+    static const unsigned int heap_end[2] = { 0x8000u, 0xd000u };
     unsigned char file_it;
-    memset(movie.start, 0, sizeof(movie.start));
-    memset(filesize, 0, sizeof(filesize));
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         const unsigned int file_length = get_file_length(file_it);
         unsigned char heap_it;
         unsigned char alloc_failed = 1;
-        if (!file_length) continue;
+        if (!file_length) {
+            fputc(0, fout);  // Skip this file.
+            continue;
+        }
         for (heap_it = 0; heap_it < sizeof(heap_start) / sizeof(*heap_start); ++heap_it) {
             if (heap_end[heap_it] - heap_start[heap_it] >= file_length) {
-                movie.start[file_it] = heap_start[heap_it];
+                const unsigned int addr = (int)heap_start[heap_it];
+                // Writes address.
+                fputc(addr >> 8, fout);
+                fputc(addr & 0xffu, fout);
                 heap_start[heap_it] += file_length;
-                filesize[file_it] = file_length;
                 alloc_failed = 0;
+                fwrite(&_EDITRAM_LAST__, file_length, 1, fout);
                 break;
             }
         }
@@ -421,9 +389,6 @@ static char calc_onefiler_starts() {
 
 static void save_onefiler() {
     FILE* f;
-    if (!calc_onefiler_starts()) {
-        return;
-    }
     _filetype = 'p';  // .prg
     f = prompt_open("demo", "w");
     if (f == NULL) {
@@ -435,6 +400,11 @@ static void save_onefiler() {
     // Saves player program code.
     is_onefiler = 1;
     fwrite((char*)0x801, &_RAM_LAST__ - (char*)0x801, 1, f);
+    if (!write_onefiler_anims(f)) {
+        textcolor(COLOR_RED);
+        puts("out of mem");
+        cgetc();
+    }
     if (EOF == fclose(f)) {
         textcolor(COLOR_RED);
         puts("disk full?");
