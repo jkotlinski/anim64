@@ -42,19 +42,6 @@ void init_play() {
     *(voidFn*)0xfffe = irq_handler;  // set irq handler pointer
 }
 
-#pragma codeseg("EDITCODE")
-
-void exit_play() {
-    *(char*)0xd01a = 0;  // disable raster interrupts
-    caught_irqs = 0;
-    *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
-    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
-    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
-    *(char*)0xd418 = 0;  // Mute sound.
-
-    if (kbhit()) cgetc();
-}
-
 // Returns 0 if timed out, 1 if keyboard was pressed.
 void play_anim(unsigned char speed, unsigned char alt_screen) {
     ticks_per_frame = speed;
@@ -70,6 +57,19 @@ void play_anim(unsigned char speed, unsigned char alt_screen) {
     switched_frame = 0;
     *(char*)0xd01a = 1;  // enable raster interrupts
     while (!switched_frame);
+}
+
+#pragma codeseg("EDITCODE")
+
+void exit_play() {
+    *(char*)0xd01a = 0;  // disable raster interrupts
+    caught_irqs = 0;
+    *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
+    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
+    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
+    *(char*)0xd418 = 0;  // Mute sound.
+
+    if (kbhit()) cgetc();
 }
 
 char wait_anim(unsigned int duration) {
