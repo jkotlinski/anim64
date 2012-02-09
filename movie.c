@@ -128,10 +128,24 @@ void show_screen();
 
 extern volatile unsigned char caught_irqs;
 
+void move_files_in_place() {
+    for (;;) {
+        unsigned char* head = &_RAM_LAST__;
+        if (!*head) return;
+        {
+            unsigned char* addr = (unsigned char*)((*head++ << 8) | (*head++ & 0xffu));
+            unsigned int size = (*head++ << 8) | (*head++ & 0xffu);
+            memcpy(addr, head, size);
+            head += size;
+        }
+    }
+}
+
 void play_movie() {
     unsigned int wait_duration = 0;
     unsigned char file_it = 0;
     unsigned char alt_screen = 0;
+    move_files_in_place();
     init_music();
     init_play();
     for (;;) {
@@ -367,15 +381,17 @@ static char write_onefiler_anims(FILE* fout) {
         unsigned char heap_it;
         unsigned char alloc_failed = 1;
         if (!file_length) {
-            fputc(0, fout);  // Skip this file.
             continue;
         }
         for (heap_it = 0; heap_it < sizeof(heap_start) / sizeof(*heap_start); ++heap_it) {
-            if (heap_end[heap_it] - heap_start[heap_it] >= file_length) {
+            if (heap_end[heap_it] - heap_start[heap_it] >= file_length + 4) {
                 const unsigned int addr = (int)heap_start[heap_it];
                 // Writes address.
                 fputc(addr >> 8, fout);
                 fputc(addr & 0xffu, fout);
+                // Writes size.
+                fputc(file_length >> 8, fout);
+                fputc(file_length & 0xff, fout);
                 heap_start[heap_it] += file_length;
                 alloc_failed = 0;
                 fwrite(&_EDITRAM_LAST__, file_length, 1, fout);
@@ -384,6 +400,7 @@ static char write_onefiler_anims(FILE* fout) {
         }
         if (alloc_failed) return 0;
     }
+    fputc(0, fout);
     return 1;
 }
 
