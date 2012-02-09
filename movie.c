@@ -384,15 +384,18 @@ static unsigned int get_file_length(unsigned char file) {
 }
 
 static char calc_onefiler_starts() {
-    unsigned char* heap_start[3] = { 
+    /* If pushed against the wall, there still is the opportunity to
+     * switch out the kernal.
+     */
+    unsigned char* heap_start[2] = { 
         &_RAM_LAST__,  // RAM end - 0x8000 
-        (unsigned char*)0xc000u,  // - 0xd000 
-        (unsigned char*)0xe000u   // - 0xefff 
+        (unsigned char*)0xc000u  // - 0xd000 
+        // (unsigned char*)0xe000u   // - 0xefff 
     };
-    static const unsigned char* const heap_end[3] = {
+    static const unsigned char* const heap_end[2] = {
         (unsigned char*)0x8000u,
-        (unsigned char*)0xd000u,
-        (unsigned char*)0xffffu
+        (unsigned char*)0xd000u
+        // (unsigned char*)0xffffu
     };
     unsigned char file_it;
     memset(movie.start, 0, sizeof(movie.start));
@@ -402,12 +405,11 @@ static char calc_onefiler_starts() {
         unsigned char heap_it;
         unsigned char alloc_failed = 1;
         if (!file_length) continue;
-        for (heap_it = 0; heap_it < 3; ++heap_it) {
+        for (heap_it = 0; heap_it < sizeof(heap_start) / sizeof(*heap_start); ++heap_it) {
             if (heap_end[heap_it] - heap_start[heap_it] >= file_length) {
                 movie.start[file_it] = heap_start[heap_it];
                 heap_start[heap_it] += file_length;
                 filesize[file_it] = file_length;
-                printf("%i %#x\n", file_it, movie.start[file_it]);
                 alloc_failed = 0;
                 break;
             }
@@ -422,7 +424,6 @@ static void save_onefiler() {
     if (!calc_onefiler_starts()) {
         return;
     }
-    while(1);
     _filetype = 'p';  // .prg
     f = prompt_open("demo", "w");
     if (f == NULL) {
