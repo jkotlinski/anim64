@@ -45,6 +45,7 @@ THE SOFTWARE. */
 
 #pragma bssseg(push, "EDITCODE")
 char filename[FILE_COUNT][FILENAME_LENGTH];
+unsigned int filesize[FILE_COUNT];
 #pragma bssseg(pop)
 
 #pragma bssseg (push,"DATA")
@@ -54,7 +55,7 @@ char filename[FILE_COUNT][FILENAME_LENGTH];
 static struct Movie {
     unsigned int duration[FILE_COUNT];
     unsigned char speed[FILE_COUNT];
-    unsigned char* start[FILE_COUNT];
+    const unsigned char* start[FILE_COUNT];
 } movie;
 char is_onefiler;
 #pragma bssseg (pop)
@@ -383,22 +384,37 @@ static unsigned int get_file_length(unsigned char file) {
 }
 
 static char calc_onefiler_starts() {
-    char* heap_start[3] = { 
+    unsigned char* heap_start[3] = { 
         &_RAM_LAST__,  // RAM end - 0x8000 
-        (char*)0xc000u,  // - 0xd000 
-        (char*)0xe000u   // - 0xefff 
+        (unsigned char*)0xc000u,  // - 0xd000 
+        (unsigned char*)0xe000u   // - 0xefff 
     };
     static const unsigned char* const heap_end[3] = {
-        (char*)0x8000u, (char*)0xd000u, (char*)0xefffu
+        (unsigned char*)0x8000u,
+        (unsigned char*)0xd000u,
+        (unsigned char*)0xffffu
     };
     unsigned char file_it;
     memset(movie.start, 0, sizeof(movie.start));
+    memset(filesize, 0, sizeof(filesize));
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        unsigned int length = get_file_length(file_it);
-        printf("%i %s %#x\n", file_it, filename[file_it], length);
+        const unsigned int file_length = get_file_length(file_it);
+        unsigned char heap_it;
+        unsigned char alloc_failed = 1;
+        if (!file_length) continue;
+        for (heap_it = 0; heap_it < 3; ++heap_it) {
+            if (heap_end[heap_it] - heap_start[heap_it] >= file_length) {
+                movie.start[file_it] = heap_start[heap_it];
+                heap_start[heap_it] += file_length;
+                filesize[file_it] = file_length;
+                printf("%i %#x\n", file_it, movie.start[file_it]);
+                alloc_failed = 0;
+                break;
+            }
+        }
+        if (alloc_failed) return 0;
     }
-    while(1);
-    return 0;
+    return 1;
 }
 
 static void save_onefiler() {
@@ -406,6 +422,7 @@ static void save_onefiler() {
     if (!calc_onefiler_starts()) {
         return;
     }
+    while(1);
     _filetype = 'p';  // .prg
     f = prompt_open("demo", "w");
     if (f == NULL) {
