@@ -134,7 +134,7 @@ void move_files_in_place() {
     while (*head) {
         unsigned char* addr = (unsigned char*)((*head++ << 8) | (*head++ & 0xffu));
         unsigned int size = (*head++ << 8) | (*head++ & 0xffu);
-        start[file_it] = addr;
+        start[file_it++] = addr;
         memcpy(addr, head, size);
         head += size;
     }
