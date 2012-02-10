@@ -244,10 +244,10 @@ static void draw_headers() {
     cputs("spd");
 }
 
-static void print_digits(unsigned int number, char digits) {
-    char buf[5];
-    char it;
-    char filler = ' ';
+static void print_digits(unsigned int number, unsigned char digits) {
+    unsigned char buf[5];
+    unsigned char it;
+    unsigned char filler = ' ';
     for (it = 0; it < digits; ++it) {
         buf[it] = number % 10;
         number /= 10;
