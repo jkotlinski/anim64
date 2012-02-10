@@ -134,7 +134,7 @@ _irq_handler:
     tax
     tay
     jsr $1003
- 
+
     ; #define SCX_REG *(char*)0xd016
     ; SCX_REG = (SCX_REG & ~3) | (*(char*)0xd41c >> 6); 
     lda $d41c

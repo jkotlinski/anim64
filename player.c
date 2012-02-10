@@ -54,3 +54,17 @@ void play_anim(unsigned char speed, unsigned char alt_screen) {
     while (!switched_frame);
 }
 
+void blink_vic_from_sid() {
+    const unsigned char freq = *(unsigned char*)0xd41b;
+    const unsigned char amp = *(unsigned char*)0xd41c;
+    if (freq > 0xe0 && amp > 0xe0u) {
+        *(char*)0xd020 = *(char*)0xd41b;
+    } else {
+        *(char*)0xd020 = 0;
+    }
+    if (freq > 0xf8u && amp > 0xf0u) {
+        *(char*)0xd021 = *(char*)0xd41b;
+    } else {
+        *(char*)0xd021 = 0;
+    }
+}

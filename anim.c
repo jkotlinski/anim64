@@ -49,7 +49,9 @@ char wait_anim(unsigned int duration) {
             effect_tick(first_anim_screen);
         }
         */
-        while (!caught_irqs) {}
+        while (!caught_irqs) {
+            blink_vic_from_sid();
+        }
         --caught_irqs;
         // *(char*)0xd020 = 0;
 

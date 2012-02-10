@@ -172,7 +172,9 @@ void play_movie_if_onefiler() {
     for (;;) {
         unpack_anim(file_it, alt_screen);
         while (wait_duration--) {
-            while (!caught_irqs);
+            while (!caught_irqs) {
+                blink_vic_from_sid();
+            }
             --caught_irqs;
         }
         play_anim(movie.speed[file_it], alt_screen);
