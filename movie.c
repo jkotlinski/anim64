@@ -40,7 +40,7 @@ THE SOFTWARE. */
  * $e000 - $ffff: rle buffer
  */
 
-#define FILE_COUNT 16
+#define FILE_COUNT 20
 #define FILENAME_LENGTH 8
 
 #pragma bssseg(push, "EDITCODE")
@@ -371,11 +371,13 @@ static char write_onefiler_anims(FILE* fout) {
      * It would also be possible to let the first heap start from player end,
      * but it seems like there are problems in magic area around 3FFx.
      */
-    unsigned int heap_start[2] = { 
+#define HEAP_COUNT 3
+    unsigned int heap_start[3] = { 
         (unsigned int)HEAP_START,  // RAM end - 0x8000 
-        0xc000u  // - 0xd000 
+        0xc000u,  // - 0xd000 
+        0xe000u  // - 0xffff 
     };
-    static const unsigned int heap_end[2] = { 0x8000u, 0xd000u };
+    static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xffffu };
     unsigned char file_it;
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         const unsigned int file_length = get_file_length(file_it);
