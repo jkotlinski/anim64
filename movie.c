@@ -113,15 +113,10 @@ extern unsigned char _RAM_LAST__;
 unsigned char* start[FILE_COUNT];
 
 // Returns 1 if load succeeded, otherwise 0.
-static unsigned char unpack_anim(char file_it, unsigned char alt_screen) {
-    const unsigned char* rle_data = start[file_it];
+static void unpack_anim(char file_it, unsigned char alt_screen) {
     unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
-    if (rle_data == NULL) {
-        return 0;
-    }
-    rle_unpack(screen_base, rle_data);
+    rle_unpack(screen_base, start[file_it]);
     undiff(screen_base);
-    return 1;
 }
 
 void show_screen();
@@ -158,7 +153,9 @@ void play_movie() {
         wait_duration = movie.duration[file_it];
 
         ++file_it;
-        file_it %= FILE_COUNT;
+        if (file_it == FILE_COUNT || start[file_it] == 0) {
+            file_it = 0;
+        }
         alt_screen ^= 1;
     }
 }
