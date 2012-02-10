@@ -136,15 +136,14 @@ _irq_handler:
     jsr $1003
  
     ; #define SCX_REG *(char*)0xd016
-    ; #define SCY_REG *(char*)0xd011
     ; SCX_REG = (SCX_REG & ~3) | (*(char*)0xd41c >> 6); 
     lda $d41c
-    asl
-    asl
-    asl
-    asl
-    asl
-    asl
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
+    lsr
     sta :+ + 1
     lda $d016
     and #~3
