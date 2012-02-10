@@ -20,9 +20,6 @@ THE SOFTWARE. */
 
 #include "player.h"
 
-#include <stdio.h>
-#include <conio.h>
-
 // #include "effects.h"
 #include "irq.h"
 
@@ -55,46 +52,5 @@ void play_anim(unsigned char speed, unsigned char alt_screen) {
     switched_frame = 0;
     *(char*)0xd01a = 1;  // enable raster interrupts
     while (!switched_frame);
-}
-
-#pragma codeseg("EDITCODE")
-
-void exit_play() {
-    *(char*)0xd01a = 0;  // disable raster interrupts
-    caught_irqs = 0;
-    *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
-    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
-    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
-    *(char*)0xd418 = 0;  // Mute sound.
-
-    if (kbhit()) cgetc();
-}
-
-char wait_anim(unsigned int duration) {
-    char keyboard_state = 0;
-
-    while (duration--) {
-        // Waits until raster screen is right below lower text border.
-        // *(char*)0xd020 = 1;
-        /*
-        if (!caught_irqs) {
-            effect_tick(first_anim_screen);
-        }
-        */
-        while (!caught_irqs) {}
-        --caught_irqs;
-        // *(char*)0xd020 = 0;
-
-        // To exit animation, first all keys should be released, then
-        // some key should be pressed.
-        if (keyboard_state == 0) {
-            if (0xff == *(char*)0xdc01) {  // All keys released?
-                keyboard_state = 1;
-            }
-        } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
-            return 1;
-        }
-    }
-    return 0;
 }
 
