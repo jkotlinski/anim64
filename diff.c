@@ -59,12 +59,11 @@ static void unpack_color_nibbles(unsigned char* colorscreen_base) {
     unsigned char* src = colorscreen_base + 4 * 40 * 25 / 2;
     while (1) {
         unsigned char* dst = colorscreen_base + screen_it * 0x400 + 40 * 25;
-        unsigned int i = 0;
-        while (i < (40 * 25) / 2) {
+        while (1) {
             const unsigned char val = *--src;
             *--dst = val & 0xf;
             *--dst = val >> 4;
-            ++i;
+            if (!((unsigned int)dst & 0x3ffu)) break;
         }
         if (!screen_it--) break;
     }

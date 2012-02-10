@@ -508,9 +508,6 @@ static char handle_key(unsigned char key) {
             show_screen();
             break;
         case CH_F7:  // Go to animation editor.
-            load_selected_anim();
-            rle_unpack((char*)0x8000u, &_EDITRAM_LAST__);
-            undiff((char*)0x8000u);
             return 1;
     }
     return 0;
