@@ -390,8 +390,7 @@ void main() {
 #endif
     init();
 
-    if (is_onefiler) {
-        play_movie();
-    }
+    play_movie_if_onefiler();
+
     edit();
 }

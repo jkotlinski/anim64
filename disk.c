@@ -25,19 +25,19 @@ THE SOFTWARE. */
 
 #pragma codeseg("EDITCODE")
 
+char prompt_path[8];
 FILE* prompt_open(const char* prompt, const char* mode) {
     clrscr();
     gotoxy(0, 0);
     textcolor(COLOR_YELLOW);
     for (;;) {
         FILE* f;
-        char path[32];
         cputc('\n');
         cputs(prompt);
         cputc('>');
-        gets(path);
-        if (!*path) return NULL;
-        f = fopen(path, mode);
+        gets(prompt_path);
+        if (!*prompt_path) return NULL;
+        f = fopen(prompt_path, mode);
         if (f) return f;
         cputs("err");
     }

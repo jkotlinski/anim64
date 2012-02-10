@@ -25,4 +25,6 @@ THE SOFTWARE. */
 
 FILE* prompt_open(const char* prompt, const char* mode);
 
+extern char prompt_path[8];
+
 #endif  /* DISK_H_ */

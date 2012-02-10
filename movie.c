@@ -45,6 +45,7 @@ THE SOFTWARE. */
 
 #pragma bssseg(push, "EDITCODE")
 char filename[FILE_COUNT][FILENAME_LENGTH];
+char music_path[FILENAME_LENGTH];
 #pragma bssseg(pop)
 
 #pragma bssseg (push,"DATA")
@@ -55,7 +56,6 @@ static struct Movie {
     unsigned int duration[FILE_COUNT];
     unsigned char speed[FILE_COUNT];
 } movie;
-char is_onefiler;
 #pragma bssseg (pop)
 
 static char selected_file;
@@ -74,20 +74,38 @@ static const char* MOVIE_FILE = ".movie";
 
 #pragma codeseg("EDITCODE")
 
+static void load_music(FILE* f) {
+#define MUSIC_START ((char*)0x1000)
+#define MUSIC_STOP ((char*)0x2800)
+    if ((char)fgetc(f) == (char)MUSIC_START &&
+            (char)fgetc(f) == ((char)((int)MUSIC_START >> 8))) {
+        fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
+    }
+    fclose(f);
+}
+
 static void load_movie() {
     FILE* f = fopen(MOVIE_FILE, "r");
     if (!f) return;
     fread(&filename, sizeof(filename), 1, f);
     fread(&movie, sizeof(movie), 1, f);
+    fread(&music_path, sizeof(music_path), 1, f);
     fclose(f);
+    if (*music_path) {
+        f = fopen(music_path, "r");
+        load_music(f);
+    }
 }
 
 static void save_movie() {
     FILE* f = fopen(MOVIE_FILE, "w");
+    gotoxy(20, 0);
+    cputs("save...");
     if (!f || !fwrite(&filename, sizeof(filename), 1, f)) {
         puts("err");
     } else {
         fwrite(&movie, sizeof(movie), 1, f);
+        fwrite(music_path, sizeof(music_path), 1, f);
         puts("ok");
     }
     fclose(f);
@@ -137,10 +155,17 @@ void move_files_in_place() {
     }
 }
 
-void play_movie() {
+static char is_onefiler() {
+    return movie.speed[0];
+}
+
+void play_movie_if_onefiler() {
     unsigned int wait_duration = 0;
     unsigned char file_it = 0;
     unsigned char alt_screen = 0;
+    if (!is_onefiler()) {
+        return;
+    }
     move_files_in_place();
     init_music();
     init_play();
@@ -161,21 +186,16 @@ void play_movie() {
     }
 }
 
-static void load_music() {
-    FILE* f = prompt_open("music", "r");
-
-#define MUSIC_START ((char*)0x1000)
-#define MUSIC_STOP ((char*)0x2800)
-    if ((char)fgetc(f) == (char)MUSIC_START &&
-            (char)fgetc(f) == ((char)((int)MUSIC_START >> 8))) {
-        fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
-    }
-    fclose(f);
-
-    show_screen();
-}
-
 #pragma codeseg("EDITCODE")
+
+static void prompt_music() {
+    FILE* f = prompt_open("music", "r");
+    if (f) {
+        strcpy(music_path, prompt_path);
+        load_music(f);
+        show_screen();
+    }
+}
 
 static void read_filename() {
     char* ptr = filename[selected_file];
@@ -291,13 +311,13 @@ static void show_screen() {
 static void init() {
     char file_it;
     static char inited;
-    if (inited || is_onefiler) {
+    if (inited || is_onefiler()) {
         return;
     }
     /* Since movie is not in BSS, zero-init filename and speed explicitly. */
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        movie.duration[file_it] = 100;
-        movie.speed[file_it] = 1;
+        movie.duration[file_it] = 128;
+        movie.speed[file_it] = 32;
     }
     load_movie();
     inited = 1;
@@ -416,7 +436,6 @@ static void save_onefiler() {
     fputc(1, f);
     fputc(8, f);
     // Saves player program code.
-    is_onefiler = 1;
     fwrite((char*)0x801, (unsigned int)HEAP_START - 0x801, 1, f);
     if (HEAP_START < &_RAM_LAST__) {
         // The heap must start after player code ends.
@@ -470,11 +489,9 @@ static char handle_key(unsigned char key) {
             break;
         case CH_F1: load_movie(); break;
         case CH_F2:
-            gotoxy(20, 0);
-            cputs("save...");
             save_movie();
             break;
-        case CH_F3: load_music(); break;
+        case CH_F3: prompt_music(); break;
         case CH_F5:
             save_onefiler();
             show_screen();

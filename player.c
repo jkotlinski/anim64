@@ -52,8 +52,6 @@ void play_anim(unsigned char speed, unsigned char alt_screen) {
         ? 8 + *(char*)(0xa000u + 40 * 25 + 2)
         : *(char*)(0x8000u + 40 * 25 + 2);
 
-    caught_irqs = 1;
-
     switched_frame = 0;
     *(char*)0xd01a = 1;  // enable raster interrupts
     while (!switched_frame);
