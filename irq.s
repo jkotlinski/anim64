@@ -149,7 +149,7 @@ _irq_handler:
     lda $d016
     and #~3
 :   eor #0
-    sta $d41c
+    sta $d016
 
     inc _caught_irqs
 
