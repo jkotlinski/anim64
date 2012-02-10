@@ -107,6 +107,7 @@ static unsigned int skip_music_frames() {
 /* The following two are defined by the linker. */
 extern unsigned char _EDITRAM_LAST__;
 extern unsigned char _RAM_LAST__;
+#define HEAP_START (char*)0x4000u
 
 #pragma codeseg("CODE")
 
@@ -125,7 +126,7 @@ extern volatile unsigned char caught_irqs;
 
 void move_files_in_place() {
     unsigned char file_it = 0;
-    unsigned char* head = &_RAM_LAST__;
+    unsigned char* head = HEAP_START;
     while (*head) {
         unsigned char* addr = (unsigned char*)((*head++ << 8) | (*head++ & 0xffu));
         unsigned int size = (*head++ << 8) | (*head++ & 0xffu);
@@ -366,9 +367,12 @@ static unsigned int get_file_length(unsigned char file) {
 static char write_onefiler_anims(FILE* fout) {
     /* If pushed against the wall, there still is the opportunity to
      * switch out the kernal and gain access to 0xe000 - 0xffff...
+     *
+     * It would also be possible to let the first heap start from player end,
+     * but it seems like there are problems in magic area around 3FFx.
      */
     unsigned int heap_start[2] = { 
-        (unsigned int)&_RAM_LAST__,  // RAM end - 0x8000 
+        (unsigned int)HEAP_START,  // RAM end - 0x8000 
         0xc000u  // - 0xd000 
     };
     static const unsigned int heap_end[2] = { 0x8000u, 0xd000u };
@@ -414,7 +418,13 @@ static void save_onefiler() {
     fputc(8, f);
     // Saves player program code.
     is_onefiler = 1;
-    fwrite((char*)0x801, &_RAM_LAST__ - (char*)0x801, 1, f);
+    fwrite((char*)0x801, HEAP_START - 0x801, 1, f);
+    if (HEAP_START < &_RAM_LAST__) {
+        // The heap must start after player code ends.
+        while (1) {
+            ++*(char*)0xd020u;  // Don't let this go unnoticed!
+        }
+    }
     if (!write_onefiler_anims(f)) {
         textcolor(COLOR_RED);
         puts("out of mem");
