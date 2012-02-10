@@ -172,7 +172,11 @@ void play_movie_if_onefiler() {
     for (;;) {
         unpack_anim(file_it, alt_screen);
         while (wait_duration--) {
-            while (!caught_irqs) {}
+            while (!caught_irqs) {
+#define SCX_REG *(char*)0xd016
+#define SCY_REG *(char*)0xd011
+                SCX_REG = (SCX_REG & ~3) | (*(char*)0xd41c >> 6); 
+            }
             --caught_irqs;
         }
         play_anim(movie.speed[file_it], alt_screen);
