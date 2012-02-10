@@ -418,7 +418,7 @@ static void save_onefiler() {
     fputc(8, f);
     // Saves player program code.
     is_onefiler = 1;
-    fwrite((char*)0x801, HEAP_START - 0x801, 1, f);
+    fwrite((char*)0x801, (unsigned int)HEAP_START - 0x801, 1, f);
     if (HEAP_START < &_RAM_LAST__) {
         // The heap must start after player code ends.
         while (1) {
