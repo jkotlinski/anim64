@@ -60,7 +60,6 @@ signed char curr_screen;
 
 static void init() {
     clrscr();
-    textcolor(COLOR_YELLOW);
     bordercolor(0);
     bgcolor(0);
 
@@ -357,6 +356,8 @@ static void handle_key(char key) {
 void edit() {
 #define BLINK_PERIOD 30
     int loop = BLINK_PERIOD;
+
+    textcolor(COLOR_YELLOW);
 
     memset(VIDEO_BASE, 0x20, 0x1000);
     *(VIDEO_BASE + END_FRAME) = 3;

@@ -135,7 +135,8 @@ void move_files_in_place() {
         unsigned char* addr = (unsigned char*)((*head++ << 8) | (*head++ & 0xffu));
         unsigned int size = (*head++ << 8) | (*head++ & 0xffu);
         start[file_it++] = addr;
-        memcpy(addr, head, size);
+        if (addr != head)
+            memcpy(addr, head, size);
         head += size;
     }
 }
@@ -357,7 +358,7 @@ void load_selected_anim() {
 
 static unsigned int get_file_length(unsigned char file) {
     FILE* f;
-    unsigned int length = 0;
+    unsigned int length;
     if (!filename[file][0]) return 0;
     f = fopen(filename[file], "r");
     length = fread(&_EDITRAM_LAST__, 1, (char*)0x8000 - &_EDITRAM_LAST__, f);
@@ -384,7 +385,8 @@ static char write_onefiler_anims(FILE* fout) {
         }
         for (heap_it = 0; heap_it < sizeof(heap_start) / sizeof(*heap_start); ++heap_it) {
             if (heap_end[heap_it] - heap_start[heap_it] >= file_length + 4) {
-                const unsigned int addr = (int)heap_start[heap_it];
+                unsigned int addr = (int)heap_start[heap_it];
+                addr += 4;  // Include header.
                 // Writes address.
                 fputc(addr >> 8, fout);
                 fputc(addr & 0xffu, fout);
