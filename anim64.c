@@ -221,18 +221,21 @@ static void save_anim() {
     invalidate_loaded_anim();
 }
 
-unsigned char copy_screen = -1;
+#define CLIPBOARD_CHARS (unsigned char*)0xc000u
+#define CLIPBOARD_COLORS (unsigned char*)0xc400u
+
+void copy_screen() {
+    hide_cursor();
+    // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
+    memcpy(CLIPBOARD_CHARS, VIDEO_BASE + 0x400 * curr_screen, END_FRAME);
+    memcpy(CLIPBOARD_COLORS, VIDEO_BASE + 0x1000 + 0x400 * curr_screen, 40 * 25);
+}
+
 void paste_screen() {
-    if (copy_screen > 3) return;
     remember_colors();
-    // Characters. Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
-    memcpy(VIDEO_BASE + 0x400 * curr_screen,
-            VIDEO_BASE + 0x400 * copy_screen,
-            END_FRAME);
-    // Colors.
-    memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen,
-            VIDEO_BASE + 0x1000 + 0x400 * copy_screen,
-            40 * 25);
+    // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
+    memcpy(VIDEO_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, END_FRAME);
+    memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen, CLIPBOARD_COLORS, 40 * 25);
     update_screen_base();
 }
 
@@ -325,7 +328,7 @@ static void handle_key(char key) {
 
         case CH_F1: load_anim(); break;
         case CH_F2: invalidate_loaded_anim(); save_anim(); break;
-        case CH_F5: copy_screen = curr_screen; break;
+        case CH_F5: copy_screen(); break;
         case CH_F6: paste_screen(); break;
         case CH_F7: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
