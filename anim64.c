@@ -223,7 +223,9 @@ static void save_anim() {
 #define CLIPBOARD_CHARS (unsigned char*)0xc000u
 #define CLIPBOARD_COLORS (unsigned char*)0xc400u
 
+static char has_copy;
 void copy_screen() {
+    has_copy = 1;
     hide_cursor();
     // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
     memcpy(CLIPBOARD_CHARS, VIDEO_BASE + 0x400 * curr_screen, END_FRAME);
@@ -231,6 +233,7 @@ void copy_screen() {
 }
 
 void paste_screen() {
+    if (!has_copy) return;
     remember_colors();
     // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
     memcpy(VIDEO_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, END_FRAME);
