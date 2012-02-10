@@ -365,11 +365,8 @@ static unsigned int get_file_length(unsigned char file) {
 }
 
 static char write_onefiler_anims(FILE* fout) {
-    /* If pushed against the wall, there still is the opportunity to
-     * switch out the kernal and gain access to 0xe000 - 0xffff...
-     *
-     * It would also be possible to let the first heap start from player end,
-     * but it seems like there are problems in magic area around 3FFx.
+    /* It would be possible to let the first heap start from player end,
+     * but it seems like there are problems in magic area around 3FFx...
      */
 #define HEAP_COUNT 3
     unsigned int heap_start[3] = { 
