@@ -53,7 +53,7 @@ char music_path[FILENAME_LENGTH];
  * instead of BSS to keep them from being zero-initialized.
  */
 static struct Movie {
-    unsigned int duration[FILE_COUNT];
+    unsigned char frames[FILE_COUNT];
     unsigned char speed[FILE_COUNT];
 } movie;
 #pragma bssseg (pop)
@@ -68,7 +68,7 @@ static char selected_file;
 static char selected_column;
 
 #define DURATION_X (FILENAME_LENGTH + 1) 
-#define SPEED_X (DURATION_X + 6)
+#define SPEED_X (DURATION_X + 4)
 
 static const char* MOVIE_FILE = ".movie";
 
@@ -117,7 +117,7 @@ static unsigned int skip_music_frames() {
     unsigned int frames = 0;
     unsigned char file_it;
     for (file_it = 0; file_it < selected_file; ++file_it) {
-        frames += movie.duration[file_it];
+        frames += movie.frames[file_it] * movie.speed[file_it];
     }
     return frames;
 }
@@ -176,7 +176,7 @@ void play_movie_if_onefiler() {
             --caught_irqs;
         }
         play_anim(movie.speed[file_it], alt_screen);
-        wait_duration = movie.duration[file_it];
+        wait_duration = movie.frames[file_it] * movie.speed[file_it];
 
         ++file_it;
         if (file_it == FILE_COUNT || start[file_it] == 0) {
@@ -212,8 +212,9 @@ static void read_filename() {
     *ptr = 0;
 }
 
-static unsigned int read_digits(unsigned digits) {
+static unsigned int read_digits() {
     unsigned int number = 0;
+    unsigned char digits = 3;
     while (digits > 0) {
         char c = cgetc();
         if (c >= '0' && c <= '9') {
@@ -239,16 +240,17 @@ static void draw_headers() {
     gotoxy(0, 0);
     cputs("file");
     gotoxy(DURATION_X, 0);
-    cputs("dur.");
+    cputs("dur");
     gotoxy(SPEED_X, 0);
     cputs("spd");
 }
 
-static void print_digits(unsigned int number, unsigned char digits) {
+static void print_digits(unsigned int number) {
     unsigned char buf[5];
     unsigned char it;
     unsigned char filler = ' ';
-    for (it = 0; it < digits; ++it) {
+    unsigned char digits = 3;
+    for (it = 0; it < 3; ++it) {
         buf[it] = number % 10;
         number /= 10;
     }
@@ -280,14 +282,14 @@ static void draw_row(unsigned char row) {
     // Prints duration.
     update_color(1, row);
     gotox(DURATION_X);
-    print_digits(movie.duration[row], 5);
+    print_digits(movie.frames[row]);
     revers(0);
     cclear(1);
     revers(1);
     // Prints speed.
     update_color(2, row);
     gotox(SPEED_X);
-    print_digits(movie.speed[row], 3);
+    print_digits(movie.speed[row]);
     revers(0);
 }
 
@@ -316,7 +318,7 @@ static void init() {
     }
     /* Since movie is not in BSS, zero-init filename and speed explicitly. */
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        movie.duration[file_it] = 128;
+        movie.frames[file_it] = 4;
         movie.speed[file_it] = 32;
     }
     load_movie();
@@ -343,16 +345,16 @@ static void edit_field() {
             break;
         case 1:  // Duration.
             gotox(DURATION_X);
-            cclear(5);
+            cclear(3);
             gotox(DURATION_X);
-            movie.duration[selected_file] = read_digits(5);
+            movie.frames[selected_file] = read_digits();
             break;
         case 2:  // Speed.
             gotox(SPEED_X);
             cclear(3);
             gotox(SPEED_X);
             {
-                unsigned int x = read_digits(3);
+                unsigned int x = read_digits();
                 if (!x) x = 1;
                 if (x & 0xff00u) x = 0xff;
                 movie.speed[selected_file] = x;
@@ -505,7 +507,7 @@ static char handle_key(unsigned char key) {
             skip_music_frames();
             init_play();
             play_anim(movie.speed[selected_file], 1);
-            wait_anim(movie.duration[selected_file]);
+            wait_anim(movie.frames[selected_file] * movie.speed[selected_file]);
             exit_play();
             show_screen();
             break;
