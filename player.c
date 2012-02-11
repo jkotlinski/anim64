@@ -41,7 +41,7 @@ void init_play() {
 
 // Returns 0 if timed out, 1 if keyboard was pressed.
 void play_anim(unsigned char speed, unsigned char alt_screen) {
-    ticks_per_frame = speed;
+    ticks_per_frame = speed - 1;
 
     first_anim_screen = (alt_screen ? 8 : 0);
     anim_screen = first_anim_screen;
