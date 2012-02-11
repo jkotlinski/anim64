@@ -21,8 +21,8 @@ THE SOFTWARE. */
 #ifndef PACK_H_
 #define PACK_H_
 
-void pack(unsigned char* screen_base);
+void pack(unsigned char* screen_base, char interframe_compression);
 
-void unpack(unsigned char* screen_base);
+void unpack(unsigned char* screen_base, char interframe_compression);
 
 #endif  // PACK_H_

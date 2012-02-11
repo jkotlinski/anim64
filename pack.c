@@ -40,16 +40,18 @@ static void pack_color_nibbles(unsigned char* colorscreen_base) {
     }
 }
 
-void pack(unsigned char* screen_base) {
+void pack(unsigned char* screen_base, char interframe_compression) {
     unsigned char screen_it = screen_base[END_FRAME];
     /* Actually, xor'ing with previous screen does sometimes makes
      * things worse. So we should have adaptive solution here.
      */
-    while (screen_it) {
-        unsigned char* screen_ptr = screen_base + screen_it * 0x400;
-        xor_prev(screen_ptr);  // Characters.
-        xor_prev(screen_ptr + 0x1000);  // Colors.
-        --screen_it;
+    if (interframe_compression) {
+        while (screen_it) {
+            unsigned char* screen_ptr = screen_base + screen_it * 0x400;
+            xor_prev(screen_ptr);  // Characters.
+            xor_prev(screen_ptr + 0x1000);  // Colors.
+            --screen_it;
+        }
     }
     pack_color_nibbles(screen_base + 0x1000);
 }
@@ -72,11 +74,13 @@ static void unpack_color_nibbles(unsigned char* colorscreen_base) {
     }
 }
 
-void unpack(unsigned char* screen_base) {
+void unpack(unsigned char* screen_base, char interframe_compression) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
     if (screen_base[VERSION] != 1) return;
     unpack_color_nibbles(screen_base + 0x1000);
+    if (!interframe_compression)
+        return;
     while (screen_it <= end_frame) {
         unsigned char* screen_ptr = screen_base + screen_it * 0x400;
         xor_prev(screen_ptr);  // Characters.

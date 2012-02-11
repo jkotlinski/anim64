@@ -190,6 +190,7 @@ static void load_anim() {
     switch_to_console_screen();
     f = prompt_open("load", "r");
     if (f) {
+        const unsigned char interframe_compressed = fgetc(f);
         const unsigned int read = fread(&_EDITRAM_LAST__, 1,
                 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
         fclose(f);
@@ -206,7 +207,7 @@ static void load_anim() {
             memcpy(VIDEO_BASE + 0x1000, (&_EDITRAM_LAST__) + 2, 0x400);
         } else {
             rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
-            unpack(VIDEO_BASE);
+            unpack(VIDEO_BASE, interframe_compressed);
         }
         curr_screen = 0;
     }
@@ -218,17 +219,31 @@ static void save_anim() {
     switch_to_console_screen();
     f = prompt_open("save", "w");
     if (f) {
+        unsigned int file_size_interframe_off;
         unsigned int file_size;
+        unsigned char use_interframe;
         VIDEO_BASE[VERSION] = 1;
-        pack(VIDEO_BASE);
+        pack(VIDEO_BASE, 0);
+        file_size_interframe_off = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        unpack(VIDEO_BASE, 0);
+        pack(VIDEO_BASE, 1);
         file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        use_interframe = (file_size <= file_size_interframe_off);  // Interframe byte.
+        if (!use_interframe) {
+            // Repacks with interframe off.
+            unpack(VIDEO_BASE, 1);
+            pack(VIDEO_BASE, 0);
+            file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        }
+
+        fputc(use_interframe, f);
         fwrite(&_EDITRAM_LAST__, file_size, 1, f);
         if (EOF == fclose(f)) {
             textcolor(COLOR_RED);
             puts("disk full?");
             cgetc();
         }
-        unpack(VIDEO_BASE);
+        unpack(VIDEO_BASE, use_interframe);
     }
     switch_to_gfx_screen();
     invalidate_loaded_anim();

@@ -133,8 +133,9 @@ unsigned char* start[FILE_COUNT];
 // Returns 1 if load succeeded, otherwise 0.
 static void unpack_anim(char file_it, unsigned char alt_screen) {
     unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
-    rle_unpack(screen_base, start[file_it]);
-    unpack(screen_base);
+    const unsigned char interframe_compressed = *start[file_it];
+    rle_unpack(screen_base, start[file_it] + 1);
+    unpack(screen_base, interframe_compressed);
 }
 
 void show_screen();
@@ -368,17 +369,19 @@ static void edit_field() {
 static void load_selected_anim(unsigned char alt_screen) {
     FILE* f;
     char* screen = (char*)(alt_screen ? 0xa000u : 0x8000u);
+    char interframe_compressed;
     if (loaded_anim[alt_screen] == selected_file) return; 
     f = fopen(filename[selected_file], "r");
     if (!f) {
         cputs("err");
         return; 
     }
+    interframe_compressed = fgetc(f);
     fread(&_EDITRAM_LAST__, 1, 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
     fclose(f);
     loaded_anim[alt_screen] = selected_file;
     rle_unpack(screen, &_EDITRAM_LAST__);
-    unpack(screen);
+    unpack(screen, interframe_compressed);
 }
 
 static unsigned int get_file_length(unsigned char file) {
