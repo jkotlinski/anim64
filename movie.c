@@ -98,7 +98,7 @@ static void load_movie() {
 
 static void save_movie() {
     FILE* f = fopen(MOVIE_FILE, "w");
-    gotoxy(20, 0);
+    gotoxy(25, 0);
     cputs("save...");
     if (!f || !fwrite(&filename, sizeof(filename), 1, f)) {
         puts("err");
