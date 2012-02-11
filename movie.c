@@ -178,6 +178,7 @@ void play_movie_if_onefiler() {
             --caught_irqs;
         }
         play_anim(movie.speed[file_it], alt_screen);
+        --caught_irqs;
         wait_duration = movie.frames[file_it] * movie.speed[file_it];
 
         ++file_it;
