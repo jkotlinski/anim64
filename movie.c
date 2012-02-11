@@ -397,7 +397,7 @@ static unsigned int get_file_length(unsigned char file) {
     return length;
 }
 
-static char write_onefiler_anims(FILE* fout) {
+static void write_onefiler_anims(FILE* fout) {
     /* It would be possible to let the first heap start from player end,
      * but it seems like there are problems in magic area around 3FFx...
      */
@@ -414,6 +414,13 @@ static char write_onefiler_anims(FILE* fout) {
         unsigned char heap_it;
         unsigned char alloc_failed = 1;
         if (!file_length) {
+            if (*filename[file_it]) {
+                textcolor(COLOR_RED);
+                cputs("bad file ");
+                cputs(filename[file_it]);
+                cgetc();
+                return;
+            }
             continue;
         }
         for (heap_it = 0; heap_it < sizeof(heap_start) / sizeof(*heap_start); ++heap_it) {
@@ -432,10 +439,14 @@ static char write_onefiler_anims(FILE* fout) {
                 break;
             }
         }
-        if (alloc_failed) return 0;
+        if (alloc_failed) {
+            textcolor(COLOR_RED);
+            cputs("out of mem");
+            cgetc();
+            return;
+        }
     }
     fputc(0, fout);
-    return 1;
 }
 
 static void save_onefiler() {
@@ -456,11 +467,7 @@ static void save_onefiler() {
             ++*(char*)0xd020u;  // Don't let this go unnoticed!
         }
     }
-    if (!write_onefiler_anims(f)) {
-        textcolor(COLOR_RED);
-        puts("out of mem");
-        cgetc();
-    }
+    write_onefiler_anims(f);
     if (EOF == fclose(f)) {
         textcolor(COLOR_RED);
         puts("disk full?");
