@@ -25,10 +25,12 @@ void init_play();
 void exit_play();
 
 // Plays animation at 0x8000 with given speed.
-// speed: 0 = fastest, 255 = slowest
+// speed: 1 = fastest, 255 = slowest
 void play_anim(unsigned char speed, unsigned char screen_base);
 
 // Returns 0 if timed out, 1 if keyboard was pressed.
 char wait_anim(unsigned int duration);
+
+void blink_vic_from_sid();
 
 #endif  // PLAYER_H_

@@ -25,4 +25,7 @@ THE SOFTWARE. */
 
 FILE* prompt_open(const char* prompt, const char* mode);
 
+#define FILENAME_LENGTH 16
+extern char prompt_path[FILENAME_LENGTH];
+
 #endif  /* DISK_H_ */

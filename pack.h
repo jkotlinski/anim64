@@ -18,15 +18,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
-#ifndef DIFF_H_
-#define DIFF_H_
+#ifndef PACK_H_
+#define PACK_H_
 
-/* For screens 1..3, modifies characters & colors so that only the difference
- * from the previous screen is stored.
- */
-void diff(unsigned char* screen_base);
+void pack(unsigned char* screen_base, char interframe_compression);
 
-/* Undoes a diff. */
-void undiff(unsigned char* screen_base);
+void unpack(unsigned char* screen_base, char interframe_compression);
 
-#endif  // DIFF_H_
+#endif  // PACK_H_

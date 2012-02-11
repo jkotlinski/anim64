@@ -24,9 +24,9 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
-#include "diff.h"
+#include "pack.h"
 #include "disk.h"
-#include "effects.h"
+// #include "effects.h"
 #include "movie.h"
 #include "music.h"
 #include "rle.h"
@@ -46,9 +46,7 @@ static char color = 1;
 #define SAVE_SIZE (0x400 * 4 + 4 * 40 * 25 / 2)
 
 /* The following two are defined by the linker. */
-extern unsigned char _RAM_START__;
-extern unsigned char _RAM_SIZE__;
-#define RLE_BUFFER (unsigned char*)(((unsigned)&_RAM_START__) + ((unsigned)&_RAM_SIZE__))
+extern unsigned char _EDITRAM_LAST__;
 
 char* screen_base = VIDEO_BASE;
 /* RAM end - $7fff: rle buffer
@@ -62,17 +60,16 @@ signed char curr_screen;
 
 static void init() {
     clrscr();
-    textcolor(COLOR_YELLOW);
     bordercolor(0);
     bgcolor(0);
 
-    memset(VIDEO_BASE, 0x20, 0x1000);
-    *(VIDEO_BASE + END_FRAME) = 3;
-    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
     memset((void*)0xd800, 0, 0x400);  // Clear colors for better packing.
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 4;  // Point video to 0x8000.
 }
+
+#pragma codeseg("EDITCODE")
+#pragma rodataseg("EDITCODE")
 
 static char paint_char = 1;
 
@@ -193,10 +190,37 @@ static void load_anim() {
     switch_to_console_screen();
     f = prompt_open("load", "r");
     if (f) {
-        fread(RLE_BUFFER, 1, 0x8000u - (unsigned int)RLE_BUFFER, f);
+        const unsigned int read = fread(&_EDITRAM_LAST__, 1,
+                0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
         fclose(f);
-        rle_unpack(VIDEO_BASE, RLE_BUFFER);
-        undiff(VIDEO_BASE);
+#define UNPACKED_SCREEN_LENGTH 0x402
+        if (read == UNPACKED_SCREEN_LENGTH && _EDITRAM_LAST__ == 0 && (&_EDITRAM_LAST__)[1] == 4) {
+            // Copy unpacked character screen.
+            memcpy(VIDEO_BASE, (&_EDITRAM_LAST__) + 2, 0x400);
+            VIDEO_BASE[BORDER_OFFSET] = 0;
+            VIDEO_BASE[BG_OFFSET] = 0;
+            VIDEO_BASE[END_FRAME] = 0;
+        } else if (read == UNPACKED_SCREEN_LENGTH && _EDITRAM_LAST__ == 0 &&
+                (&_EDITRAM_LAST__)[1] == 0xd8) {
+            // Copy unpacked color screen.
+            memcpy(VIDEO_BASE + 0x1000, (&_EDITRAM_LAST__) + 2, 0x400);
+        } else {
+            const unsigned char interframe_compressed = _EDITRAM_LAST__;
+            switch (interframe_compressed) {
+                case 0:  // Interframe disabled.
+                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__ + 1);
+                    unpack(VIDEO_BASE, 0);
+                    break;
+                case 1:  // Interframe enabled.
+                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__ + 1);
+                    unpack(VIDEO_BASE, 1);
+                    break;
+                default:  // Interframe option not set?
+                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
+                    unpack(VIDEO_BASE, 1);
+                    break;
+            }
+        }
         curr_screen = 0;
     }
     switch_to_gfx_screen();
@@ -207,34 +231,54 @@ static void save_anim() {
     switch_to_console_screen();
     f = prompt_open("save", "w");
     if (f) {
+        unsigned int file_size_interframe_off;
         unsigned int file_size;
+        unsigned char use_interframe;
         VIDEO_BASE[VERSION] = 1;
-        diff(VIDEO_BASE);
-        file_size = rle_pack(RLE_BUFFER, VIDEO_BASE, SAVE_SIZE);
-        fwrite(RLE_BUFFER, file_size, 1, f);
+        pack(VIDEO_BASE, 0);
+        file_size_interframe_off = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        unpack(VIDEO_BASE, 0);
+        pack(VIDEO_BASE, 1);
+        file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        use_interframe = (file_size <= file_size_interframe_off);  // Interframe byte.
+        if (!use_interframe) {
+            // Repacks with interframe off.
+            unpack(VIDEO_BASE, 1);
+            pack(VIDEO_BASE, 0);
+            file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        }
+
+        fputc(use_interframe, f);
+        fwrite(&_EDITRAM_LAST__, file_size, 1, f);
         if (EOF == fclose(f)) {
             textcolor(COLOR_RED);
             puts("disk full?");
             cgetc();
         }
-        undiff(VIDEO_BASE);
+        unpack(VIDEO_BASE, use_interframe);
     }
     switch_to_gfx_screen();
-    invalidate_packed_anims();
+    invalidate_loaded_anim();
 }
 
-unsigned char copy_screen = -1;
-void paste_screen() {
-    if (copy_screen > 3) return;
+#define CLIPBOARD_CHARS (unsigned char*)0xc000u
+#define CLIPBOARD_COLORS (unsigned char*)0xc400u
+
+static char has_copy;
+void copy_screen() {
+    has_copy = 1;
+    hide_cursor();
+    // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
+    memcpy(CLIPBOARD_CHARS, VIDEO_BASE + 0x400 * curr_screen, END_FRAME);
+    memcpy(CLIPBOARD_COLORS, VIDEO_BASE + 0x1000 + 0x400 * curr_screen, 40 * 25);
+}
+
+static void paste_screen() {
+    if (!has_copy) return;
     remember_colors();
-    // Characters. Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
-    memcpy(VIDEO_BASE + 0x400 * curr_screen,
-            VIDEO_BASE + 0x400 * copy_screen,
-            END_FRAME);
-    // Colors.
-    memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen,
-            VIDEO_BASE + 0x1000 + 0x400 * copy_screen,
-            40 * 25);
+    // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
+    memcpy(VIDEO_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, END_FRAME);
+    memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen, CLIPBOARD_COLORS, 40 * 25);
     update_screen_base();
 }
 
@@ -312,23 +356,22 @@ static void handle_key(char key) {
             remember_colors();
             init_music();
             init_play();
-#define DELAY 30
-            play_anim(DELAY, 0);
+            play_anim(32, 0);
             wait_anim(65535u);
             exit_play();
             update_screen_base();
             break;
 
-        case 0x13:  // HOME
+        /* case 0x13:  // HOME
             ++*(VIDEO_BASE + EFFECT_OFFSET);
             *(VIDEO_BASE + EFFECT_OFFSET) %= EFFECT_COUNT;
-            break;
+            break; */
         /* case 0x93:  // CLR (shift + HOME)
             break; */
 
         case CH_F1: load_anim(); break;
-        case CH_F2: invalidate_packed_anims(); save_anim(); break;
-        case CH_F5: copy_screen = curr_screen; break;
+        case CH_F2: invalidate_loaded_anim(); save_anim(); break;
+        case CH_F5: copy_screen(); break;
         case CH_F6: paste_screen(); break;
         case CH_F7: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
         case 0x12: reverse = 0x80u; break;
@@ -354,17 +397,15 @@ static void handle_key(char key) {
     }
 }
 
-void main() {
+void edit() {
 #define BLINK_PERIOD 30
     int loop = BLINK_PERIOD;
-#if 0
-    while(1) { if (kbhit()) { printf("%x", cgetc()); } }
-#endif
-    init();
 
-    if (is_onefiler()) {
-        run_anims(0);
-    }
+    textcolor(COLOR_YELLOW);
+
+    memset(VIDEO_BASE, 0x20, 0x1000);
+    *(VIDEO_BASE + END_FRAME) = 3;
+    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
 
     // Test.
     // handle_key(CH_F8);
@@ -382,4 +423,18 @@ void main() {
             loop = BLINK_PERIOD;
         }
     }
+}
+
+#pragma codeseg("CODE")
+#pragma rodataseg("CODE")
+
+void main() {
+#if 0
+    while(1) { if (kbhit()) { printf("%x", cgetc()); } }
+#endif
+    init();
+
+    play_movie_if_onefiler();
+
+    edit();
 }

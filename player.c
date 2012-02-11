@@ -20,10 +20,7 @@ THE SOFTWARE. */
 
 #include "player.h"
 
-#include <stdio.h>
-#include <conio.h>
-
-#include "effects.h"
+// #include "effects.h"
 #include "irq.h"
 
 typedef void (*voidFn)(void);
@@ -42,17 +39,6 @@ void init_play() {
     *(voidFn*)0xfffe = irq_handler;  // set irq handler pointer
 }
 
-void exit_play() {
-    *(char*)0xd01a = 0;  // disable raster interrupts
-    caught_irqs = 0;
-    *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
-    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
-    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
-    *(char*)0xd418 = 0;  // Mute sound.
-
-    if (kbhit()) cgetc();
-}
-
 // Returns 0 if timed out, 1 if keyboard was pressed.
 void play_anim(unsigned char speed, unsigned char alt_screen) {
     ticks_per_frame = speed;
@@ -63,38 +49,22 @@ void play_anim(unsigned char speed, unsigned char alt_screen) {
         ? 8 + *(char*)(0xa000u + 40 * 25 + 2)
         : *(char*)(0x8000u + 40 * 25 + 2);
 
-    caught_irqs = 1;
-
     switched_frame = 0;
     *(char*)0xd01a = 1;  // enable raster interrupts
     while (!switched_frame);
 }
 
-char wait_anim(unsigned int duration) {
-    char keyboard_state = 0;
-
-    while (duration--) {
-        // Waits until raster screen is right below lower text border.
-        // *(char*)0xd020 = 1;
-        /*
-        if (!caught_irqs) {
-            effect_tick(first_anim_screen);
-        }
-        */
-        while (!caught_irqs) {}
-        --caught_irqs;
-        // *(char*)0xd020 = 0;
-
-        // To exit animation, first all keys should be released, then
-        // some key should be pressed.
-        if (keyboard_state == 0) {
-            if (0xff == *(char*)0xdc01) {  // All keys released?
-                keyboard_state = 1;
-            }
-        } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
-            return 1;
-        }
+void blink_vic_from_sid() {
+    const unsigned char freq = *(unsigned char*)0xd41b;
+    const unsigned char amp = *(unsigned char*)0xd41c;
+    if (freq > 0xe0 && amp > 0xe0u) {
+        *(char*)0xd020 = *(char*)0xd41b;
+    } else {
+        *(char*)0xd020 = 0;
     }
-    return 0;
+    if (freq > 0xf8u && amp > 0xf0u) {
+        *(char*)0xd021 = *(char*)0xd41b;
+    } else {
+        *(char*)0xd021 = 0;
+    }
 }
-

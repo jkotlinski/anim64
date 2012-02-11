@@ -23,10 +23,8 @@ THE SOFTWARE. */
 
 void edit_movie();
 
-void invalidate_packed_anims();
+void invalidate_loaded_anim();
 
-void run_anims(unsigned char file_it);
-
-char is_onefiler();
+void play_movie_if_onefiler();
 
 #endif  /* MOVIE_H_ */

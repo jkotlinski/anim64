@@ -32,7 +32,7 @@ all:   	anim64
 	@echo $<
 	@$(AS) $(basename $<).s
 
-OBJS = anim64.o music.o movie.o rle.o rlepack.o rleunpack.o player.o irq.o disk.o effects.o diff.o diff_asm.o
+OBJS = main.o music.o movie.o rle.o rlepack.o rleunpack.o player.o irq.o disk.o pack.o diff_asm.o anim.o
 
 -include $(OBJS:%.o=$(DEPDIR)/%.u)
 
@@ -59,7 +59,7 @@ run: anim64
 
 .PHONY:	clean
 clean:
-	rm -f *~ *.d64 *.map *.o *.lbl *.prg *.lst *.a *.u $(DEPDIR)/*
+	rm -f *~ anim64.d64 *.map *.o *.lbl *.prg *.lst *.a *.u $(DEPDIR)/*
 	
 # ------------------
 
