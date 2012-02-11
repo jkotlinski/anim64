@@ -41,7 +41,6 @@ THE SOFTWARE. */
  */
 
 #define FILE_COUNT 20
-#define FILENAME_LENGTH 8
 
 #pragma bssseg(push, "EDITCODE")
 char filename[FILE_COUNT][FILENAME_LENGTH];

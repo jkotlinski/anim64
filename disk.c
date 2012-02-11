@@ -25,7 +25,7 @@ THE SOFTWARE. */
 
 #pragma codeseg("EDITCODE")
 
-char prompt_path[8];
+char prompt_path[FILENAME_LENGTH];
 FILE* prompt_open(const char* prompt, const char* mode) {
     clrscr();
     gotoxy(0, 0);

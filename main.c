@@ -190,10 +190,24 @@ static void load_anim() {
     switch_to_console_screen();
     f = prompt_open("load", "r");
     if (f) {
-        fread(&_EDITRAM_LAST__, 1, 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
+        const unsigned int read = fread(&_EDITRAM_LAST__, 1,
+                0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
         fclose(f);
-        rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
-        undiff(VIDEO_BASE);
+#define UNPACKED_SCREEN_LENGTH 0x402
+        if (read == UNPACKED_SCREEN_LENGTH && _EDITRAM_LAST__ == 0 && (&_EDITRAM_LAST__)[1] == 4) {
+            // Copy unpacked character screen.
+            memcpy(VIDEO_BASE, (&_EDITRAM_LAST__) + 2, 0x400);
+            VIDEO_BASE[BORDER_OFFSET] = 0;
+            VIDEO_BASE[BG_OFFSET] = 0;
+            VIDEO_BASE[END_FRAME] = 0;
+        } else if (read == UNPACKED_SCREEN_LENGTH && _EDITRAM_LAST__ == 0 &&
+                (&_EDITRAM_LAST__)[1] == 0xd8) {
+            // Copy unpacked color screen.
+            memcpy(VIDEO_BASE + 0x1000, (&_EDITRAM_LAST__) + 2, 0x400);
+        } else {
+            rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
+            undiff(VIDEO_BASE);
+        }
         curr_screen = 0;
     }
     switch_to_gfx_screen();
