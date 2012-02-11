@@ -190,7 +190,6 @@ static void load_anim() {
     switch_to_console_screen();
     f = prompt_open("load", "r");
     if (f) {
-        const unsigned char interframe_compressed = fgetc(f);
         const unsigned int read = fread(&_EDITRAM_LAST__, 1,
                 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
         fclose(f);
@@ -206,8 +205,21 @@ static void load_anim() {
             // Copy unpacked color screen.
             memcpy(VIDEO_BASE + 0x1000, (&_EDITRAM_LAST__) + 2, 0x400);
         } else {
-            rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
-            unpack(VIDEO_BASE, interframe_compressed);
+            const unsigned char interframe_compressed = _EDITRAM_LAST__;
+            switch (interframe_compressed) {
+                case 0:  // Interframe disabled.
+                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__ + 1);
+                    unpack(VIDEO_BASE, 0);
+                    break;
+                case 1:  // Interframe enabled.
+                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__ + 1);
+                    unpack(VIDEO_BASE, 1);
+                    break;
+                default:  // Interframe option not set?
+                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
+                    unpack(VIDEO_BASE, 1);
+                    break;
+            }
         }
         curr_screen = 0;
     }
