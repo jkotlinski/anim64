@@ -150,6 +150,15 @@ _irq_handler:
 :   eor #0
     sta $d016
 
+    ; Flips to UPPERCASE when SID channel 3 has max amplitude.
+    lda $d41c
+    cmp #$ff
+    bne :+
+    lda $d018
+    ora #2
+    sta $d018
+:
+
     inc _caught_irqs
 
     asl $d019  ; Acknowledges interrupt.
