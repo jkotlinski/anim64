@@ -163,6 +163,7 @@ void play_movie_if_onefiler() {
     unsigned int wait_duration = 0;
     unsigned char file_it = 0;
     unsigned char alt_screen = 0;
+    unsigned char first_duration_dec = 2;
     if (!is_onefiler()) {
         return;
     }
@@ -178,8 +179,9 @@ void play_movie_if_onefiler() {
             --caught_irqs;
         }
         play_anim(movie.speed[file_it], alt_screen);
-        --caught_irqs;
         wait_duration = movie.frames[file_it] * movie.speed[file_it];
+        wait_duration -= first_duration_dec;
+        first_duration_dec = 0;
 
         ++file_it;
         if (file_it == FILE_COUNT || start[file_it] == 0) {
