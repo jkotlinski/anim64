@@ -266,11 +266,14 @@ static void save_anim() {
 
 static char has_copy;
 void copy_screen() {
+    char bg = *(char*)0xd020;
+    *(char*)0xd020 = COLOR_GREEN;
     has_copy = 1;
     hide_cursor();
     // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
     memcpy(CLIPBOARD_CHARS, VIDEO_BASE + 0x400 * curr_screen, END_FRAME);
     memcpy(CLIPBOARD_COLORS, VIDEO_BASE + 0x1000 + 0x400 * curr_screen, 40 * 25);
+    *(char*)0xd020 = bg;
 }
 
 static void paste_screen() {
