@@ -40,6 +40,7 @@ FILE* prompt_open(const char* prompt, const char* mode) {
         f = fopen(prompt_path, mode);
         if (f) return f;
         cputs("err");
+        gotox(0);
     }
 }
 
