@@ -18,7 +18,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
-#include "diff.h"
+#include "pack.h"
 
 #include "diff_asm.h"
 
@@ -40,7 +40,7 @@ static void pack_color_nibbles(unsigned char* colorscreen_base) {
     }
 }
 
-void diff(unsigned char* screen_base) {
+void pack(unsigned char* screen_base) {
     unsigned char screen_it = screen_base[END_FRAME];
     /* Actually, xor'ing with previous screen does sometimes makes
      * things worse. So we should have adaptive solution here.
@@ -72,7 +72,7 @@ static void unpack_color_nibbles(unsigned char* colorscreen_base) {
     }
 }
 
-void undiff(unsigned char* screen_base) {
+void unpack(unsigned char* screen_base) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
     if (screen_base[VERSION] != 1) return;

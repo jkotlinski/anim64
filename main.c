@@ -24,7 +24,7 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
-#include "diff.h"
+#include "pack.h"
 #include "disk.h"
 // #include "effects.h"
 #include "movie.h"
@@ -206,7 +206,7 @@ static void load_anim() {
             memcpy(VIDEO_BASE + 0x1000, (&_EDITRAM_LAST__) + 2, 0x400);
         } else {
             rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
-            undiff(VIDEO_BASE);
+            unpack(VIDEO_BASE);
         }
         curr_screen = 0;
     }
@@ -220,7 +220,7 @@ static void save_anim() {
     if (f) {
         unsigned int file_size;
         VIDEO_BASE[VERSION] = 1;
-        diff(VIDEO_BASE);
+        pack(VIDEO_BASE);
         file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
         fwrite(&_EDITRAM_LAST__, file_size, 1, f);
         if (EOF == fclose(f)) {
@@ -228,7 +228,7 @@ static void save_anim() {
             puts("disk full?");
             cgetc();
         }
-        undiff(VIDEO_BASE);
+        unpack(VIDEO_BASE);
     }
     switch_to_gfx_screen();
     invalidate_loaded_anim();

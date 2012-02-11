@@ -23,7 +23,7 @@ THE SOFTWARE. */
 #include <stdlib.h>
 #include <string.h>
 
-#include "diff.h"
+#include "pack.h"
 #include "disk.h"
 #include "music.h"
 #include "rle.h"
@@ -134,7 +134,7 @@ unsigned char* start[FILE_COUNT];
 static void unpack_anim(char file_it, unsigned char alt_screen) {
     unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
     rle_unpack(screen_base, start[file_it]);
-    undiff(screen_base);
+    unpack(screen_base);
 }
 
 void show_screen();
@@ -378,7 +378,7 @@ static void load_selected_anim(unsigned char alt_screen) {
     fclose(f);
     loaded_anim[alt_screen] = selected_file;
     rle_unpack(screen, &_EDITRAM_LAST__);
-    undiff(screen);
+    unpack(screen);
 }
 
 static unsigned int get_file_length(unsigned char file) {
