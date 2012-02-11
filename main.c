@@ -273,7 +273,7 @@ void copy_screen() {
     memcpy(CLIPBOARD_COLORS, VIDEO_BASE + 0x1000 + 0x400 * curr_screen, 40 * 25);
 }
 
-void paste_screen() {
+static void paste_screen() {
     if (!has_copy) return;
     remember_colors();
     // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
