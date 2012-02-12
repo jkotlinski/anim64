@@ -406,6 +406,7 @@ static void write_onefiler_anims(FILE* fout) {
     };
     static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xffffu };
     unsigned char file_it;
+    *(char*)0xd018 |= 2;  // lower/uppercase gfx
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         const unsigned int file_length = get_file_length(file_it);
         unsigned char heap_it;
@@ -413,13 +414,17 @@ static void write_onefiler_anims(FILE* fout) {
         if (!file_length) {
             if (*filename[file_it]) {
                 textcolor(COLOR_RED);
-                cputs("bad file ");
+                gotoxy(0, file_it + 2);
                 cputs(filename[file_it]);
-                cgetc();
-                return;
+                cputs(" bad");
+                goto exit;
             }
             continue;
         }
+        gotoxy(0, file_it + 2);
+        cputs(filename[file_it]);
+        cputs(": ");
+        cputhex16(file_length);
         for (heap_it = 0; heap_it < sizeof(heap_start) / sizeof(*heap_start); ++heap_it) {
             if (heap_end[heap_it] - heap_start[heap_it] >= file_length + 4) {
                 unsigned int addr = (int)heap_start[heap_it];
@@ -438,12 +443,15 @@ static void write_onefiler_anims(FILE* fout) {
         }
         if (alloc_failed) {
             textcolor(COLOR_RED);
-            cputs("out of mem");
-            cgetc();
-            return;
+            cputs(" out of mem");
+            goto exit;
         }
     }
     fputc(0, fout);
+    cputs(" ok!");
+exit:
+    cgetc();
+    *(char*)0xd018 &= ~2;  // uppercase + gfx
 }
 
 static void save_onefiler() {
