@@ -189,6 +189,16 @@ static void switch_to_gfx_screen() {
     update_screen_base();
 }
 
+static void convert_v1_v2() {
+    char screen;
+    memmove(COLOR_BASE, VIDEO_BASE + 0x2000, 0x2000);
+    for (screen = 0; screen < 4; ++screen) {
+        unsigned char* ptr = VIDEO_BASE + screen * 0x400 + COLORS_OFFSET;
+        *ptr <<= 4;
+        *ptr |= *(ptr + 1);
+    }
+}
+
 static void load_anim() {
     FILE* f;
     switch_to_console_screen();
@@ -202,7 +212,7 @@ static void load_anim() {
                 fread(RLE_BUFFER_V1, 1, RLE_BUFFER_SIZE_V1, f);
                 rle_unpack(VIDEO_BASE, RLE_BUFFER_V1);
                 unpack(VIDEO_BASE, first_byte);
-                memmove(COLOR_BASE, VIDEO_BASE + 0x2000, 0x2000);
+                convert_v1_v2();
                 break;
             case 2:
                 // TODO: Version 2.
