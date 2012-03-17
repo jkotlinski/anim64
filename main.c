@@ -191,8 +191,12 @@ static void switch_to_gfx_screen() {
 
 static void convert_v1_v2() {
     char screen;
-    memmove(COLOR_BASE, VIDEO_BASE + 0x2000, 0x2000);
-    // Resets colors.
+    memmove(COLOR_BASE, VIDEO_BASE + 0x1000, 0x1000);
+
+    // Trash source colors to make transition easier... TODO: Remove this call.
+    memset(VIDEO_BASE + 0x1000, 0x15, 0x1000);
+
+    // Resets bg/border color bytes.
     for (screen = 0; screen < 4; ++screen) {
         VIDEO_BASE[screen * 0x400 + COLORS_OFFSET] = 0;
     }
