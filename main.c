@@ -39,14 +39,14 @@ static unsigned char reverse;
 static char color = 1;
 
 #define VIDEO_BASE ((char*)0x8000)
-#define BORDER_OFFSET (40 * 25)
-#define BG_OFFSET (40 * 25 + 1)
-#define END_FRAME (40 * 25 + 2)
-#define VERSION (40 * 25 + 3)
+#define COLORS_OFFSET (40 * 25)  // (border << 4) | bg
 #define SAVE_SIZE (0x400 * 4 + 4 * 40 * 25 / 2)
 
 /* The following two are defined by the linker. */
 extern unsigned char _EDITRAM_LAST__;
+
+unsigned char end_frame = 3;
+#define MAX_END_FRAME 7
 
 char* screen_base = VIDEO_BASE;
 /* RAM end - $7fff: rle buffer
@@ -119,21 +119,23 @@ static void remember_colors() {
 }
 
 static void update_screen_base() {
+    unsigned char colors;
     screen_base = (char*)(0x8000 + curr_screen * 0x400);
     *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
     memcpy((void*)0xd800, screen_base + 0x1000, 40 * 25);
-    *(char*)0xd020 = screen_base[BORDER_OFFSET];
-    *(char*)0xd021 = screen_base[BG_OFFSET];
+    colors = screen_base[COLORS_OFFSET];
+    *(char*)0xd020 = colors >> 4;
+    *(char*)0xd021 = colors & 0xf;
     show_cursor();
 }
 
 static void change_screen(char step) {
     remember_colors();
     curr_screen += step;
-    if (curr_screen > *(VIDEO_BASE + END_FRAME)) {
+    if (curr_screen > end_frame) {
         curr_screen = 0;
     } else if (curr_screen < 0) {
-        curr_screen = *(VIDEO_BASE + END_FRAME);
+        curr_screen = end_frame;
     }
     update_screen_base();
 }
@@ -193,18 +195,7 @@ static void load_anim() {
         const unsigned int read = fread(&_EDITRAM_LAST__, 1,
                 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
         fclose(f);
-#define UNPACKED_SCREEN_LENGTH 0x402
-        if (read == UNPACKED_SCREEN_LENGTH && _EDITRAM_LAST__ == 0 && (&_EDITRAM_LAST__)[1] == 4) {
-            // Copy unpacked character screen.
-            memcpy(VIDEO_BASE, (&_EDITRAM_LAST__) + 2, 0x400);
-            VIDEO_BASE[BORDER_OFFSET] = 0;
-            VIDEO_BASE[BG_OFFSET] = 0;
-            VIDEO_BASE[END_FRAME] = 0;
-        } else if (read == UNPACKED_SCREEN_LENGTH && _EDITRAM_LAST__ == 0 &&
-                (&_EDITRAM_LAST__)[1] == 0xd8) {
-            // Copy unpacked color screen.
-            memcpy(VIDEO_BASE + 0x1000, (&_EDITRAM_LAST__) + 2, 0x400);
-        } else {
+        {
             const unsigned char interframe_compressed = _EDITRAM_LAST__;
             switch (interframe_compressed) {
                 case 0:  // Interframe disabled.
@@ -215,9 +206,11 @@ static void load_anim() {
                     rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__ + 1);
                     unpack(VIDEO_BASE, 1);
                     break;
-                default:  // Interframe option not set?
-                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__);
-                    unpack(VIDEO_BASE, 1);
+                case 2:  // TODO: v2 loading
+                default:
+                    while (1) {
+                        ++*(char*)0xd020;
+                    }
                     break;
             }
         }
@@ -231,10 +224,13 @@ static void save_anim() {
     switch_to_console_screen();
     f = prompt_open("save", "w");
     if (f) {
+        fputc(2, f);  // Version.
+        fputc(end_frame + 1, f);  // Frame count.
+
+        /*
         unsigned int file_size_interframe_off;
         unsigned int file_size;
         unsigned char use_interframe;
-        VIDEO_BASE[VERSION] = 1;
         pack(VIDEO_BASE, 0);
         file_size_interframe_off = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
         unpack(VIDEO_BASE, 0);
@@ -256,6 +252,7 @@ static void save_anim() {
             cgetc();
         }
         unpack(VIDEO_BASE, use_interframe);
+        */
     }
     switch_to_gfx_screen();
     invalidate_loaded_anim();
@@ -270,8 +267,8 @@ void copy_screen() {
     *(char*)0xd020 = COLOR_GREEN;
     has_copy = 1;
     hide_cursor();
-    // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
-    memcpy(CLIPBOARD_CHARS, VIDEO_BASE + 0x400 * curr_screen, END_FRAME);
+    // Copies one frame, including colors byte.
+    memcpy(CLIPBOARD_CHARS, VIDEO_BASE + 0x400 * curr_screen, COLORS_OFFSET + 1);
     memcpy(CLIPBOARD_COLORS, VIDEO_BASE + 0x1000 + 0x400 * curr_screen, 40 * 25);
     *(char*)0xd020 = bg;
 }
@@ -279,8 +276,8 @@ void copy_screen() {
 static void paste_screen() {
     if (!has_copy) return;
     remember_colors();
-    // Copies BG_OFFSET + BORDER_OFFSET, excludes END_FRAME.
-    memcpy(VIDEO_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, END_FRAME);
+    // Copies one frame, including colors byte.
+    memcpy(VIDEO_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, COLORS_OFFSET + 1);
     memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen, CLIPBOARD_COLORS, 40 * 25);
     update_screen_base();
 }
@@ -340,15 +337,21 @@ static void handle_key(char key) {
                 handle_key(CH_CURS_LEFT);
             }
             break;
-        case CH_F3:
-            *(char*)0xd020 = ++screen_base[BORDER_OFFSET];
+        case CH_F3:  // Change border color.
+            screen_base[COLORS_OFFSET] += 0x10u;
+            *(char*)0xd020 = screen_base[COLORS_OFFSET] >> 4;
             break;
         case CH_F4:
-            *(char*)0xd021 = ++screen_base[BG_OFFSET];
+            {
+                unsigned char bg = screen_base[COLORS_OFFSET];
+                screen_base[COLORS_OFFSET] &= 0xf0u;
+                screen_base[COLORS_OFFSET] |= ++bg & 0xf;
+                *(char*)0xd021 = bg;
+            }
             break;
         case CH_F8:
-            ++*(VIDEO_BASE + END_FRAME);
-            *(VIDEO_BASE + END_FRAME) &= 3;
+            ++end_frame;
+            end_frame &= MAX_END_FRAME;
             break;
         case ' ':
         case 0x80 | ' ':
@@ -407,7 +410,6 @@ void edit() {
     textcolor(COLOR_YELLOW);
 
     memset(VIDEO_BASE, 0x20, 0x1000);
-    *(VIDEO_BASE + END_FRAME) = 3;
     memset(VIDEO_BASE + 0x1000, 0, 0x1000);
 
     // Test.
