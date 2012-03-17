@@ -40,19 +40,19 @@ static char color = 1;
 
 #define VIDEO_BASE ((char*)0x8000)
 #define COLORS_OFFSET (40 * 25)  // (border << 4) | bg
-#define SAVE_SIZE (0x400 * 4 + 4 * 40 * 25 / 2)
 
 /* The following two are defined by the linker. */
 extern unsigned char _EDITRAM_LAST__;
 
 unsigned char end_frame = 3;
-#define MAX_END_FRAME 7
+#define MAX_END_FRAME 15
 
 char* screen_base = VIDEO_BASE;
-/* RAM end - $7fff: rle buffer
- * $8000 - $8fff: screen 0-3, + border/screen color
- * $9000 - $9fff: colors 0-3
- * $a000 - $cfff: unused
+/* RAM end - $5fff: rle buffer
+ * $6000 - $7fff: colors 0-$f
+ * $8000 - $bfff: screen 0-$f, + border/screen color
+ * $c000 - $c7ff: clipboard
+ * $c800 - $c7ff: unused
  * $e000 - $ffff: unused
  */
 
