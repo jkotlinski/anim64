@@ -23,6 +23,6 @@ THE SOFTWARE. */
 
 void pack(unsigned char* screen_base, char interframe_compression);
 
-void unpack(unsigned char* screen_base, char interframe_compression);
+void unpack_v1(unsigned char* screen_base, char interframe_compression);
 
 #endif  // PACK_H_

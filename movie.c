@@ -135,7 +135,7 @@ static void unpack_anim(char file_it, unsigned char alt_screen) {
     unsigned char* screen_base = (unsigned char*)(alt_screen ? 0xa000u : 0x8000u);
     const unsigned char interframe_compressed = *start[file_it];
     rle_unpack(screen_base, start[file_it] + 1);
-    unpack(screen_base, interframe_compressed);
+    unpack_v1(screen_base, interframe_compressed);
 }
 
 void show_screen();
@@ -381,7 +381,7 @@ static void load_selected_anim(unsigned char alt_screen) {
     fclose(f);
     loaded_anim[alt_screen] = selected_file;
     rle_unpack(screen, &_EDITRAM_LAST__);
-    unpack(screen, interframe_compressed);
+    unpack_v1(screen, interframe_compressed);
 }
 
 static unsigned int get_file_length(unsigned char file) {

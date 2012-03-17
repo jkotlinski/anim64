@@ -214,7 +214,7 @@ static void load_anim() {
                 // Version 1: first_byte is interframe compression on/off.
                 fread(RLE_BUFFER_V1, 1, RLE_BUFFER_SIZE_V1, f);
                 rle_unpack(VIDEO_BASE, RLE_BUFFER_V1);
-                unpack(VIDEO_BASE, first_byte);
+                unpack_v1(VIDEO_BASE, first_byte);
                 convert_v1_v2();
                 break;
             case 2:
