@@ -192,10 +192,9 @@ static void switch_to_gfx_screen() {
 static void convert_v1_v2() {
     char screen;
     memmove(COLOR_BASE, VIDEO_BASE + 0x2000, 0x2000);
+    // Resets colors.
     for (screen = 0; screen < 4; ++screen) {
-        unsigned char* ptr = VIDEO_BASE + screen * 0x400 + COLORS_OFFSET;
-        *ptr <<= 4;
-        *ptr |= *(ptr + 1);
+        VIDEO_BASE[screen * 0x400 + COLORS_OFFSET] = 0;
     }
 }
 
