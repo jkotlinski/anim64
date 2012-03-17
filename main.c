@@ -38,21 +38,23 @@ static unsigned char reverse;
 
 static char color = 1;
 
+#define COLOR_BASE ((char*)0x6000)
 #define VIDEO_BASE ((char*)0x8000)
 #define COLORS_OFFSET (40 * 25)  // (border << 4) | bg
 
-/* The following two are defined by the linker. */
-extern unsigned char _EDITRAM_LAST__;
+#define RLE_BUFFER_V1 (unsigned char*)0x6000u
+#define RLE_BUFFER_SIZE_V1 0x2000u
+#define RLE_BUFFER_V2 (unsigned char*)0xc800u
+#define RLE_BUFFER_SIZE_V2 0x800u
 
 unsigned char end_frame = 3;
 #define MAX_END_FRAME 15
 
 char* screen_base = VIDEO_BASE;
-/* RAM end - $5fff: rle buffer
- * $6000 - $7fff: colors 0-$f
+/* $6000 - $7fff: colors 0-$f
  * $8000 - $bfff: screen 0-$f, + border/screen color
  * $c000 - $c7ff: clipboard
- * $c800 - $c7ff: unused
+ * $c800 - $cfff: rle buffer
  * $e000 - $ffff: unused
  */
 
@@ -192,28 +194,22 @@ static void load_anim() {
     switch_to_console_screen();
     f = prompt_open("load", "r");
     if (f) {
-        const unsigned int read = fread(&_EDITRAM_LAST__, 1,
-                0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
-        fclose(f);
-        {
-            const unsigned char interframe_compressed = _EDITRAM_LAST__;
-            switch (interframe_compressed) {
-                case 0:  // Interframe disabled.
-                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__ + 1);
-                    unpack(VIDEO_BASE, 0);
-                    break;
-                case 1:  // Interframe enabled.
-                    rle_unpack(VIDEO_BASE, &_EDITRAM_LAST__ + 1);
-                    unpack(VIDEO_BASE, 1);
-                    break;
-                case 2:  // TODO: v2 loading
-                default:
-                    while (1) {
-                        ++*(char*)0xd020;
-                    }
-                    break;
-            }
+        const unsigned char first_byte = fgetc(f);
+        switch (first_byte) {
+            case 0:
+            case 1:
+                // Version 1: first_byte is interframe compression on/off.
+                fread(RLE_BUFFER_V1, 1, RLE_BUFFER_SIZE_V1, f);
+                rle_unpack(VIDEO_BASE, RLE_BUFFER_V1);
+                unpack(VIDEO_BASE, first_byte);
+                memmove(COLOR_BASE, VIDEO_BASE + 0x2000, 0x2000);
+                break;
+            case 2:
+                // TODO: Version 2.
+            default:
+                for (;;) ++*(char*)0xd020;  // Not supported.
         }
+        fclose(f);
         curr_screen = 0;
     }
     switch_to_gfx_screen();
