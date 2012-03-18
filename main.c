@@ -39,7 +39,8 @@ static unsigned char reverse;
 static char color = 1;
 
 #define COLOR_BASE ((char*)0x6000)
-#define VIDEO_BASE ((char*)0x8000)
+#define DISPLAY_BASE ((char*)0x400)
+#define CHAR_BASE ((char*)0x8000)
 #define COLORS_OFFSET (40 * 25)  // (border << 4) | bg
 
 #define RLE_BUFFER_V1 (unsigned char*)0x6000u
@@ -50,12 +51,14 @@ static char color = 1;
 unsigned char end_frame = 3;
 #define MAX_END_FRAME 15
 
-char* screen_base = VIDEO_BASE;
 /* $6000 - $7fff: colors 0-$f
- * $8000 - $bfff: screen 0-$f, + border/screen color
- * $c000 - $c7ff: clipboard
- * $c800 - $cfff: rle buffer
+ * $8000 - $bfff: chars 0-$f
+ * $c000 - $cfff: clipboard / RLE buffer
  * $e000 - $ffff: unused
+ *
+ * note: first plan was to use $8000-$bfff for chars, and switch screen by flipping
+ * $d018. this however does not work for 16 screens, since charset is wired to
+ * $9000-$9fff.
  */
 
 signed char curr_screen;
@@ -66,8 +69,9 @@ static void init() {
     bgcolor(0);
 
     memset((void*)0xd800, 0, 0x400);  // Clear colors for better packing.
-    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    *(char*)0xd018 = 4;  // Point video to 0x8000.
+    // *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+    // *(char*)0xd018 = 4;  // Point video to 0x8000.
+    *(char*)0xd018 = 0x14;  // Point video to 0x400.
 }
 
 #pragma codeseg("EDITCODE")
@@ -81,12 +85,12 @@ static unsigned int offset() {
 
 static void punch(char ch, char col) {
     const unsigned int i = offset();
-    screen_base[i] = ch;
+    DISPLAY_BASE[i] = ch;
     *(char*)(0xd800u + i) = col;
 }
 
 static char screen_char() {
-    return screen_base[offset()];
+    return DISPLAY_BASE[offset()];
 }
 
 static char screen_color() {
@@ -133,10 +137,11 @@ static void copy_colors_to_d800() {
 
 static void update_screen_base() {
     unsigned char colors;
-    screen_base = (char*)(0x8000 + curr_screen * 0x400);
-    *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
+    // screen_base = (char*)(0x8000 + curr_screen * 0x400);
+    // *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
+    memcpy(0x400, CHAR_BASE + curr_screen * 0x400, 0x400);
     copy_colors_to_d800();
-    colors = screen_base[COLORS_OFFSET];
+    colors = DISPLAY_BASE[COLORS_OFFSET];
     *(char*)0xd020 = colors >> 4;
     *(char*)0xd021 = colors & 0xf;
     show_cursor();
@@ -189,31 +194,26 @@ void switch_color(char c) {
 static void switch_to_console_screen() {
     remember_colors();
     clrscr();
-    *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
-    *(char*)0xd018 = 0x14;  // Point video to 0x400.
+    // *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd021 = COLOR_BLACK;
     memset((char*)0xd800, COLOR_YELLOW, 0x400);
 }
 
 static void switch_to_gfx_screen() {
-    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+    // *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     update_screen_base();
 }
 
 static void convert_v1_v2() {
     char screen;
-    memmove(COLOR_BASE, VIDEO_BASE + 0x1000, 0x1000);
+    memmove(COLOR_BASE, CHAR_BASE + 0x1000, 0x1000);
 
     // In new version, colors are packed during editing.
     pack_color_nibbles(COLOR_BASE);
 
-    // During rewrite, trash source colors to make non-working colors more obvious...
-    // TODO: Remove this call.
-    memset(VIDEO_BASE + 0x1000, 0x15, 0x1000);
-
-    // Converts bg/border color bytes.
+    // Packs bg/border color nibbles.
     for (screen = 0; screen < 4; ++screen) {
-        unsigned char* ptr = VIDEO_BASE + screen * 0x400 + COLORS_OFFSET;
+        unsigned char* ptr = CHAR_BASE + screen * 0x400 + COLORS_OFFSET;
         *ptr <<= 4;
         *ptr |= 0xf & *(ptr + 1);
     }
@@ -230,8 +230,8 @@ static void load_anim() {
             case 1:
                 // Version 1: first_byte is interframe compression on/off.
                 fread(RLE_BUFFER_V1, 1, RLE_BUFFER_SIZE_V1, f);
-                rle_unpack(VIDEO_BASE, RLE_BUFFER_V1);
-                unpack_v1(VIDEO_BASE, first_byte);
+                rle_unpack(CHAR_BASE, RLE_BUFFER_V1);
+                unpack_v1(CHAR_BASE, first_byte);
                 convert_v1_v2();
                 break;
             case 2:
@@ -294,17 +294,17 @@ void copy_screen() {
     has_copy = 1;
     hide_cursor();
     // Copies one frame, including colors byte.
-    memcpy(CLIPBOARD_CHARS, VIDEO_BASE + 0x400 * curr_screen, COLORS_OFFSET + 1);
-    memcpy(CLIPBOARD_COLORS, VIDEO_BASE + 0x1000 + 0x400 * curr_screen, 40 * 25);
+    memcpy(CLIPBOARD_CHARS, CHAR_BASE + 0x400 * curr_screen, COLORS_OFFSET + 1);
+    memcpy(CLIPBOARD_COLORS, COLOR_BASE + curr_screen * 40 * 25 / 2, 40 * 25 / 2);
     *(char*)0xd020 = bg;
 }
 
 static void paste_screen() {
     if (!has_copy) return;
-    remember_colors();
+    hide_cursor();
     // Copies one frame, including colors byte.
-    memcpy(VIDEO_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, COLORS_OFFSET + 1);
-    memcpy(VIDEO_BASE + 0x1000 + 0x400 * curr_screen, CLIPBOARD_COLORS, 40 * 25);
+    memcpy(CHAR_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, COLORS_OFFSET + 1);
+    memcpy(COLOR_BASE + curr_screen * 40 * 25 / 2, CLIPBOARD_COLORS, 40 * 25 / 2);
     update_screen_base();
 }
 
@@ -364,14 +364,14 @@ static void handle_key(char key) {
             }
             break;
         case CH_F3:  // Change border color.
-            screen_base[COLORS_OFFSET] += 0x10u;
-            *(char*)0xd020 = screen_base[COLORS_OFFSET] >> 4;
+            DISPLAY_BASE[COLORS_OFFSET] += 0x10u;
+            *(char*)0xd020 = DISPLAY_BASE[COLORS_OFFSET] >> 4;
             break;
         case CH_F4:
             {
-                unsigned char bg = screen_base[COLORS_OFFSET];
-                screen_base[COLORS_OFFSET] &= 0xf0u;
-                screen_base[COLORS_OFFSET] |= ++bg & 0xf;
+                unsigned char bg = DISPLAY_BASE[COLORS_OFFSET];
+                DISPLAY_BASE[COLORS_OFFSET] &= 0xf0u;
+                DISPLAY_BASE[COLORS_OFFSET] |= ++bg & 0xf;
                 *(char*)0xd021 = bg;
             }
             break;
@@ -435,8 +435,9 @@ void edit() {
 
     textcolor(COLOR_YELLOW);
 
-    memset(VIDEO_BASE, 0x20, 0x1000);
-    memset(VIDEO_BASE + 0x1000, 0, 0x1000);
+    memset(DISPLAY_BASE, 0x20, 0x400);
+    memset(CHAR_BASE, 0x20, 0x4000);
+    memset(COLOR_BASE, 0, 0x2000);
 
     // Test.
     // handle_key(CH_F8);
