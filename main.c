@@ -148,13 +148,13 @@ static void update_screen_base() {
     show_cursor();
 }
 
-static void change_screen(char step) {
+static void change_screen(signed char step) {
     remember_screen();
     curr_screen += step;
-    if (curr_screen > end_frame) {
-        curr_screen = 0;
-    } else if (curr_screen < 0) {
+    if (curr_screen & 0x80u) {
         curr_screen = end_frame;
+    } else if (curr_screen > end_frame) {
+        curr_screen = 0;
     }
     update_screen_base();
 }
