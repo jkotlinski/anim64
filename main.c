@@ -437,15 +437,25 @@ static void handle_key(char key) {
     }
 }
 
+static void init_edit() {
+    unsigned char screen;
+    memset(DISPLAY_BASE, 0x20, 0x400);
+    memset(CHAR_BASE, 0x20, 0x4000);
+    memset(COLOR_BASE, 0, 0x2000);
+    textcolor(COLOR_YELLOW);
+
+    // Black border + background.
+    DISPLAY_BASE[COLORS_OFFSET] = 0;
+    for (screen = 0; screen < 16; ++screen) {
+        CHAR_BASE[COLORS_OFFSET + screen * 0x400] = 0;
+    }
+}
+
 void edit() {
 #define BLINK_PERIOD 30
     int loop = BLINK_PERIOD;
 
-    textcolor(COLOR_YELLOW);
-
-    memset(DISPLAY_BASE, 0x20, 0x400);
-    memset(CHAR_BASE, 0x20, 0x4000);
-    memset(COLOR_BASE, 0, 0x2000);
+    init_edit();
 
     // Test.
     // handle_key(CH_F8);
