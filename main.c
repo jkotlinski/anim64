@@ -113,7 +113,7 @@ static void show_cursor() {
     hidden_color = screen_color();
 }
 
-static void remember_colors() {
+static void remember_screen() {
     unsigned char* src = (unsigned char*)0xd800;
     unsigned char* dst = COLOR_BASE + curr_screen * 40 * 25 / 2;
     hide_cursor();
@@ -122,6 +122,7 @@ static void remember_colors() {
         *dst = *src++ << 4;
         *dst++ |= *src++ & 0xf;
     }
+    memcpy(CHAR_BASE + curr_screen * 0x400, DISPLAY_BASE, 40 * 25 + 1);
 }
 
 static void copy_colors_to_d800() {
@@ -139,7 +140,7 @@ static void update_screen_base() {
     unsigned char colors;
     // screen_base = (char*)(0x8000 + curr_screen * 0x400);
     // *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
-    memcpy(0x400, CHAR_BASE + curr_screen * 0x400, 0x400);
+    memcpy((char*)0x400, CHAR_BASE + curr_screen * 0x400, 0x400);
     copy_colors_to_d800();
     colors = DISPLAY_BASE[COLORS_OFFSET];
     *(char*)0xd020 = colors >> 4;
@@ -148,7 +149,7 @@ static void update_screen_base() {
 }
 
 static void change_screen(char step) {
-    remember_colors();
+    remember_screen();
     curr_screen += step;
     if (curr_screen > end_frame) {
         curr_screen = 0;
@@ -192,7 +193,7 @@ void switch_color(char c) {
 }
 
 static void switch_to_console_screen() {
-    remember_colors();
+    remember_screen();
     clrscr();
     // *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd021 = COLOR_BLACK;
@@ -385,7 +386,7 @@ static void handle_key(char key) {
             handle_key(CH_CURS_RIGHT);
             break;
         case CH_STOP:
-            remember_colors();
+            remember_screen();
             init_music();
             init_play();
             play_anim(32, 0);
