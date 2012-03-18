@@ -110,13 +110,13 @@ static void show_cursor() {
 }
 
 static void remember_colors() {
-    unsigned int i = 0x1000;
+    unsigned char* src = (unsigned char*)0xd800;
+    unsigned char* dst = COLOR_BASE + curr_screen * 40 * 25 / 2;
     hide_cursor();
-    memcpy(screen_base + 0x1000, (void*)0xd800, 40 * 25);
-    // Get rid of noise from reading video area.
-    while (i < 0x1000 + 40 * 25) {
-        screen_base[i] &= 0xf;
-        ++i;
+    while (src != (unsigned char*)0xd800 + 40 * 25) {
+        // Pack nibbles.
+        *dst = *src++ << 4;
+        *dst++ |= *src++ & 0xf;
     }
 }
 
