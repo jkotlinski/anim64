@@ -78,7 +78,7 @@ void unpack_v1(unsigned char* screen_base, char interframe_compression) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
     if (screen_base[VERSION] != 1) return;
-    // unpack_color_nibbles(screen_base + 0x1000);
+    unpack_color_nibbles(screen_base + 0x1000);
     if (!interframe_compression)
         return;
     while (screen_it <= end_frame) {

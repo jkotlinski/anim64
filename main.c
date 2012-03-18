@@ -120,11 +120,22 @@ static void remember_colors() {
     }
 }
 
+static void copy_colors_to_d800() {
+    unsigned char* src = COLOR_BASE + curr_screen * 40 * 25 / 2;
+    unsigned char* dst = (unsigned char*)0xd800;
+    // TODO: Rewrite in assembly.
+    while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
+        unsigned char colors = *src++;
+        *dst++ = colors >> 4;
+        *dst++ = colors & 0xf;
+    }
+}
+
 static void update_screen_base() {
     unsigned char colors;
     screen_base = (char*)(0x8000 + curr_screen * 0x400);
     *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
-    memcpy((void*)0xd800, screen_base + 0x1000, 40 * 25);
+    copy_colors_to_d800();
     colors = screen_base[COLORS_OFFSET];
     *(char*)0xd020 = colors >> 4;
     *(char*)0xd021 = colors & 0xf;
