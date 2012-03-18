@@ -193,12 +193,18 @@ static void convert_v1_v2() {
     char screen;
     memmove(COLOR_BASE, VIDEO_BASE + 0x1000, 0x1000);
 
-    // Trash source colors to make transition easier... TODO: Remove this call.
+    // In new version, colors are packed during editing.
+    pack_color_nibbles(COLOR_BASE);
+
+    // During rewrite, trash source colors to make non-working colors more obvious...
+    // TODO: Remove this call.
     memset(VIDEO_BASE + 0x1000, 0x15, 0x1000);
 
-    // Resets bg/border color bytes.
+    // Converts bg/border color bytes.
     for (screen = 0; screen < 4; ++screen) {
-        VIDEO_BASE[screen * 0x400 + COLORS_OFFSET] = 0;
+        unsigned char* ptr = VIDEO_BASE + screen * 0x400 + COLORS_OFFSET;
+        *ptr <<= 4;
+        *ptr |= 0xf & *(ptr + 1);
     }
 }
 

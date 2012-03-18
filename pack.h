@@ -25,4 +25,6 @@ void pack(unsigned char* screen_base, char interframe_compression);
 
 void unpack_v1(unsigned char* screen_base, char interframe_compression);
 
+void pack_color_nibbles(unsigned char* colorscreen_base);
+
 #endif  // PACK_H_

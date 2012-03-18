@@ -27,7 +27,7 @@ THE SOFTWARE. */
 
 #pragma codeseg("EDITCODE")
 
-static void pack_color_nibbles(unsigned char* colorscreen_base) {
+void pack_color_nibbles(unsigned char* colorscreen_base) {
     unsigned char screen_it;
     unsigned char* dst = colorscreen_base;
     for (screen_it = 0; screen_it < 4; ++screen_it) {
