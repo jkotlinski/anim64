@@ -119,8 +119,12 @@ static void remember_screen() {
     hide_cursor();
     while (src != (unsigned char*)0xd800 + 40 * 25) {
         // Pack nibbles.
-        *dst = *src++ << 4;
-        *dst++ |= *src++ & 0xf;
+        unsigned char packed = *src << 4;
+        ++src;
+        packed |= *src & 0xf;
+        ++src;
+        *dst = packed;
+        ++dst;
     }
     memcpy(CHAR_BASE + curr_screen * 0x400, DISPLAY_BASE, 40 * 25 + 1);
 }
@@ -130,9 +134,12 @@ static void copy_colors_to_d800() {
     unsigned char* dst = (unsigned char*)0xd800;
     // TODO: Rewrite in assembly.
     while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
-        unsigned char colors = *src++;
-        *dst++ = colors >> 4;
-        *dst++ = colors & 0xf;
+        unsigned char colors = *src;
+        ++src;
+        *dst = colors >> 4;
+        ++dst;
+        *dst = colors;
+        ++dst;
     }
 }
 
