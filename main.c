@@ -244,6 +244,7 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
         unsigned char* src = (char*)0xa000u + 0x400u * screen;
         unsigned char* dst = SCREEN_BASE + SCREEN_SIZE * screen;
         unsigned int i;
+        ++*(char*)0xd020;
         memcpy(dst, src, 40 * 25);
         // Border + bg colors.
         dst += 40 * 25;
@@ -260,6 +261,7 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
     }
     // Clean temp areas.
     for (screen = 4; screen < 16; ++screen) {
+        ++*(char*)0xd020;
         clear_screen(screen);
     }
 }

@@ -64,6 +64,7 @@ static void unpack_color_nibbles(unsigned char* colorscreen_base) {
     unsigned char* src = colorscreen_base + 4 * 40 * 25 / 2;
     while (1) {
         unsigned char* dst = colorscreen_base + screen_it * 0x400 + 40 * 25;
+        ++*(char*)0xd020;
         while (1) {
             const unsigned char val = *--src;
             *--dst = val;
@@ -86,5 +87,6 @@ void unpack_v1(unsigned char* screen_base, char interframe_compression) {
         xor_prev(screen_ptr);  // Characters.
         xor_prev(screen_ptr + 0x1000);  // Colors.
         ++screen_it;
+        ++*(char*)0xd020;
     }
 }
