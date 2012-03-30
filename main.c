@@ -250,7 +250,7 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
         dst += 40 * 25;
         src += 40 * 25;
         *dst = (*src << 4) | (src[1] & 0xf);
-        // Move color nibbles.
+        // Move & pack color nibbles.
         ++dst;
         src = (char*)0xb000u + 0x400u * screen;
         for (i = 0; i < 40 * 25; ++i) {
@@ -260,7 +260,7 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
         }
     }
     // Clean temp areas.
-    for (screen = 4; screen < 16; ++screen) {
+    for (; screen < 16; ++screen) {
         clear_screen(screen);
     }
 }
