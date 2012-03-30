@@ -125,6 +125,10 @@ static unsigned char* curr_screen_colors() {
     return curr_screen_chars() + SCREEN_COLORS_OFFSET;
 }
 
+static unsigned char* curr_bg_color() {
+    return curr_screen_chars() + BG_COLORS_OFFSET;
+}
+
 static void remember_screen() {
     unsigned char* src = (unsigned char*)0xd800;
     unsigned char* dst = curr_screen_colors();
@@ -138,15 +142,16 @@ static void remember_screen() {
         *dst = packed;
         ++dst;
     }
-    memcpy(SCREEN_BASE + curr_screen * SCREEN_SIZE, DISPLAY_BASE, 40 * 25 + 1);
+    memcpy(curr_screen_chars(), DISPLAY_BASE, 40 * 25);
+    *curr_bg_color() = (*(char*)0xd020 << 4) | (0xf & *(char*)0xd021);
 }
 
 static void copy_colors_to_d800() {
-    unsigned char* src = curr_screen_colors();
+    const unsigned char* src = curr_screen_colors();
     unsigned char* dst = (unsigned char*)0xd800;
     // TODO: Rewrite in assembly.
     while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
-        unsigned char colors = *src;
+        const unsigned char colors = *src;
         ++src;
         *dst = colors >> 4;
         ++dst;
@@ -157,9 +162,9 @@ static void copy_colors_to_d800() {
 
 static void update_screen_base() {
     unsigned char colors;
-    memcpy((char*)0x400, curr_screen_chars(), 0x400);
+    memcpy((char*)0x400, curr_screen_chars(), 40 * 25);
     copy_colors_to_d800();
-    colors = DISPLAY_BASE[BG_COLORS_OFFSET];
+    colors = *curr_bg_color();
     *(char*)0xd020 = colors >> 4;
     *(char*)0xd021 = colors & 0xf;
     show_cursor();
@@ -400,16 +405,10 @@ static void handle_key(char key) {
             }
             break;
         case CH_F3:  // Change border color.
-            DISPLAY_BASE[BG_COLORS_OFFSET] += 0x10u;
-            *(char*)0xd020 = DISPLAY_BASE[BG_COLORS_OFFSET] >> 4;
+            ++*(char*)0xd020;
             break;
         case CH_F4:
-            {
-                unsigned char bg = DISPLAY_BASE[BG_COLORS_OFFSET];
-                DISPLAY_BASE[BG_COLORS_OFFSET] &= 0xf0u;
-                DISPLAY_BASE[BG_COLORS_OFFSET] |= ++bg & 0xf;
-                *(char*)0xd021 = bg;
-            }
+            ++*(char*)0xd021;
             break;
         case CH_F8:
             ++end_frame;
