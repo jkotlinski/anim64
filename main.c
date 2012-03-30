@@ -299,6 +299,12 @@ static void save_anim() {
         fputc(2, f);  // Version.
         fputc(frame_count, f);
 
+        // RLE packed frame 0.
+
+        // for each frame...
+        //   - one char - interframe compress or not?
+        //   - packed frame
+
         /*
         unsigned int file_size_interframe_off;
         unsigned int file_size;
