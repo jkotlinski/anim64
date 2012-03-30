@@ -261,7 +261,6 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
     }
     // Clean temp areas.
     for (screen = 4; screen < 16; ++screen) {
-        ++*(char*)0xd020;
         clear_screen(screen);
     }
 }
