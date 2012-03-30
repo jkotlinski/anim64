@@ -160,7 +160,7 @@ static void copy_colors_to_d800() {
     }
 }
 
-static void update_screen_base() {
+static void redraw() {
     unsigned char colors;
     memcpy((char*)0x400, curr_screen_chars(), 40 * 25);
     copy_colors_to_d800();
@@ -178,7 +178,7 @@ static void change_screen(signed char step) {
     } else if (curr_screen > end_frame) {
         curr_screen = 0;
     }
-    update_screen_base();
+    redraw();
 }
 
 static unsigned char petscii_to_screen(unsigned char petscii) {
@@ -220,11 +220,6 @@ static void switch_to_console_screen() {
     // *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd021 = COLOR_BLACK;
     memset((char*)0xd800, COLOR_YELLOW, 0x400);
-}
-
-static void switch_to_gfx_screen() {
-    // *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    update_screen_base();
 }
 
 static void clear_screen(char screen) {
@@ -285,7 +280,21 @@ static void load_anim() {
         fclose(f);
         curr_screen = 0;
     }
-    switch_to_gfx_screen();
+    redraw();
+}
+
+static void rle_write_screen(char screen, FILE* f) {
+#define RLE_BUFFER (char*)0xc800u
+#define RLE_BUFFER_SIZE 0x800u
+    unsigned int packed_bytes = rle_pack(RLE_BUFFER, SCREEN_BASE + screen * SCREEN_SIZE, SCREEN_SIZE);
+    while (packed_bytes > RLE_BUFFER_SIZE) {
+        ++*(char*)0xd020;  // Buffer overflow!
+    }
+    if (screen != 0) {
+        // TODO: Interframe compression. Right now, always write 0.
+        fputc(0, f);
+    }
+    fwrite(RLE_BUFFER, packed_bytes, 1, f);
 }
 
 static void save_anim() {
@@ -293,46 +302,22 @@ static void save_anim() {
     switch_to_console_screen();
     f = prompt_open("save", "w");
     if (f) {
-        const char frame = 0;
-        const char frame_count = end_frame + 1;
+        char frame;
 
         fputc(2, f);  // Version.
-        fputc(frame_count, f);
+        fputc(end_frame + 1, f);  // Frame count.
 
-        // RLE packed frame 0.
-
-        // for each frame...
-        //   - one char - interframe compress or not?
-        //   - packed frame
-
-        /*
-        unsigned int file_size_interframe_off;
-        unsigned int file_size;
-        unsigned char use_interframe;
-        pack(VIDEO_BASE, 0);
-        file_size_interframe_off = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
-        unpack(VIDEO_BASE, 0);
-        pack(VIDEO_BASE, 1);
-        file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
-        use_interframe = (file_size <= file_size_interframe_off);  // Interframe byte.
-        if (!use_interframe) {
-            // Repacks with interframe off.
-            unpack(VIDEO_BASE, 1);
-            pack(VIDEO_BASE, 0);
-            file_size = rle_pack(&_EDITRAM_LAST__, VIDEO_BASE, SAVE_SIZE);
+        for (frame = 0; frame <= end_frame; ++frame) {
+            rle_write_screen(frame, f);
         }
 
-        fputc(use_interframe, f);
-        fwrite(&_EDITRAM_LAST__, file_size, 1, f);
         if (EOF == fclose(f)) {
             textcolor(COLOR_RED);
             puts("disk full?");
             cgetc();
         }
-        unpack(VIDEO_BASE, use_interframe);
-        */
     }
-    switch_to_gfx_screen();
+    redraw();
     invalidate_loaded_anim();
 }
 
@@ -353,7 +338,7 @@ static void paste_screen() {
     hide_cursor();
     // Copies one frame.
     memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
-    update_screen_base();
+    redraw();
 }
 
 static void handle_key(char key) {
@@ -433,7 +418,7 @@ static void handle_key(char key) {
             play_anim(32, 0);
             wait_anim(65535u);
             exit_play();
-            update_screen_base();
+            redraw();
             break;
 
         /* case 0x13:  // HOME
@@ -447,7 +432,7 @@ static void handle_key(char key) {
         case CH_F2: invalidate_loaded_anim(); save_anim(); break;
         case CH_F5: copy_screen(); break;
         case CH_F6: paste_screen(); break;
-        case CH_F7: switch_to_console_screen(); edit_movie(); switch_to_gfx_screen(); break;
+        case CH_F7: switch_to_console_screen(); edit_movie(); redraw(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
 
