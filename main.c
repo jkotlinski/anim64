@@ -38,28 +38,33 @@ static unsigned char reverse;
 
 static char color = 1;
 
-#define COLOR_BASE ((char*)0x6000)
-#define DISPLAY_BASE ((char*)0x400)
-#define CHAR_BASE ((char*)0x8000)
-#define COLORS_OFFSET (40 * 25)  // (border << 4) | bg
-
-#define RLE_BUFFER_V1 (unsigned char*)0x6000u
-#define RLE_BUFFER_SIZE_V1 0x2000u
-#define RLE_BUFFER_V2 (unsigned char*)0xc800u
-#define RLE_BUFFER_SIZE_V2 0x800u
-
-unsigned char end_frame = 3;
-#define MAX_END_FRAME 15
-
-/* $6000 - $7fff: colors 0-$f
- * $8000 - $bfff: chars 0-$f
- * $c000 - $cfff: clipboard / RLE buffer
+/* $6000 - $bfff: screens
+ * $c000 - $c7ff: clipboard
+ * $c800 - $cfff: RLE buffer
  * $e000 - $ffff: unused
  *
  * note: first plan was to use $8000-$bfff for chars, and switch screen by flipping
  * $d018. this however does not work for 16 screens, since charset is wired to
  * $9000-$9fff.
  */
+
+/* Screens are stored by:
+ *  - 40 x 25 character bytes
+ *  - 1 packed border/bg color byte
+ *  - 40 x 25 bitpacked color nibbles
+ */
+#define SCREEN_BASE ((char*)0x6000)
+#define SCREEN_COLORS_OFFSET (40 * 25 + 1)
+#define SCREEN_SIZE (40 * 25 + 1 + 40 * 25 / 2)  // 1501 ($5dd) bytes.
+#define DISPLAY_BASE ((char*)0x400)
+#define BG_COLORS_OFFSET (40 * 25)  // (border << 4) | bg
+#define CLIPBOARD (unsigned char*)0xc000u
+
+#define RLE_BUFFER_V2 (unsigned char*)0xc800u
+#define RLE_BUFFER_SIZE_V2 0x800u
+
+unsigned char end_frame = 3;
+#define MAX_END_FRAME 15
 
 signed char curr_screen;
 
@@ -68,7 +73,6 @@ static void init() {
     bordercolor(0);
     bgcolor(0);
 
-    memset((void*)0xd800, 0, 0x400);  // Clear colors for better packing.
     // *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     // *(char*)0xd018 = 4;  // Point video to 0x8000.
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
@@ -113,9 +117,17 @@ static void show_cursor() {
     hidden_color = screen_color();
 }
 
+static unsigned char* curr_screen_chars() {
+    return SCREEN_BASE + curr_screen * SCREEN_SIZE;
+}
+
+static unsigned char* curr_screen_colors() {
+    return curr_screen_chars() + SCREEN_COLORS_OFFSET;
+}
+
 static void remember_screen() {
     unsigned char* src = (unsigned char*)0xd800;
-    unsigned char* dst = COLOR_BASE + curr_screen * 40 * 25 / 2;
+    unsigned char* dst = curr_screen_colors();
     hide_cursor();
     while (src != (unsigned char*)0xd800 + 40 * 25) {
         // Pack nibbles.
@@ -126,11 +138,11 @@ static void remember_screen() {
         *dst = packed;
         ++dst;
     }
-    memcpy(CHAR_BASE + curr_screen * 0x400, DISPLAY_BASE, 40 * 25 + 1);
+    memcpy(SCREEN_BASE + curr_screen * SCREEN_SIZE, DISPLAY_BASE, 40 * 25 + 1);
 }
 
 static void copy_colors_to_d800() {
-    unsigned char* src = COLOR_BASE + curr_screen * 40 * 25 / 2;
+    unsigned char* src = curr_screen_colors();
     unsigned char* dst = (unsigned char*)0xd800;
     // TODO: Rewrite in assembly.
     while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
@@ -145,11 +157,9 @@ static void copy_colors_to_d800() {
 
 static void update_screen_base() {
     unsigned char colors;
-    // screen_base = (char*)(0x8000 + curr_screen * 0x400);
-    // *(char*)0xd018 = 4 | (curr_screen << 4);  // Point video to 0x8000.
-    memcpy((char*)0x400, CHAR_BASE + curr_screen * 0x400, 0x400);
+    memcpy((char*)0x400, curr_screen_chars(), 0x400);
     copy_colors_to_d800();
-    colors = DISPLAY_BASE[COLORS_OFFSET];
+    colors = DISPLAY_BASE[BG_COLORS_OFFSET];
     *(char*)0xd020 = colors >> 4;
     *(char*)0xd021 = colors & 0xf;
     show_cursor();
@@ -212,18 +222,40 @@ static void switch_to_gfx_screen() {
     update_screen_base();
 }
 
-static void convert_v1_v2() {
+static void clear_screen(char screen) {
+    char* ptr = SCREEN_BASE + screen * SCREEN_SIZE;
+    memset(ptr, 0x20, SCREEN_SIZE);
+    ptr[BG_COLORS_OFFSET] = 0;
+}
+
+static void convert_v1_v2(FILE* f, char use_iframe) {
     char screen;
-    memmove(COLOR_BASE, CHAR_BASE + 0x1000, 0x1000);
+    fread((char*)0x8000, 1, 0x2000u, f);
+    rle_unpack((char*)0xa000u, (char*)0x8000u);
+    unpack_v1((char*)0xa000u, use_iframe);
 
-    // In new version, colors are packed during editing.
-    pack_color_nibbles(COLOR_BASE);
-
-    // Packs bg/border color nibbles.
     for (screen = 0; screen < 4; ++screen) {
-        unsigned char* ptr = CHAR_BASE + screen * 0x400 + COLORS_OFFSET;
-        *ptr <<= 4;
-        *ptr |= 0xf & *(ptr + 1);
+        // Move chars.
+        unsigned char* src = (char*)0xa000u + 0x400u * screen;
+        unsigned char* dst = SCREEN_BASE + SCREEN_SIZE * screen;
+        unsigned int i;
+        memcpy(dst, src, 40 * 25);
+        // Border + bg colors.
+        dst += 40 * 25;
+        src += 40 * 25;
+        *dst = (*src << 4) | (src[1] & 0xf);
+        // Move color nibbles.
+        ++dst;
+        src = (char*)0xb000u + 0x400u * screen;
+        for (i = 0; i < 40 * 25; ++i) {
+            *dst = (src[0] << 4) | (src[1] & 0xf);
+            ++dst;
+            src += 2;
+        }
+    }
+    // Clean temp areas.
+    for (screen = 4; screen < 16; ++screen) {
+        clear_screen(screen);
     }
 }
 
@@ -237,10 +269,7 @@ static void load_anim() {
             case 0:
             case 1:
                 // Version 1: first_byte is interframe compression on/off.
-                fread(RLE_BUFFER_V1, 1, RLE_BUFFER_SIZE_V1, f);
-                rle_unpack(CHAR_BASE, RLE_BUFFER_V1);
-                unpack_v1(CHAR_BASE, first_byte);
-                convert_v1_v2();
+                convert_v1_v2(f, first_byte);
                 break;
             case 2:
                 // TODO: Version 2.
@@ -258,8 +287,11 @@ static void save_anim() {
     switch_to_console_screen();
     f = prompt_open("save", "w");
     if (f) {
+        const char frame = 0;
+        const char frame_count = end_frame + 1;
+
         fputc(2, f);  // Version.
-        fputc(end_frame + 1, f);  // Frame count.
+        fputc(frame_count, f);
 
         /*
         unsigned int file_size_interframe_off;
@@ -292,8 +324,6 @@ static void save_anim() {
     invalidate_loaded_anim();
 }
 
-#define CLIPBOARD_CHARS (unsigned char*)0xc000u
-#define CLIPBOARD_COLORS (unsigned char*)0xc400u
 
 static char has_copy;
 void copy_screen() {
@@ -301,18 +331,16 @@ void copy_screen() {
     *(char*)0xd020 = COLOR_GREEN;
     has_copy = 1;
     hide_cursor();
-    // Copies one frame, including colors byte.
-    memcpy(CLIPBOARD_CHARS, CHAR_BASE + 0x400 * curr_screen, COLORS_OFFSET + 1);
-    memcpy(CLIPBOARD_COLORS, COLOR_BASE + curr_screen * 40 * 25 / 2, 40 * 25 / 2);
+    // Copies one frame.
+    memcpy(CLIPBOARD, SCREEN_BASE + SCREEN_SIZE * curr_screen, SCREEN_SIZE);
     *(char*)0xd020 = bg;
 }
 
 static void paste_screen() {
     if (!has_copy) return;
     hide_cursor();
-    // Copies one frame, including colors byte.
-    memcpy(CHAR_BASE + 0x400 * curr_screen, CLIPBOARD_CHARS, COLORS_OFFSET + 1);
-    memcpy(COLOR_BASE + curr_screen * 40 * 25 / 2, CLIPBOARD_COLORS, 40 * 25 / 2);
+    // Copies one frame.
+    memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
     update_screen_base();
 }
 
@@ -372,14 +400,14 @@ static void handle_key(char key) {
             }
             break;
         case CH_F3:  // Change border color.
-            DISPLAY_BASE[COLORS_OFFSET] += 0x10u;
-            *(char*)0xd020 = DISPLAY_BASE[COLORS_OFFSET] >> 4;
+            DISPLAY_BASE[BG_COLORS_OFFSET] += 0x10u;
+            *(char*)0xd020 = DISPLAY_BASE[BG_COLORS_OFFSET] >> 4;
             break;
         case CH_F4:
             {
-                unsigned char bg = DISPLAY_BASE[COLORS_OFFSET];
-                DISPLAY_BASE[COLORS_OFFSET] &= 0xf0u;
-                DISPLAY_BASE[COLORS_OFFSET] |= ++bg & 0xf;
+                unsigned char bg = DISPLAY_BASE[BG_COLORS_OFFSET];
+                DISPLAY_BASE[BG_COLORS_OFFSET] &= 0xf0u;
+                DISPLAY_BASE[BG_COLORS_OFFSET] |= ++bg & 0xf;
                 *(char*)0xd021 = bg;
             }
             break;
@@ -439,15 +467,10 @@ static void handle_key(char key) {
 
 static void init_edit() {
     unsigned char screen;
-    memset(DISPLAY_BASE, 0x20, 0x400);
-    memset(CHAR_BASE, 0x20, 0x4000);
-    memset(COLOR_BASE, 0, 0x2000);
     textcolor(COLOR_YELLOW);
 
-    // Black border + background.
-    DISPLAY_BASE[COLORS_OFFSET] = 0;
     for (screen = 0; screen < 16; ++screen) {
-        CHAR_BASE[COLORS_OFFSET + screen * 0x400] = 0;
+        clear_screen(screen);
     }
 }
 
