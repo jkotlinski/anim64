@@ -320,15 +320,35 @@ static void load_anim() {
     redraw();
 }
 
-static void rle_write_screen(FILE* f) {
+static unsigned int rle_pack_screen() {
     unsigned int packed_bytes = rle_pack(RLE_BUFFER, curr_screen_chars(), SCREEN_SIZE);
     while (packed_bytes > RLE_BUFFER_SIZE) {
         ++*(char*)0xd020;  // Buffer overflow!
     }
-    fwrite(RLE_BUFFER, packed_bytes, 1, f);
+    return packed_bytes;
+}
+
+static void rle_write_screen(FILE* f) {
     if (curr_screen != 0) {
-        // TODO: Interframe compression. Right now, always write 0.
-        fputc(0, f);
+        // Interframe compression.
+        unsigned int non_iframe_bytes = rle_pack_screen();
+        unsigned int iframe_bytes;
+        xor_prev_v2();
+        iframe_bytes = rle_pack_screen();
+
+        if (iframe_bytes < non_iframe_bytes) {
+            // Write using interframe...
+            fwrite(RLE_BUFFER, iframe_bytes, 1, f);
+            fputc(1, f);
+            xor_prev_v2();
+        } else {
+            // ...un-interframe and write.
+            xor_prev_v2();
+            fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
+            fputc(0, f);
+        }
+    } else {
+        fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
     }
 }
 
