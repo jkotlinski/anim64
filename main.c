@@ -261,6 +261,15 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
     }
 }
 
+static void xor_prev_v2() {
+    char* curr = curr_screen_chars();
+    char* prev = curr - SCREEN_SIZE;
+    unsigned int i;
+    for (i = 0; i < SCREEN_SIZE; ++i) {
+        curr[i] ^= prev[i];
+    }
+}
+
 #define RLE_BUFFER (char*)0xc800u
 #define RLE_BUFFER_SIZE 0x800u
 void load_v2_anim(FILE* f) {
@@ -276,9 +285,11 @@ void load_v2_anim(FILE* f) {
     // ...then unpack them one by one.
     while (curr_screen <= end_frame) {
         rle_start = rle_unpack(curr_screen_chars(), rle_start);
-        // TODO: Interframe decompression.
-        if (*rle_start++ != 0) {
-            while (1) ++*(char*)0xd020;  // Not implemented yet!
+        if (curr_screen != 0) {
+            if (*rle_start) {
+                xor_prev_v2();
+            }
+            ++rle_start;
         }
         ++curr_screen;
     }
@@ -309,16 +320,16 @@ static void load_anim() {
     redraw();
 }
 
-static void rle_write_screen(char screen, FILE* f) {
-    unsigned int packed_bytes = rle_pack(RLE_BUFFER, SCREEN_BASE + screen * SCREEN_SIZE, SCREEN_SIZE);
+static void rle_write_screen(FILE* f) {
+    unsigned int packed_bytes = rle_pack(RLE_BUFFER, curr_screen_chars(), SCREEN_SIZE);
     while (packed_bytes > RLE_BUFFER_SIZE) {
         ++*(char*)0xd020;  // Buffer overflow!
     }
-    if (screen != 0) {
+    fwrite(RLE_BUFFER, packed_bytes, 1, f);
+    if (curr_screen != 0) {
         // TODO: Interframe compression. Right now, always write 0.
         fputc(0, f);
     }
-    fwrite(RLE_BUFFER, packed_bytes, 1, f);
 }
 
 static void save_anim() {
@@ -326,14 +337,15 @@ static void save_anim() {
     switch_to_console_screen();
     f = prompt_open("save", "w");
     if (f) {
-        char frame;
+        const char curr_screen_saved = curr_screen;
 
         fputc(2, f);  // Version.
         fputc(end_frame + 1, f);  // Frame count.
 
-        for (frame = 0; frame <= end_frame; ++frame) {
-            rle_write_screen(frame, f);
+        for (curr_screen = 0; curr_screen <= end_frame; ++curr_screen) {
+            rle_write_screen(f);
         }
+        curr_screen = curr_screen_saved;
 
         if (EOF == fclose(f)) {
             textcolor(COLOR_RED);
