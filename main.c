@@ -329,26 +329,29 @@ static unsigned int rle_pack_screen() {
 }
 
 static void rle_write_screen(FILE* f) {
-    if (curr_screen != 0) {
+    if (curr_screen == 0) {
+        fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
+        return;
+    }
+    {
         // Interframe compression.
         unsigned int non_iframe_bytes = rle_pack_screen();
         unsigned int iframe_bytes;
+        unsigned char use_iframe;
         xor_prev_v2();
         iframe_bytes = rle_pack_screen();
 
-        if (iframe_bytes < non_iframe_bytes) {
+        use_iframe = (iframe_bytes < non_iframe_bytes);
+        if (use_iframe) {
             // Write using interframe...
             fwrite(RLE_BUFFER, iframe_bytes, 1, f);
-            fputc(1, f);
             xor_prev_v2();
         } else {
-            // ...un-interframe and write.
+            // ...un-interframe, repack and write.
             xor_prev_v2();
             fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
-            fputc(0, f);
         }
-    } else {
-        fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
+        fputc(use_iframe, f);
     }
 }
 
