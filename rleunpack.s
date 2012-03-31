@@ -39,8 +39,8 @@ _rle_unpack:
 	sta dest
 	stx dest + 1
 	jsr rle_unpack		; execute
-	lda destlen		; return length
-	ldx destlen + 1
+	lda src		; return pointer to last unconsumed byte
+	ldx src + 1
 	rts
 
 

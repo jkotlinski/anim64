@@ -59,6 +59,7 @@ static char color = 1;
 #define DISPLAY_BASE ((char*)0x400)
 #define BG_COLORS_OFFSET (40 * 25)  // (border << 4) | bg
 #define CLIPBOARD (unsigned char*)0xc000u
+#define SCREEN_AREA_SIZE (CLIPBOARD - SCREEN_BASE)
 
 #define RLE_BUFFER_V2 (unsigned char*)0xc800u
 #define RLE_BUFFER_SIZE_V2 0x800u
@@ -260,6 +261,29 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
     }
 }
 
+#define RLE_BUFFER (char*)0xc800u
+#define RLE_BUFFER_SIZE 0x800u
+void load_v2_anim(FILE* f) {
+    unsigned int read_bytes;
+    const unsigned char* rle_start;
+    curr_screen = 0;
+    end_frame = fgetc(f) - 1;
+    // Read all compressed frames to start of screen area...
+    read_bytes = fread(SCREEN_BASE, 1, SCREEN_AREA_SIZE, f);
+    // ...move them to end of screen area...
+    rle_start = CLIPBOARD - read_bytes;
+    memmove(rle_start, SCREEN_BASE, read_bytes);
+    // ...then unpack them one by one.
+    while (curr_screen <= end_frame) {
+        rle_start = rle_unpack(curr_screen_chars(), rle_start);
+        // TODO: Interframe decompression.
+        if (*rle_start++ != 0) {
+            while (1) ++*(char*)0xd020;  // Not implemented yet!
+        }
+        ++curr_screen;
+    }
+}
+
 static void load_anim() {
     FILE* f;
     switch_to_console_screen();
@@ -273,7 +297,9 @@ static void load_anim() {
                 convert_v1_v2(f, first_byte);
                 break;
             case 2:
-                // TODO: Version 2.
+                // Version 2.
+                load_v2_anim(f);
+                break;
             default:
                 for (;;) ++*(char*)0xd020;  // Not supported.
         }
@@ -284,8 +310,6 @@ static void load_anim() {
 }
 
 static void rle_write_screen(char screen, FILE* f) {
-#define RLE_BUFFER (char*)0xc800u
-#define RLE_BUFFER_SIZE 0x800u
     unsigned int packed_bytes = rle_pack(RLE_BUFFER, SCREEN_BASE + screen * SCREEN_SIZE, SCREEN_SIZE);
     while (packed_bytes > RLE_BUFFER_SIZE) {
         ++*(char*)0xd020;  // Buffer overflow!
@@ -320,7 +344,6 @@ static void save_anim() {
     redraw();
     invalidate_loaded_anim();
 }
-
 
 static char has_copy;
 void copy_screen() {
