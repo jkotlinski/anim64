@@ -26,4 +26,6 @@ THE SOFTWARE. */
  */
 void __fastcall__ xor_prev(unsigned char* screen_ptr);
 
+void copy_colors_to_d800(const unsigned char* src);
+
 #endif  // DIFF_ASM_H_

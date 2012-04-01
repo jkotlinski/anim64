@@ -18,7 +18,10 @@
 ; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 ; THE SOFTWARE.
 
+.importzp ptr1
+
 .export _xor_prev
+.export _copy_colors_to_d800
 
 ; void xor_prev(unsigned char* screen_ptr) {
 ;    unsigned int offset = 0;
@@ -61,3 +64,53 @@ wr: sta $8400  ; *screen_ptr = a
     cmp or + 2  ; Has prev_ptr reached original screen_ptr?
     bne loop
     rts         ; Yes - done!
+
+; void copy_colors_to_d800(const unsigned char* src) {
+;     unsigned char* dst = (unsigned char*)0xd800;
+;     while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
+;         const unsigned char colors = *src;
+;         ++src;
+;         *dst = colors;
+;         ++dst;
+;         *dst = colors >> 4;
+;         ++dst;
+;     }
+; }
+dst	= ptr1 ; Borrows cc65 temp pointer.
+_copy_colors_to_d800:
+    sta @src
+    stx @src + 1
+    ; dst = 0xd800;
+    ldy #0
+    sty dst
+    lda #$d8
+    sta dst + 1
+@loop:
+@src = @loop + 1
+    ; *dst = *src;
+    lda $1234  ; src
+    sta (dst),y
+    ; *++dst = *src >> 4;
+    lsr a
+    lsr a
+    lsr a
+    lsr a
+    inc dst
+    sta (dst),y
+
+    ; ++dst;
+    inc dst
+    bne :+
+    inc dst + 1
+    ; if (dst == 0xdc00) then return;
+    lda dst + 1
+    cmp #$dc
+    bne :+
+    rts 
+:
+    ; ++src;
+    inc @src
+    bne :+
+    inc @src + 1
+:
+    jmp @loop

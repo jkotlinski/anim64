@@ -24,6 +24,7 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
+#include "diff_asm.h"
 #include "pack.h"
 #include "disk.h"
 // #include "effects.h"
@@ -136,9 +137,9 @@ static void remember_screen() {
     hide_cursor();
     while (src != (unsigned char*)0xd800 + 40 * 25) {
         // Pack nibbles.
-        unsigned char packed = *src << 4;
+        unsigned char packed = *src & 0xf;
         ++src;
-        packed |= *src & 0xf;
+        packed |= *src << 4;
         ++src;
         *dst = packed;
         ++dst;
@@ -147,24 +148,10 @@ static void remember_screen() {
     *curr_bg_color() = (*(char*)0xd020 << 4) | (0xf & *(char*)0xd021);
 }
 
-static void copy_colors_to_d800() {
-    const unsigned char* src = curr_screen_colors();
-    unsigned char* dst = (unsigned char*)0xd800;
-    // TODO: Rewrite in assembly.
-    while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
-        const unsigned char colors = *src;
-        ++src;
-        *dst = colors >> 4;
-        ++dst;
-        *dst = colors;
-        ++dst;
-    }
-}
-
 static void redraw() {
     unsigned char colors;
     memcpy((char*)0x400, curr_screen_chars(), 40 * 25);
-    copy_colors_to_d800();
+    copy_colors_to_d800(curr_screen_colors());
     colors = *curr_bg_color();
     *(char*)0xd020 = colors >> 4;
     *(char*)0xd021 = colors & 0xf;
@@ -250,7 +237,7 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
         ++dst;
         src = (char*)0xb000u + 0x400u * screen;
         for (i = 0; i < 40 * 25; ++i) {
-            *dst = (src[0] << 4) | (src[1] & 0xf);
+            *dst = (*src & 0xf) | (src[1] << 4);
             ++dst;
             src += 2;
         }
