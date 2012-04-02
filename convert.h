@@ -18,13 +18,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
-#ifndef PACK_H_
-#define PACK_H_
+#ifndef CONVERT_H_
+#define CONVERT_H_
 
-void pack(unsigned char* screen_base, char interframe_compression);
+#include <stdio.h>
 
-void unpack_v1(unsigned char* screen_base, char interframe_compression);
+void convert_v1_v2(FILE* f, char use_iframe);
 
-void pack_color_nibbles(unsigned char* colorscreen_base);
-
-#endif  // PACK_H_
+#endif  // CONVERT_H_

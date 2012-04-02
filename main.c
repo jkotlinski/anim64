@@ -24,14 +24,15 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
+#include "convert.h"
 #include "diff_asm.h"
-#include "pack.h"
 #include "disk.h"
 // #include "effects.h"
 #include "movie.h"
 #include "music.h"
 #include "rle.h"
 #include "player.h"
+#include "screen.h"
 
 static unsigned char cur_x;
 static unsigned char cur_y;
@@ -54,11 +55,8 @@ static char color = 1;
  *  - 1 packed border/bg color byte
  *  - 40 x 25 bitpacked color nibbles
  */
-#define SCREEN_BASE ((char*)0x6000)
 #define SCREEN_COLORS_OFFSET (40 * 25 + 1)
-#define SCREEN_SIZE (40 * 25 + 1 + 40 * 25 / 2)  // 1501 ($5dd) bytes.
 #define DISPLAY_BASE ((char*)0x400)
-#define BG_COLORS_OFFSET (40 * 25)  // (border << 4) | bg
 #define CLIPBOARD (unsigned char*)0xc000u
 #define SCREEN_AREA_SIZE (CLIPBOARD - SCREEN_BASE)
 
@@ -89,7 +87,7 @@ static unsigned int offset() {
     return 40 * cur_y + cur_x;
 }
 
-static void inc_d020() {
+void inc_d020() {
     ++*(char*)0xd020;
 }
 
@@ -229,44 +227,6 @@ static void switch_to_console_screen() {
     // *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd021 = COLOR_BLACK;
     memset((char*)0xd800, COLOR_YELLOW, 0x400);
-}
-
-static void clear_screen(char screen) {
-    char* ptr = SCREEN_BASE + screen * SCREEN_SIZE;
-    memset(ptr, 0x20, SCREEN_SIZE);
-    ptr[BG_COLORS_OFFSET] = 0;
-}
-
-static void convert_v1_v2(FILE* f, char use_iframe) {
-    char screen;
-    fread((char*)0x8000, 1, 0x2000u, f);
-    rle_unpack((char*)0xa000u, (char*)0x8000u);
-    unpack_v1((char*)0xa000u, use_iframe);
-
-    for (screen = 0; screen < 4; ++screen) {
-        // Move chars.
-        unsigned char* src = (char*)0xa000u + 0x400u * screen;
-        unsigned char* dst = SCREEN_BASE + SCREEN_SIZE * screen;
-        unsigned int i;
-        inc_d020();
-        memcpy(dst, src, 40 * 25);
-        // Border + bg colors.
-        dst += 40 * 25;
-        src += 40 * 25;
-        *dst = (*src << 4) | (src[1] & 0xf);
-        // Move & pack color nibbles.
-        ++dst;
-        src = (char*)0xb000u + 0x400u * screen;
-        for (i = 0; i < 40 * 25; ++i) {
-            *dst = (*src & 0xf) | (src[1] << 4);
-            ++dst;
-            src += 2;
-        }
-    }
-    // Clean temp areas.
-    for (; screen < 16; ++screen) {
-        clear_screen(screen);
-    }
 }
 
 static void xor_prev_v2() {

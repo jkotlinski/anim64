@@ -18,47 +18,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
-#include "pack.h"
+#include "convert.h"
+
+#include <stdio.h>
+#include <string.h>
 
 #include "diff_asm.h"
+#include "rle.h"
+#include "screen.h"
+
+#pragma codeseg("EDITCODE")
+#pragma rodataseg("EDITCODE")
 
 #define END_FRAME (40 * 25 + 2)
 #define VERSION (40 * 25 + 3)
 
-#pragma codeseg("EDITCODE")
-
-void pack_color_nibbles(unsigned char* colorscreen_base) {
-    unsigned char screen_it;
-    unsigned char* dst = colorscreen_base;
-    for (screen_it = 0; screen_it < 4; ++screen_it) {
-        unsigned char* src = colorscreen_base + screen_it * 0x400;
-        unsigned int i = 0;
-        while (i < (40 * 25) / 2) {
-            *dst++ = (*src++ << 4) | *src++;
-            ++i;
-        }
-    }
-}
-
-void pack(unsigned char* screen_base, char interframe_compression) {
-    unsigned char screen_it = screen_base[END_FRAME];
-    /* Actually, xor'ing with previous screen does sometimes makes
-     * things worse. So we should have adaptive solution here.
-     */
-    if (interframe_compression) {
-        while (screen_it) {
-            unsigned char* screen_ptr = screen_base + screen_it * 0x400;
-            xor_prev(screen_ptr);  // Characters.
-            xor_prev(screen_ptr + 0x1000);  // Colors.
-            --screen_it;
-        }
-    }
-    pack_color_nibbles(screen_base + 0x1000);
-}
-
-#pragma codeseg("LOWCODE")
-
-// TODO: Write in assembly.
 static void unpack_color_nibbles(unsigned char* colorscreen_base) {
     unsigned char screen_it = 3;
     unsigned char* src = colorscreen_base + 4 * 40 * 25 / 2;
@@ -75,7 +49,7 @@ static void unpack_color_nibbles(unsigned char* colorscreen_base) {
     }
 }
 
-void unpack_v1(unsigned char* screen_base, char interframe_compression) {
+static void unpack_v1(unsigned char* screen_base, char interframe_compression) {
     const unsigned char end_frame = screen_base[END_FRAME];
     unsigned char screen_it = 1;
     if (screen_base[VERSION] != 1) return;
@@ -88,5 +62,39 @@ void unpack_v1(unsigned char* screen_base, char interframe_compression) {
         xor_prev(screen_ptr + 0x1000);  // Colors.
         ++screen_it;
         ++*(char*)0xd020;
+    }
+}
+
+void inc_d020();
+
+void convert_v1_v2(FILE* f, char use_iframe) {
+    char screen;
+    fread((char*)0x8000, 1, 0x2000u, f);
+    rle_unpack((char*)0xa000u, (char*)0x8000u);
+    unpack_v1((char*)0xa000u, use_iframe);
+
+    for (screen = 0; screen < 4; ++screen) {
+        // Move chars.
+        unsigned char* src = (char*)0xa000u + 0x400u * screen;
+        unsigned char* dst = SCREEN_BASE + SCREEN_SIZE * screen;
+        unsigned int i;
+        inc_d020();
+        memcpy(dst, src, 40 * 25);
+        // Border + bg colors.
+        dst += 40 * 25;
+        src += 40 * 25;
+        *dst = (*src << 4) | (src[1] & 0xf);
+        // Move & pack color nibbles.
+        ++dst;
+        src = (char*)0xb000u + 0x400u * screen;
+        for (i = 0; i < 40 * 25; ++i) {
+            *dst = (*src & 0xf) | (src[1] << 4);
+            ++dst;
+            src += 2;
+        }
+    }
+    // Clean temp areas.
+    for (; screen < 16; ++screen) {
+        clear_screen(screen);
     }
 }
