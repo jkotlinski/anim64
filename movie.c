@@ -32,13 +32,13 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* RAM end - $7fff: rle buffer
- * $8000 - $8fff: screen 0-3, + border/screen color
- * $9000 - $9fff: color 0-3
- * $a000 - $afff: screen 4-7, + border/screen color
- * $b000 - $bfff: color 4-7
- * $c000 - $cfff: rle buffer
- * $e000 - $ffff: rle buffer
+/* $4000 - $7fff: packed screens
+ * $8000 - $83ff: chars, screen 0
+ * $8400 - $87ff: colors, screen 0
+ * $8800 - $8bff: chars, screen 1
+ * $8c00 - $8fff: colors, screen 1
+ * $9000 - $cfff: packed screens
+ * $e000 - $ffff: packed screens
  */
 
 #define FILE_COUNT 20
@@ -113,6 +113,7 @@ static void save_movie() {
 
 static unsigned char loaded_anim = -1;
 
+/*
 static unsigned int skip_music_frames() {
     unsigned int frames = 0;
     unsigned char file_it;
@@ -121,6 +122,7 @@ static unsigned int skip_music_frames() {
     }
     return frames;
 }
+*/
 
 /* The following two are defined by the linker. */
 extern unsigned char _EDITRAM_LAST__;
@@ -375,7 +377,7 @@ static void write_onefiler_anims(FILE* fout) {
 #define HEAP_COUNT 3
     unsigned int heap_start[3] = { 
         (unsigned int)HEAP_START,  // RAM end - 0x8000 
-        0xc000u,  // - 0xd000 
+        0x9000u,  // - 0xd000 
         0xe000u  // - 0xffff 
     };
     static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xffffu };
@@ -496,6 +498,7 @@ static char handle_key(unsigned char key) {
             show_screen();
             break;
         case CH_STOP:
+            while (1) ++*(char*)0xd020;
             /* TODO: Preview animation.
             load_selected_anim();
             skip_music_frames();

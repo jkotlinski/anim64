@@ -382,6 +382,7 @@ static void handle_key(char key) {
         case CH_STOP:
             remember_screen();
             init_music();
+            while (1) ++*(char*)0xd020;
             init_play();
             play_anim(32, 0);
             wait_anim(65535u);
