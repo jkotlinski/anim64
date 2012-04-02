@@ -131,10 +131,20 @@ static unsigned char* curr_bg_color() {
     return curr_screen_chars() + BG_COLORS_OFFSET;
 }
 
+static void tidy_up_colors() {
+    unsigned int i;
+    for (i = 1; i != 40 * 25; ++i) {
+        if (((char*)0x401)[i] == ' ') {
+            ((char*)0xd801)[i] = ((char*)0xd800)[i];
+        }
+    }
+}
+
 static void remember_screen() {
     unsigned char* src = (unsigned char*)0xd800;
     unsigned char* dst = curr_screen_colors();
     hide_cursor();
+    tidy_up_colors();
     while (src != (unsigned char*)0xd800 + 40 * 25) {
         // Pack nibbles.
         unsigned char packed = *src & 0xf;
