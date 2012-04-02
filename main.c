@@ -132,13 +132,19 @@ static unsigned char* curr_bg_color() {
 }
 
 static void tidy_up_colors() {
-    unsigned int i;
+    unsigned char prev_color = *(char*)0xd800;
+    char* ch = (char*)0x401;
+    char* color = (char*)0xd801;
     /* For every space char, use color of previous char. */
-    for (i = 1; i != 40 * 25; ++i) {
-        if (((char*)0x401)[i] == ' ') {
-            ((char*)0xd801)[i] = ((char*)0xd800)[i];
+    do {
+        if (*ch == ' ') {
+            *color = prev_color;
+        } else {
+            prev_color = *color;
         }
-    }
+        ++color;
+        ++ch;
+    } while (ch != (char*)0x400 + 40 * 25);
 }
 
 static void remember_screen() {
