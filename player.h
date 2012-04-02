@@ -24,10 +24,6 @@ THE SOFTWARE. */
 void init_play();
 void exit_play();
 
-// Plays animation at 0x8000 with given speed.
-// speed: 1 = fastest, 255 = slowest
-void play_anim(unsigned char speed, unsigned char screen_base);
-
 // Returns 0 if timed out, 1 if keyboard was pressed.
 char wait_anim(unsigned int duration);
 

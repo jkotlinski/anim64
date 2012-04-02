@@ -23,8 +23,6 @@ THE SOFTWARE. */
 // #include "effects.h"
 #include "irq.h"
 
-typedef void (*voidFn)(void);
-
 #define RASTER_LINE 0xfb
 
 void init_play() {
@@ -36,22 +34,6 @@ void init_play() {
 
     *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
     *(char*)0xd012 = RASTER_LINE;  // raster line
-    *(voidFn*)0xfffe = irq_handler;  // set irq handler pointer
-}
-
-// Returns 0 if timed out, 1 if keyboard was pressed.
-void play_anim(unsigned char speed, unsigned char alt_screen) {
-    ticks_per_frame = speed;
-
-    first_anim_screen = (alt_screen ? 8 : 0);
-    anim_screen = first_anim_screen;
-    last_anim_screen = alt_screen
-        ? 8 + *(char*)(0xa000u + 40 * 25 + 2)
-        : *(char*)(0x8000u + 40 * 25 + 2);
-
-    switched_frame = 0;
-    *(char*)0xd01a = 1;  // enable raster interrupts
-    while (!switched_frame);
 }
 
 void blink_vic_from_sid() {

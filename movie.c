@@ -155,12 +155,14 @@ static char is_onefiler() {
 }
 
 void play_movie_if_onefiler() {
-    unsigned int wait_duration = 0;
-    unsigned char file_it = 0;
-    unsigned char alt_screen = 0;
     if (!is_onefiler()) {
         return;
     }
+    for (;;) ++*(char*)0xd020;
+    /*
+    unsigned int wait_duration = 0;
+    unsigned char file_it = 0;
+    unsigned char alt_screen = 0;
     move_files_in_place();
     init_music();
     init_play();
@@ -181,6 +183,7 @@ void play_movie_if_onefiler() {
         }
         alt_screen ^= 1;
     }
+    */
 }
 
 #pragma codeseg("EDITCODE")

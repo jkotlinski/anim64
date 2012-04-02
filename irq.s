@@ -19,21 +19,15 @@
 ; THE SOFTWARE.
 
 .export _irq_handler
+.export _edit_play_irq_handler
 .export _caught_irqs  ; counter
 .export _ticks_per_frame
-.export _anim_screen
-.export _first_anim_screen
-.export _last_anim_screen
-.export _switched_frame
 
-_anim_screen: .byte 0
-_first_anim_screen: .byte 0
-_last_anim_screen: .byte 0
 _ticks_per_frame: .byte 0
 frame_delay: .byte 0
 _caught_irqs: .byte 0
-_switched_frame: .byte 0
 
+.if 0
 ; _anim_screen will cycle 0..3 or 8..11.
 anim_next_screen:
     ; *(char*)0xd018 = 4 | (anim_screen << 4);  // Point video to 0x8000.
@@ -111,6 +105,31 @@ anim_next_screen:
     lda _first_anim_screen
     sta _anim_screen
     rts
+.endif
+
+_edit_play_irq_handler:
+    pha
+    txa
+    pha
+    tya
+    pha
+
+    inc _caught_irqs
+
+    ; Calls music subroutine.
+    lda #0
+    tax
+    tay
+    jsr $1003
+
+    asl $d019  ; Acknowledges interrupt.
+
+    pla
+    tay
+    pla
+    tax
+    pla
+    rti
 
 _irq_handler:
     pha
@@ -121,7 +140,7 @@ _irq_handler:
 
     ldx frame_delay
     bne @wait
-    jsr anim_next_screen
+    ;jsr anim_next_screen
     ldx _ticks_per_frame
     jmp @done
 @wait:

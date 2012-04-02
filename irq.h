@@ -22,12 +22,15 @@ THE SOFTWARE. */
 #define IRQ_H_
 
 extern char ticks_per_frame;
-extern char caught_irqs;  // Increased by 1 every VBL.
+extern volatile char caught_irqs;  // Increased by 1 every VBL.
 extern char anim_screen;  // 0 (normal screen) or 8 (alt screen).
 extern char first_anim_screen;
 extern char last_anim_screen;
 extern volatile char switched_frame;
 
+typedef void (*voidFn)(void);
+
 void irq_handler();
+void edit_play_irq_handler();
 
 #endif  // IRQ_H_

@@ -28,6 +28,7 @@ THE SOFTWARE. */
 #include "diff_asm.h"
 #include "disk.h"
 // #include "effects.h"
+#include "irq.h"
 #include "movie.h"
 #include "music.h"
 #include "rle.h"
@@ -165,7 +166,6 @@ static void redraw() {
     colors = *curr_bg_color();
     *(char*)0xd021 = colors;
     *(char*)0xd020 = colors >> 4;
-    show_cursor();
 }
 
 static void change_screen(signed char step) {
@@ -177,6 +177,7 @@ static void change_screen(signed char step) {
         curr_screen = 0;
     }
     redraw();
+    show_cursor();
 }
 
 static unsigned char petscii_to_screen(unsigned char petscii) {
@@ -281,6 +282,7 @@ static void save_anim() {
         }
     }
     redraw();
+    show_cursor();
     invalidate_loaded_anim();
 }
 
@@ -301,12 +303,52 @@ static void paste_screen() {
     // Copies one frame.
     memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
     redraw();
+    show_cursor();
 }
 
 static void load_edit_anim() {
     switch_to_console_screen();
     load_and_unpack_anim(prompt_open("load", "r"));
     redraw();
+    show_cursor();
+}
+
+// Plays an unpacked animation (not RLE'd, but with packed color nibbles)...
+void preview_edit_anim() {
+    char keyboard_state = 0;
+
+    curr_screen = 0;
+    init_music();
+    init_play();
+    *(voidFn*)0xfffe = edit_play_irq_handler;  // set irq handler pointer
+    *(char*)0xd01a = 1;  // enable raster interrupts
+    while (1) {
+        unsigned char frame_delay = 32;
+        redraw();
+        while (frame_delay) {
+            if (caught_irqs) {
+                --caught_irqs;
+                --frame_delay;
+
+                // To exit animation, first all keys should be released, then
+                // some key should be pressed.
+                if (keyboard_state == 0) {
+                    if (0xff == *(char*)0xdc01) {  // All keys released?
+                        keyboard_state = 1;
+                    }
+                } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
+                    exit_play();
+                    return;
+                }
+            }
+            blink_vic_from_sid();
+        }
+        if (end_frame == curr_screen) {
+            curr_screen = 0;
+        } else {
+            ++curr_screen;
+        }
+    }
 }
 
 static void handle_key(char key) {
@@ -381,13 +423,9 @@ static void handle_key(char key) {
             break;
         case CH_STOP:
             remember_screen();
-            init_music();
-            while (1) ++*(char*)0xd020;
-            init_play();
-            play_anim(32, 0);
-            wait_anim(65535u);
-            exit_play();
+            preview_edit_anim();
             redraw();
+            show_cursor();
             break;
 
         /* case 0x13:  // HOME
