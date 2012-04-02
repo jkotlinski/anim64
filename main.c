@@ -24,7 +24,7 @@ THE SOFTWARE. */
 #include <string.h>
 #include <time.h>
 
-#include "convert.h"
+#include "anim.h"
 #include "diff_asm.h"
 #include "disk.h"
 // #include "effects.h"
@@ -57,16 +57,11 @@ static char color = 1;
  */
 #define SCREEN_COLORS_OFFSET (40 * 25 + 1)
 #define DISPLAY_BASE ((char*)0x400)
-#define CLIPBOARD (unsigned char*)0xc000u
-#define SCREEN_AREA_SIZE (CLIPBOARD - SCREEN_BASE)
 
 #define RLE_BUFFER_V2 (unsigned char*)0xc800u
 #define RLE_BUFFER_SIZE_V2 0x800u
 
-unsigned char end_frame = 3;
 #define MAX_END_FRAME 15
-
-signed char curr_screen;
 
 static void init() {
     clrscr();
@@ -119,10 +114,6 @@ static void hide_cursor() {
 static void show_cursor() {
     hidden_screen_char = screen_char();
     hidden_color = screen_color();
-}
-
-static unsigned char* curr_screen_chars() {
-    return SCREEN_BASE + curr_screen * SCREEN_SIZE;
 }
 
 static unsigned char* curr_screen_colors() {
@@ -229,64 +220,8 @@ static void switch_to_console_screen() {
     memset((char*)0xd800, COLOR_YELLOW, 0x400);
 }
 
-static void xor_prev_v2() {
-    char* curr = curr_screen_chars();
-    char* prev = curr - SCREEN_SIZE;
-    unsigned int i;
-    for (i = 0; i < SCREEN_SIZE; ++i) {
-        curr[i] ^= prev[i];
-    }
-}
-
 #define RLE_BUFFER (char*)0xc800u
 #define RLE_BUFFER_SIZE 0x800u
-void load_v2_anim(FILE* f) {
-    unsigned int read_bytes;
-    const unsigned char* rle_start;
-    curr_screen = 0;
-    end_frame = fgetc(f) - 1;
-    // Read all compressed frames to start of screen area...
-    read_bytes = fread(SCREEN_BASE, 1, SCREEN_AREA_SIZE, f);
-    // ...move them to end of screen area...
-    rle_start = CLIPBOARD - read_bytes;
-    memmove(rle_start, SCREEN_BASE, read_bytes);
-    // ...then unpack them one by one.
-    while (curr_screen <= end_frame) {
-        rle_start = rle_unpack(curr_screen_chars(), rle_start);
-        if (curr_screen != 0) {
-            if (*rle_start) {
-                xor_prev_v2();
-            }
-            ++rle_start;
-        }
-        ++curr_screen;
-    }
-}
-
-static void load_anim() {
-    FILE* f;
-    switch_to_console_screen();
-    f = prompt_open("load", "r");
-    if (f) {
-        const unsigned char first_byte = fgetc(f);
-        switch (first_byte) {
-            case 0:
-            case 1:
-                // Version 1: first_byte is interframe compression on/off.
-                convert_v1_v2(f, first_byte);
-                break;
-            case 2:
-                // Version 2.
-                load_v2_anim(f);
-                break;
-            default:
-                for (;;) inc_d020();  // Not supported.
-        }
-        fclose(f);
-        curr_screen = 0;
-    }
-    redraw();
-}
 
 static unsigned int rle_pack_screen() {
     unsigned int packed_bytes = rle_pack(RLE_BUFFER, curr_screen_chars(), SCREEN_SIZE);
@@ -365,6 +300,12 @@ static void paste_screen() {
     hide_cursor();
     // Copies one frame.
     memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
+    redraw();
+}
+
+static void load_edit_anim() {
+    switch_to_console_screen();
+    load_anim(prompt_open("load", "r"));
     redraw();
 }
 
@@ -455,7 +396,7 @@ static void handle_key(char key) {
         /* case 0x93:  // CLR (shift + HOME)
             break; */
 
-        case CH_F1: load_anim(); break;
+        case CH_F1: load_edit_anim(); break;
         case CH_F2: invalidate_loaded_anim(); save_anim(); break;
         case CH_F5: copy_screen(); break;
         case CH_F6: paste_screen(); break;

@@ -23,10 +23,12 @@ THE SOFTWARE. */
 #include <stdlib.h>
 #include <string.h>
 
+#include "anim.h"
 #include "disk.h"
 #include "music.h"
 #include "rle.h"
 #include "player.h"
+#include "screen.h"
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
@@ -109,7 +111,7 @@ static void save_movie() {
     fclose(f);
 }
 
-static unsigned char loaded_anim[2] = { -1, -1 };
+static unsigned char loaded_anim = -1;
 
 static unsigned int skip_music_frames() {
     unsigned int frames = 0;
@@ -319,8 +321,7 @@ static void init() {
 }
 
 void invalidate_loaded_anim() {
-    loaded_anim[0] = -1;
-    loaded_anim[1] = -1;
+    loaded_anim = -1;
 }
 
 static void edit_field() {
@@ -357,24 +358,16 @@ static void edit_field() {
     draw_fields();
 }
 
-static void load_selected_anim(unsigned char alt_screen) {
-    /*
+static void load_selected_anim() {
     FILE* f;
-    char* screen = (char*)(alt_screen ? 0xa000u : 0x8000u);
-    char interframe_compressed;
-    if (loaded_anim[alt_screen] == selected_file) return; 
+    if (loaded_anim == selected_file) return; 
     f = fopen(filename[selected_file], "r");
     if (!f) {
         cputs("err");
         return; 
     }
-    interframe_compressed = fgetc(f);
-    fread(&_EDITRAM_LAST__, 1, 0x8000u - (unsigned int)&_EDITRAM_LAST__, f);
-    fclose(f);
-    loaded_anim[alt_screen] = selected_file;
-    rle_unpack(screen, &_EDITRAM_LAST__);
-    unpack_v1(screen, interframe_compressed);
-    */
+    load_anim(f);
+    loaded_anim = selected_file;
 }
 
 static unsigned int get_file_length(unsigned char file) {
@@ -515,7 +508,7 @@ static char handle_key(unsigned char key) {
             show_screen();
             break;
         case CH_STOP:
-            load_selected_anim(1);
+            load_selected_anim();
             skip_music_frames();
             init_play();
             play_anim(movie.speed[selected_file], 1);
@@ -535,7 +528,7 @@ void edit_movie() {
 
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
-            load_selected_anim(0);
+            load_selected_anim();
             break;
         }
     }

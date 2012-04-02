@@ -18,10 +18,15 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
+#include "anim.h"
+#include "convert.h"
 #include "player.h"
 #include "irq.h"
+#include "rle.h"
+#include "screen.h"
 
 #include <conio.h>
+#include <string.h>
 
 #pragma codeseg("EDITCODE")
 
@@ -68,3 +73,46 @@ char wait_anim(unsigned int duration) {
     return 0;
 }
 
+static void load_v2_anim(FILE* f) {
+    unsigned int read_bytes;
+    const unsigned char* rle_start;
+    curr_screen = 0;
+    end_frame = fgetc(f) - 1;
+    // Read all compressed frames to start of screen area...
+    read_bytes = fread(SCREEN_BASE, 1, SCREEN_AREA_SIZE, f);
+    // ...move them to end of screen area...
+    rle_start = CLIPBOARD - read_bytes;
+    memmove(rle_start, SCREEN_BASE, read_bytes);
+    // ...then unpack them one by one.
+    while (curr_screen <= end_frame) {
+        rle_start = rle_unpack(curr_screen_chars(), rle_start);
+        if (curr_screen != 0) {
+            if (*rle_start) {
+                xor_prev_v2();
+            }
+            ++rle_start;
+        }
+        ++curr_screen;
+    }
+}
+
+void load_anim(FILE* f) {
+    unsigned char first_byte;
+    if (!f) return;
+    first_byte = fgetc(f);
+    switch (first_byte) {
+        case 0:
+        case 1:
+            // Version 1: first_byte is interframe compression on/off.
+            convert_v1_v2(f, first_byte);
+            break;
+        case 2:
+            // Version 2.
+            load_v2_anim(f);
+            break;
+        default:
+            for (;;) ++*(char*)0xd020;  // Not supported.
+    }
+    fclose(f);
+    curr_screen = 0;
+}
