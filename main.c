@@ -305,7 +305,7 @@ static void paste_screen() {
 
 static void load_edit_anim() {
     switch_to_console_screen();
-    load_anim(prompt_open("load", "r"));
+    load_and_unpack_anim(prompt_open("load", "r"));
     redraw();
 }
 

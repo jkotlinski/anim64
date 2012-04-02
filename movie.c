@@ -358,18 +358,6 @@ static void edit_field() {
     draw_fields();
 }
 
-static void load_selected_anim() {
-    FILE* f;
-    if (loaded_anim == selected_file) return; 
-    f = fopen(filename[selected_file], "r");
-    if (!f) {
-        cputs("err");
-        return; 
-    }
-    load_anim(f);
-    loaded_anim = selected_file;
-}
-
 static unsigned int get_file_length(unsigned char file) {
     FILE* f;
     unsigned int length;
@@ -508,6 +496,7 @@ static char handle_key(unsigned char key) {
             show_screen();
             break;
         case CH_STOP:
+            /* TODO: Preview animation.
             load_selected_anim();
             skip_music_frames();
             init_play();
@@ -515,6 +504,7 @@ static char handle_key(unsigned char key) {
             wait_anim(movie.frames[selected_file] * movie.speed[selected_file]);
             exit_play();
             show_screen();
+            */
             break;
         case CH_F7:  // Go to animation editor.
             return 1;
@@ -528,8 +518,16 @@ void edit_movie() {
 
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
-            load_selected_anim();
-            break;
+            // Loads and unpacks selected movie, returns to animation editor.
+            FILE* f;
+            if (loaded_anim == selected_file) return; 
+            f = fopen(filename[selected_file], "r");
+            if (!f) {
+                return; 
+            }
+            load_and_unpack_anim(f);
+            loaded_anim = selected_file;
+            return;
         }
     }
 }

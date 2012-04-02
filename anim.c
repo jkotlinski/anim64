@@ -91,7 +91,7 @@ static void load_v2_anim(FILE* f) {
     }
 }
 
-void load_anim(FILE* f) {
+void load_and_unpack_anim(FILE* f) {
     unsigned char first_byte;
     if (!f) return;
     first_byte = fgetc(f);
