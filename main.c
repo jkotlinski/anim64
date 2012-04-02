@@ -89,6 +89,10 @@ static unsigned int offset() {
     return 40 * cur_y + cur_x;
 }
 
+static void inc_d020() {
+    ++*(char*)0xd020;
+}
+
 static void punch(char ch, char col) {
     const unsigned int i = offset();
     DISPLAY_BASE[i] = ch;
@@ -244,7 +248,7 @@ static void convert_v1_v2(FILE* f, char use_iframe) {
         unsigned char* src = (char*)0xa000u + 0x400u * screen;
         unsigned char* dst = SCREEN_BASE + SCREEN_SIZE * screen;
         unsigned int i;
-        ++*(char*)0xd020;
+        inc_d020();
         memcpy(dst, src, 40 * 25);
         // Border + bg colors.
         dst += 40 * 25;
@@ -316,7 +320,7 @@ static void load_anim() {
                 load_v2_anim(f);
                 break;
             default:
-                for (;;) ++*(char*)0xd020;  // Not supported.
+                for (;;) inc_d020();  // Not supported.
         }
         fclose(f);
         curr_screen = 0;
@@ -327,12 +331,13 @@ static void load_anim() {
 static unsigned int rle_pack_screen() {
     unsigned int packed_bytes = rle_pack(RLE_BUFFER, curr_screen_chars(), SCREEN_SIZE);
     while (packed_bytes > RLE_BUFFER_SIZE) {
-        ++*(char*)0xd020;  // Buffer overflow!
+        inc_d020();  // Buffer overflow!
     }
     return packed_bytes;
 }
 
 static void rle_write_screen(FILE* f) {
+    inc_d020();
     if (curr_screen == 0) {
         fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
         return;
@@ -459,7 +464,7 @@ static void handle_key(char key) {
             }
             break;
         case CH_F3:  // Change border color.
-            ++*(char*)0xd020;
+            inc_d020();
             break;
         case CH_F4:
             ++*(char*)0xd021;
