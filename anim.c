@@ -49,11 +49,6 @@ char wait_anim(unsigned int duration) {
     while (duration--) {
         // Waits until raster screen is right below lower text border.
         // *(char*)0xd020 = 1;
-        /*
-        if (!caught_irqs) {
-            effect_tick(first_anim_screen);
-        }
-        */
         while (!caught_irqs) {
             blink_vic_from_sid();
         }
