@@ -314,7 +314,7 @@ static void load_edit_anim() {
 }
 
 // Plays an unpacked animation (not RLE'd, but with packed color nibbles)...
-void preview_edit_anim() {
+void preview_play_anim() {
     char keyboard_state = 0;
 
     curr_screen = 0;
@@ -423,7 +423,7 @@ static void handle_key(char key) {
             break;
         case CH_STOP:
             remember_screen();
-            preview_edit_anim();
+            preview_play_anim();
             redraw();
             show_cursor();
             break;
