@@ -22,7 +22,7 @@ THE SOFTWARE. */
 
 #include <string.h>
 
-#include "diff_asm.h"
+#include "loops.h"
 
 signed char curr_screen;
 unsigned char end_frame = 3;

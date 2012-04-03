@@ -23,7 +23,7 @@ THE SOFTWARE. */
 #include <stdio.h>
 #include <string.h>
 
-#include "diff_asm.h"
+#include "loops.h"
 #include "rle.h"
 #include "screen.h"
 
