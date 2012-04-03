@@ -24,9 +24,9 @@ THE SOFTWARE. */
 #include <string.h>
 
 #include "anim.h"
-#include "anim_edit.h"
 #include "anim_play.h"
 #include "diff_asm.h"
+#include "edit.h"
 // #include "effects.h"
 #include "irq.h"
 #include "movie.h"
