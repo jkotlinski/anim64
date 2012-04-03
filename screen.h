@@ -34,5 +34,9 @@ extern signed char curr_screen;
 extern unsigned char end_frame;
 
 unsigned char* curr_screen_chars();
+unsigned char* curr_screen_colors();
+unsigned char* curr_bg_color();
+
+void redraw_edit_screen();
 
 #endif  // SCREEN_H_

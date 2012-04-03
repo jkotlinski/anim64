@@ -25,6 +25,7 @@ THE SOFTWARE. */
 #include <time.h>
 
 #include "anim.h"
+#include "anim_play.h"
 #include "diff_asm.h"
 #include "disk.h"
 // #include "effects.h"
@@ -56,7 +57,6 @@ static char color = 1;
  *  - 1 packed border/bg color byte
  *  - 40 x 25 bitpacked color nibbles
  */
-#define SCREEN_COLORS_OFFSET (40 * 25 + 1)
 #define DISPLAY_BASE ((char*)0x400)
 
 #define RLE_BUFFER_V2 (unsigned char*)0xc800u
@@ -117,14 +117,6 @@ static void show_cursor() {
     hidden_color = screen_color();
 }
 
-static unsigned char* curr_screen_colors() {
-    return curr_screen_chars() + SCREEN_COLORS_OFFSET;
-}
-
-static unsigned char* curr_bg_color() {
-    return curr_screen_chars() + BG_COLORS_OFFSET;
-}
-
 static void tidy_up_colors() {
     unsigned char prev_color = *(char*)0xd800;
     char* ch = (char*)0x401;
@@ -159,15 +151,6 @@ static void remember_screen() {
     *curr_bg_color() = (*(char*)0xd020 << 4) | (0xf & *(char*)0xd021);
 }
 
-static void redraw() {
-    unsigned char colors;
-    memcpy((char*)0x400, curr_screen_chars(), 40 * 25);
-    copy_colors_to_d800(curr_screen_colors());
-    colors = *curr_bg_color();
-    *(char*)0xd021 = colors;
-    *(char*)0xd020 = colors >> 4;
-}
-
 static void change_screen(signed char step) {
     remember_screen();
     curr_screen += step;
@@ -176,7 +159,7 @@ static void change_screen(signed char step) {
     } else if (curr_screen > end_frame) {
         curr_screen = 0;
     }
-    redraw();
+    redraw_edit_screen();
     show_cursor();
 }
 
@@ -281,7 +264,7 @@ static void save_anim() {
             cgetc();
         }
     }
-    redraw();
+    redraw_edit_screen();
     show_cursor();
     invalidate_loaded_anim();
 }
@@ -302,58 +285,15 @@ static void paste_screen() {
     hide_cursor();
     // Copies one frame.
     memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
-    redraw();
+    redraw_edit_screen();
     show_cursor();
 }
 
 static void load_edit_anim() {
     switch_to_console_screen();
     load_and_unpack_anim(prompt_open("load", "r"));
-    redraw();
+    redraw_edit_screen();
     show_cursor();
-}
-
-// Plays an unpacked animation (not RLE'd, but with packed color nibbles)...
-void preview_play_anim(unsigned char speed,
-        unsigned int skip_music_ticks,
-        unsigned char frames) {
-    char keyboard_state = 0;
-
-    curr_screen = 0;
-    init_music();
-    while (skip_music_ticks--) {
-        tick_music();
-    }
-    init_play();
-    *(voidFn*)0xfffe = edit_play_irq_handler;  // set irq handler pointer
-    *(char*)0xd01a = 1;  // enable raster interrupts
-    while (frames--) {
-        unsigned char frame_delay = speed;
-        redraw();
-        while (frame_delay) {
-            if (caught_irqs) {
-                --caught_irqs;
-                --frame_delay;
-
-                // To exit animation, first all keys should be released, then
-                // some key should be pressed.
-                if (keyboard_state == 0) {
-                    if (0xff == *(char*)0xdc01) {  // All keys released?
-                        keyboard_state = 1;
-                    }
-                } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
-                    exit_play();
-                    return;
-                }
-            }
-            blink_vic_from_sid();
-        }
-        if (end_frame == curr_screen) {
-            curr_screen = 0;
-        } else {
-            ++curr_screen;
-        }
-    }
 }
 
 static void handle_key(char key) {
@@ -429,7 +369,7 @@ static void handle_key(char key) {
         case CH_STOP:
             remember_screen();
             preview_play_anim(32, 0, 255);
-            redraw();
+            redraw_edit_screen();
             show_cursor();
             break;
 
@@ -444,7 +384,7 @@ static void handle_key(char key) {
         case CH_F2: invalidate_loaded_anim(); save_anim(); break;
         case CH_F5: copy_screen(); break;
         case CH_F6: paste_screen(); break;
-        case CH_F7: switch_to_console_screen(); edit_movie(); redraw(); break;
+        case CH_F7: switch_to_console_screen(); edit_movie(); redraw_edit_screen(); break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
 
