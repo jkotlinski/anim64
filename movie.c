@@ -386,7 +386,6 @@ static void write_onefiler_anims(FILE* fout) {
     };
     static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xfffeu };
     unsigned char file_it;
-    *(char*)0xd018 |= 2;  // lower/uppercase gfx
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         const unsigned int file_length = get_file_length(file_it);
         unsigned char heap_it;
@@ -397,7 +396,7 @@ static void write_onefiler_anims(FILE* fout) {
                 gotoxy(0, file_it + 2);
                 cputs(filename[file_it]);
                 cputs(" bad");
-                goto exit;
+                return;
             }
             continue;
         }
@@ -424,14 +423,10 @@ static void write_onefiler_anims(FILE* fout) {
         if (alloc_failed) {
             textcolor(COLOR_RED);
             cputs(" out of mem");
-            goto exit;
+            return;
         }
     }
     fputc(0, fout);
-    cputs(" ok!");
-exit:
-    cgetc();
-    *(char*)0xd018 &= ~2;  // uppercase + gfx
 }
 
 static void save_onefiler() {
@@ -446,12 +441,16 @@ static void save_onefiler() {
     fputc(8, f);
     // Saves player program code.
     fwrite((char*)0x801, (unsigned int)HEAP_START - 0x801, 1, f);
+    *(char*)0xd018 |= 2;  // lower/uppercase gfx
     write_onefiler_anims(f);
     if (EOF == fclose(f)) {
         textcolor(COLOR_RED);
-        puts("disk full?");
-        cgetc();
+        cputs(" disk full?");
+    } else {
+        cputs(" ok!");
     }
+    cgetc();
+    *(char*)0xd018 &= ~2;  // uppercase + gfx
     _filetype = 'u';  // Switch back to .usr
 }
 
