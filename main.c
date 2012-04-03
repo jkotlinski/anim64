@@ -42,7 +42,9 @@ static unsigned char reverse;
 
 static char color = 1;
 
-/* $6000 - $bfff: screens
+/* animation editor memory layout
+ *
+ * $6000 - $bfff: screens
  * $c000 - $c7ff: clipboard
  * $c800 - $cfff: RLE buffer
  * $e000 - $ffff: unused
