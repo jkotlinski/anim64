@@ -314,7 +314,7 @@ static void load_edit_anim() {
 }
 
 // Plays an unpacked animation (not RLE'd, but with packed color nibbles)...
-void preview_play_anim() {
+void preview_play_anim(unsigned char speed) {
     char keyboard_state = 0;
 
     curr_screen = 0;
@@ -323,7 +323,7 @@ void preview_play_anim() {
     *(voidFn*)0xfffe = edit_play_irq_handler;  // set irq handler pointer
     *(char*)0xd01a = 1;  // enable raster interrupts
     while (1) {
-        unsigned char frame_delay = 32;
+        unsigned char frame_delay = speed;
         redraw();
         while (frame_delay) {
             if (caught_irqs) {
@@ -423,7 +423,7 @@ static void handle_key(char key) {
             break;
         case CH_STOP:
             remember_screen();
-            preview_play_anim();
+            preview_play_anim(32);
             redraw();
             show_cursor();
             break;
