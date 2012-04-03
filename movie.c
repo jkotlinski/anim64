@@ -386,6 +386,7 @@ static void write_onefiler_anims(FILE* fout) {
     };
     static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xfffeu };
     unsigned char file_it;
+    // TODO: Allocate biggest file first?
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         const unsigned int file_length = get_file_length(file_it);
         unsigned char heap_it;
