@@ -56,8 +56,7 @@ void preview_play_anim(unsigned char speed,
                         keyboard_state = 1;
                     }
                 } else if (0xff != *(char*)0xdc01) {  // Any key pressed?
-                    exit_play();
-                    return;
+                    goto exit;
                 }
             }
             blink_vic_from_sid();
@@ -68,5 +67,7 @@ void preview_play_anim(unsigned char speed,
             ++curr_screen;
         }
     }
+exit:
+    exit_play();
 }
 

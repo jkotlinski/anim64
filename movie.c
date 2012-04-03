@@ -24,6 +24,7 @@ THE SOFTWARE. */
 #include <string.h>
 
 #include "anim.h"
+#include "anim_play.h"
 #include "disk.h"
 #include "music.h"
 #include "rle.h"
@@ -113,7 +114,6 @@ static void save_movie() {
 
 static unsigned char loaded_anim = -1;
 
-/*
 static unsigned int skip_music_frames() {
     unsigned int frames = 0;
     unsigned char file_it;
@@ -122,7 +122,6 @@ static unsigned int skip_music_frames() {
     }
     return frames;
 }
-*/
 
 /* The following two are defined by the linker. */
 extern unsigned char _EDITRAM_LAST__;
@@ -460,6 +459,18 @@ static void save_onefiler() {
     _filetype = 'u';  // Switch back to .usr
 }
 
+static void load_selected_anim() {
+    // Loads and unpacks selected movie, returns to animation editor.
+    FILE* f;
+    if (loaded_anim == selected_file) return; 
+    f = fopen(filename[selected_file], "r");
+    if (!f) {
+        return; 
+    }
+    load_and_unpack_anim(f);
+    loaded_anim = selected_file;
+}
+
 static char handle_key(unsigned char key) {
     switch (key) {
         case CH_CURS_DOWN:
@@ -501,16 +512,11 @@ static char handle_key(unsigned char key) {
             show_screen();
             break;
         case CH_STOP:
-            while (1) ++*(char*)0xd020;
-            /* TODO: Preview animation.
             load_selected_anim();
-            skip_music_frames();
-            init_play();
-            play_anim(movie.speed[selected_file], 1);
-            wait_anim(movie.frames[selected_file] * movie.speed[selected_file]);
-            exit_play();
+            preview_play_anim(movie.speed[selected_file],
+                    skip_music_frames(),
+                    movie.frames[selected_file]);
             show_screen();
-            */
             break;
         case CH_F7:  // Go to animation editor.
             return 1;
@@ -524,15 +530,7 @@ void edit_movie() {
 
     for (;;) {
         if (kbhit() && handle_key(cgetc())) {
-            // Loads and unpacks selected movie, returns to animation editor.
-            FILE* f;
-            if (loaded_anim == selected_file) return; 
-            f = fopen(filename[selected_file], "r");
-            if (!f) {
-                return; 
-            }
-            load_and_unpack_anim(f);
-            loaded_anim = selected_file;
+            load_selected_anim();
             return;
         }
     }

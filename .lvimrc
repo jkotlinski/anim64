@@ -1,4 +1,4 @@
-map <F4> :wall!<CR>:make anim64 -j 2<CR>:make run<CR>
+map <F4> :wall!<CR>:!ctags -R . &<CR>:make anim64 -j 2<CR>:make run<CR>
 map <F5> :!x64 anim64.prg<CR>
 
 set tags+=~/.vim/cc65tags
