@@ -19,25 +19,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 #include <conio.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include "anim.h"
-#include "anim_play.h"
-#include "diff_asm.h"
 #include "edit.h"
-// #include "effects.h"
-#include "irq.h"
 #include "movie.h"
-#include "music.h"
-#include "player.h"
-#include "screen.h"
 
-#define RLE_BUFFER_V2 (unsigned char*)0xc800u
-#define RLE_BUFFER_SIZE_V2 0x800u
-
-static void init() {
+void main() {
     clrscr();
     bordercolor(0);
     bgcolor(0);
@@ -45,30 +31,10 @@ static void init() {
     // *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     // *(char*)0xd018 = 4;  // Point video to 0x8000.
     *(char*)0xd018 = 0x14;  // Point video to 0x400.
-}
 
-#pragma codeseg("EDITCODE")
-#pragma rodataseg("EDITCODE")
-
-void edit() {
-    unsigned char screen;
-    textcolor(COLOR_YELLOW);
-
-    for (screen = 0; screen < 16; ++screen) {
-        clear_screen(screen);
-    }
-
-    anim_edit_loop();
-}
-
-#pragma codeseg("CODE")
-#pragma rodataseg("CODE")
-
-void main() {
 #if 0
     while(1) { if (kbhit()) { printf("%x", cgetc()); } }
 #endif
-    init();
 
     play_movie_if_onefiler();
 

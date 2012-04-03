@@ -27,6 +27,6 @@ static void paste_screen();
 // Copy screen from display to long-term storage.
 void remember_screen();
 
-void anim_edit_loop();
+void edit();
 
 #endif  // ANIM_EDIT_H_

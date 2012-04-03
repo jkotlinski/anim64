@@ -390,7 +390,7 @@ void handle_anim_edit_key(char key) {
     }
 }
 
-void anim_edit_loop() {
+static void anim_edit_loop() {
 #define BLINK_PERIOD 30
     int loop = BLINK_PERIOD;
 
@@ -408,3 +408,15 @@ void anim_edit_loop() {
         }
     }
 }
+
+void edit() {
+    unsigned char screen;
+    textcolor(COLOR_YELLOW);
+
+    for (screen = 0; screen < 16; ++screen) {
+        clear_screen(screen);
+    }
+
+    anim_edit_loop();
+}
+
