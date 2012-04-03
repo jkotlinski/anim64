@@ -33,13 +33,15 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $4000 - $7fff: packed screens
- * $8000 - $83ff: chars, screen 0
- * $8400 - $87ff: colors, screen 0
- * $8800 - $8bff: chars, screen 1
- * $8c00 - $8fff: colors, screen 1
- * $9000 - $cfff: packed screens
- * $e000 - $ffff: packed screens
+/* $4000 - $7fff: packed screens ($4000 bytes)
+ * $8000 - $83e7: chars, screen 0
+ * $83e8 - $83e8: bg/border, screen 0
+ * $83e9 - $87d0: colors, screen 0
+ * $8800 - $8fd0: chars + border + colors, screen 1
+ * $9000 - $cfff: packed screens ($4000 bytes)
+ * $e000 - $fffd: packed screens ($1ffe bytes)
+ *
+ * in total, that gives ~$a000 of packed screens. not bad?
  */
 
 #define FILE_COUNT 20
@@ -157,12 +159,12 @@ void play_movie_if_onefiler() {
     if (!is_onefiler()) {
         return;
     }
+    move_files_in_place();
     for (;;) ++*(char*)0xd020;
     /*
     unsigned int wait_duration = 0;
     unsigned char file_it = 0;
     unsigned char alt_screen = 0;
-    move_files_in_place();
     init_music();
     init_play();
     for (;;) {
@@ -380,9 +382,9 @@ static void write_onefiler_anims(FILE* fout) {
     unsigned int heap_start[3] = { 
         (unsigned int)HEAP_START,  // RAM end - 0x8000 
         0x9000u,  // - 0xd000 
-        0xe000u  // - 0xffff 
+        0xe000u  // - 0xfffd 
     };
-    static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xffffu };
+    static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xfffeu };
     unsigned char file_it;
     *(char*)0xd018 |= 2;  // lower/uppercase gfx
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
@@ -444,12 +446,6 @@ static void save_onefiler() {
     fputc(8, f);
     // Saves player program code.
     fwrite((char*)0x801, (unsigned int)HEAP_START - 0x801, 1, f);
-    if (HEAP_START < &_RAM_LAST__) {
-        // The heap must start after player code ends.
-        while (1) {
-            ++*(char*)0xd020u;  // Don't let this go unnoticed!
-        }
-    }
     write_onefiler_anims(f);
     if (EOF == fclose(f)) {
         textcolor(COLOR_RED);
