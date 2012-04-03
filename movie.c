@@ -41,7 +41,11 @@ THE SOFTWARE. */
  * $9000 - $cfff: packed screens ($4000 bytes)
  * $e000 - $fffd: packed screens ($1ffe bytes)
  *
- * in total, that gives ~$a000 of packed screens. not bad?
+ * in total, that gives ~$a000 of packed screens.
+ * when loading, that will go to $4000-$e000... 
+ * normal kernal loader cannot load beyond $9fff,
+ * so onefilers *must* be compressed with exomizer
+ * or similar to fit.
  */
 
 #define FILE_COUNT 20
