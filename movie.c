@@ -19,7 +19,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
 #include <conio.h>
-#include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -77,45 +77,44 @@ static char selected_column;
 #define DURATION_X (FILENAME_LENGTH + 1) 
 #define SPEED_X (DURATION_X + 4)
 
-static const char* MOVIE_FILE = ".movie";
+#define MOVIE_FILE ".movie"
 
 #pragma codeseg("EDITCODE")
 
-static void load_music(FILE* f) {
+static void load_music() {
 #define MUSIC_START ((char*)0x1000)
 #define MUSIC_STOP ((char*)0x2800)
-    if ((char)fgetc(f) == (char)MUSIC_START &&
-            (char)fgetc(f) == ((char)((int)MUSIC_START >> 8))) {
-        fread(MUSIC_START, 1, MUSIC_STOP - MUSIC_START, f);
+    char buf[2];
+    cbm_read(MY_LFN, buf, sizeof(buf));
+    if (buf[0] == (char)MUSIC_START &&
+            buf[1] == ((char)((int)MUSIC_START >> 8))) {
+        cbm_read(MY_LFN, MUSIC_START, MUSIC_STOP - MUSIC_START);
     }
-    fclose(f);
+    cbm_close(MY_LFN);
 }
 
 static void load_movie() {
-    FILE* f = fopen(MOVIE_FILE, "r");
-    if (!f) return;
-    fread(&filename, sizeof(filename), 1, f);
-    fread(&movie, sizeof(movie), 1, f);
-    fread(&music_path, sizeof(music_path), 1, f);
-    fclose(f);
+    if (!cbm_open(MY_LFN, 8, 1, MOVIE_FILE)) return;
+    cbm_read(MY_LFN, filename, sizeof(filename));
+    cbm_read(MY_LFN, &movie, sizeof(movie));
+    cbm_read(MY_LFN, music_path, sizeof(music_path));
+    cbm_close(MY_LFN);
     if (*music_path) {
-        f = fopen(music_path, "r");
-        load_music(f);
+        if (cbm_open(MY_LFN, 8, 1, music_path)) {
+            load_music();
+        }
     }
 }
 
 static void save_movie() {
-    FILE* f = fopen(MOVIE_FILE, "w");
+    cbm_open(MY_LFN, 8, CBM_WRITE, "@0:" MOVIE_FILE);
     gotoxy(25, 0);
     cputs("save...");
-    if (!f || !fwrite(&filename, sizeof(filename), 1, f)) {
-        puts("err");
-    } else {
-        fwrite(&movie, sizeof(movie), 1, f);
-        fwrite(music_path, sizeof(music_path), 1, f);
-        puts("ok");
-    }
-    fclose(f);
+    cbm_write(MY_LFN, &filename, sizeof(filename));
+    cbm_write(MY_LFN, &movie, sizeof(movie));
+    cbm_write(MY_LFN, music_path, sizeof(music_path));
+    cbm_close(MY_LFN);
+    cputs(_oserror ? "err" : "ok");
 }
 
 static unsigned char loaded_anim = -1;
@@ -194,10 +193,9 @@ void play_movie_if_onefiler() {
 #pragma codeseg("EDITCODE")
 
 static void prompt_music() {
-    FILE* f = prompt_open("music", "r");
-    if (f) {
+    if (prompt_open("music", CBM_READ)) {
         strcpy(music_path, prompt_path);
-        load_music(f);
+        load_music();
         show_screen();
     }
 }
@@ -369,16 +367,15 @@ static void edit_field() {
 }
 
 static unsigned int get_file_length(unsigned char file) {
-    FILE* f;
     unsigned int length;
     if (!filename[file][0]) return 0;
-    f = fopen(filename[file], "r");
-    length = fread(&_EDITRAM_LAST__, 1, (char*)0x8000 - &_EDITRAM_LAST__, f);
-    fclose(f);
+    cbm_open(MY_LFN, 8, CBM_READ, filename[file]);
+    length = cbm_read(MY_LFN, &_EDITRAM_LAST__, (char*)0x8000 - &_EDITRAM_LAST__);
+    cbm_close(MY_LFN);
     return length;
 }
 
-static void write_onefiler_anims(FILE* fout) {
+static void write_onefiler_anims() {
     /* It would be possible to let the first heap start from player end,
      * but it seems like there are problems in magic area around 3FFx...
      */
@@ -414,14 +411,14 @@ static void write_onefiler_anims(FILE* fout) {
                 unsigned int addr = (int)heap_start[heap_it];
                 addr += 4;  // Include header.
                 // Writes address.
-                fputc(addr >> 8, fout);
-                fputc(addr & 0xffu, fout);
+                cbm_write(MY_LFN, &addr + 1, 1);
+                cbm_write(MY_LFN, &addr, 1);
                 // Writes size.
-                fputc(file_length >> 8, fout);
-                fputc(file_length & 0xff, fout);
+                cbm_write(MY_LFN, &file_length + 1, 1);
+                cbm_write(MY_LFN, &file_length, 1);
                 heap_start[heap_it] += file_length;
                 alloc_failed = 0;
-                fwrite(&_EDITRAM_LAST__, file_length, 1, fout);
+                cbm_write(MY_LFN, &_EDITRAM_LAST__, file_length);
                 break;
             }
         }
@@ -431,29 +428,25 @@ static void write_onefiler_anims(FILE* fout) {
             return;
         }
     }
-    fputc(0, fout);
+    // End of file marker (0).
+    file_it = 0;
+    cbm_write(MY_LFN, &file_it, 1);
 }
 
 static void save_onefiler() {
-    FILE* f;
+    char buf[2] = { 1, 8 };
     _filetype = 'p';  // .prg
-    f = prompt_open("demo", "w");
-    if (f == NULL) {
+    if (prompt_open("demo", CBM_WRITE) == NULL) {
         return;
     }
     // Writes load address.
-    fputc(1, f);
-    fputc(8, f);
+    cbm_write(MY_LFN, buf, sizeof(buf));
     // Saves player program code.
-    fwrite((char*)0x801, (unsigned int)HEAP_START - 0x801, 1, f);
+    cbm_write(MY_LFN, (char*)0x801, (unsigned int)HEAP_START - 0x801);
     *(char*)0xd018 |= 2;  // lower/uppercase gfx
-    write_onefiler_anims(f);
-    if (EOF == fclose(f)) {
-        textcolor(COLOR_RED);
-        cputs(" disk full?");
-    } else {
-        cputs(" ok!");
-    }
+    write_onefiler_anims();
+    cbm_close(MY_LFN);
+    cputs(" ok!");
     cgetc();
     *(char*)0xd018 &= ~2;  // uppercase + gfx
     _filetype = 'u';  // Switch back to .usr
@@ -461,13 +454,11 @@ static void save_onefiler() {
 
 static void load_selected_anim() {
     // Loads and unpacks selected movie, returns to animation editor.
-    FILE* f;
     if (loaded_anim == selected_file) return; 
-    f = fopen(filename[selected_file], "r");
-    if (!f) {
-        return; 
+    if (cbm_open(MY_LFN, 8, CBM_READ, filename[selected_file])) {
+        return;  // Open error.
     }
-    load_and_unpack_anim(f);
+    load_and_unpack_anim();
     loaded_anim = selected_file;
 }
 

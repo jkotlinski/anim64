@@ -21,6 +21,7 @@ THE SOFTWARE. */
 #include "edit.h"
 
 #include <conio.h>
+#include <errno.h>
 #include <string.h>
 #include <time.h>
 
@@ -183,7 +184,8 @@ static void switch_to_console_screen() {
 
 static void load_edit_anim() {
     switch_to_console_screen();
-    load_and_unpack_anim(prompt_open("load", "r"));
+    prompt_open("load", CBM_READ);
+    load_and_unpack_anim();
     redraw_edit_screen();
     show_cursor();
 }
@@ -203,10 +205,10 @@ static unsigned int rle_pack_screen() {
     return packed_bytes;
 }
 
-static void rle_write_screen(FILE* f) {
+static void rle_write_screen() {
     inc_d020();
     if (curr_screen == 0) {
-        fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
+        cbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
         return;
     }
     {
@@ -220,35 +222,37 @@ static void rle_write_screen(FILE* f) {
         use_iframe = (iframe_bytes < non_iframe_bytes);
         if (use_iframe) {
             // Write using interframe...
-            fwrite(RLE_BUFFER, iframe_bytes, 1, f);
+            cbm_write(MY_LFN, RLE_BUFFER, iframe_bytes);
             xor_prev_v2();
         } else {
             // ...un-interframe, repack and write.
             xor_prev_v2();
-            fwrite(RLE_BUFFER, rle_pack_screen(), 1, f);
+            cbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
         }
-        fputc(use_iframe, f);
+        cbm_write(MY_LFN, &use_iframe, 1);
     }
 }
 
 static void save_anim() {
-    FILE* f;
     switch_to_console_screen();
-    f = prompt_open("save", "w");
-    if (f) {
+    if (prompt_open("save", CBM_WRITE)) {
         const char curr_screen_saved = curr_screen;
 
-        fputc(2, f);  // Version.
-        fputc(end_frame + 1, f);  // Frame count.
+        const char version = 2;
+        cbm_write(MY_LFN, &version, 1);  // Version.
+        ++end_frame;
+        cbm_write(MY_LFN, &end_frame, 1);  // Frame count.
+        --end_frame;
 
         for (curr_screen = 0; curr_screen <= end_frame; ++curr_screen) {
-            rle_write_screen(f);
+            rle_write_screen();
         }
         curr_screen = curr_screen_saved;
 
-        if (EOF == fclose(f)) {
+        cbm_close(MY_LFN);
+        if (_oserror) {
             textcolor(COLOR_RED);
-            puts("disk full?");
+            cputs("disk full?");
             cgetc();
         }
     }

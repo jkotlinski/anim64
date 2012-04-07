@@ -21,9 +21,11 @@ THE SOFTWARE. */
 #ifndef DISK_H_
 #define DISK_H_
 
-#include <stdio.h>
+#define MY_LFN 1
 
-FILE* prompt_open(const char* prompt, const char* mode);
+// Open file using LFN. Returns 1 if open was successful, otherwise 0.
+// mode is CBM_READ or CBM_WRITE.
+unsigned char prompt_open(const char* prompt, char mode);
 
 #define FILENAME_LENGTH 16
 extern char prompt_path[FILENAME_LENGTH];

@@ -21,8 +21,6 @@ THE SOFTWARE. */
 #ifndef CONVERT_H_
 #define CONVERT_H_
 
-#include <stdio.h>
-
-void convert_v1_v2(FILE* f, char use_iframe);
+void convert_v1_v2(char use_iframe);
 
 #endif  // CONVERT_H_

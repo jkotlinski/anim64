@@ -22,23 +22,30 @@ THE SOFTWARE. */
 
 #include <c64.h>
 #include <conio.h>
+#include <stdio.h>
 
 #pragma codeseg("EDITCODE")
 
 char prompt_path[FILENAME_LENGTH];
-FILE* prompt_open(const char* prompt, const char* mode) {
+unsigned char prompt_open(const char* prompt, char mode) {
     clrscr();
     gotoxy(0, 0);
     textcolor(COLOR_YELLOW);
     for (;;) {
-        FILE* f;
         cputc('\n');
         cputs(prompt);
         cputc('>');
-        gets(prompt_path);
-        if (!*prompt_path) return NULL;
-        f = fopen(prompt_path, mode);
-        if (f) return f;
+        if (mode == CBM_WRITE) {
+            // Replace.
+            prompt_path[0] = '@';
+            prompt_path[1] = '0';
+            prompt_path[2] = ':';
+            gets(prompt_path + 3);
+        } else {
+            gets(prompt_path);
+        }
+        if (!*prompt_path) return 0;
+        if (!cbm_open(MY_LFN, 8, mode, prompt_path)) return 1;
         cputs("err");
         gotox(0);
     }

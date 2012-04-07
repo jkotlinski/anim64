@@ -21,11 +21,9 @@ THE SOFTWARE. */
 #ifndef ANIM_H_
 #define ANIM_H_
 
-#include <stdio.h>
-
 // Returns 0 if timed out, 1 if keyboard was pressed.
 char wait_anim(unsigned int duration);
 
-void load_and_unpack_anim(FILE* f);
+void load_and_unpack_anim();
 
 #endif  // ANIM_H_
