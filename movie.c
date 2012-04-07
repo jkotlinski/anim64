@@ -33,7 +33,7 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $4000 - $7fff: packed screens ($4000 bytes)
+/* $3800 - $7fff: packed screens ($4800 bytes)
  * $8000 - $83e7: chars, screen 0
  * $83e8 - $83e8: bg/border, screen 0
  * $83e9 - $87d0: colors, screen 0
@@ -41,8 +41,8 @@ THE SOFTWARE. */
  * $9000 - $cfff: packed screens ($4000 bytes)
  * $e000 - $fffd: packed screens ($1ffe bytes)
  *
- * in total, that gives ~$a000 of packed screens.
- * when loading, that will go to $4000-$e000... 
+ * in total, that gives ~$a800 of packed screens.
+ * when loading, that will go to $3800-$e000... 
  * normal kernal loader cannot load beyond $9fff,
  * so onefilers *must* be compressed with exomizer
  * or similar to fit.
@@ -128,10 +128,8 @@ static unsigned int skip_music_frames() {
     return frames;
 }
 
-/* The following two are defined by the linker. */
-extern unsigned char _EDITRAM_LAST__;
-extern unsigned char _RAM_LAST__;
-#define HEAP_START (char*)0x4000u
+extern unsigned char _EDITRAM_LAST__;  /* Defined by linker. */
+#define HEAP_START (char*)0x3800u
 
 #pragma codeseg("CODE")
 
