@@ -77,7 +77,7 @@ static char selected_column;
 #define DURATION_X (FILENAME_LENGTH + 1) 
 #define SPEED_X (DURATION_X + 4)
 
-#define MOVIE_FILE ".movie"
+#define MOVIE_FILE ".movie,u"
 
 #pragma codeseg("EDITCODE")
 
@@ -94,13 +94,15 @@ static void load_music() {
 }
 
 static void load_movie() {
-    if (!cbm_open(MY_LFN, 8, 1, MOVIE_FILE)) return;
+    if (0 != cbm_open(MY_LFN, 8, CBM_READ, MOVIE_FILE)) {
+        return;
+    }
     cbm_read(MY_LFN, filename, sizeof(filename));
     cbm_read(MY_LFN, &movie, sizeof(movie));
     cbm_read(MY_LFN, music_path, sizeof(music_path));
     cbm_close(MY_LFN);
     if (*music_path) {
-        if (cbm_open(MY_LFN, 8, 1, music_path)) {
+        if (0 == cbm_open(MY_LFN, 8, CBM_READ, music_path)) {
             load_music();
         }
     }
@@ -191,7 +193,7 @@ void play_movie_if_onefiler() {
 #pragma codeseg("EDITCODE")
 
 static void prompt_music() {
-    if (prompt_open("music", CBM_READ)) {
+    if (prompt_open("music", CBM_READ, TYPE_PRG)) {
         strcpy(music_path, prompt_path);
         load_music();
         show_screen();
@@ -433,8 +435,7 @@ static void write_onefiler_anims() {
 
 static void save_onefiler() {
     char buf[2] = { 1, 8 };
-    _filetype = 'p';  // .prg
-    if (prompt_open("demo", CBM_WRITE) == NULL) {
+    if (prompt_open("demo", CBM_WRITE, TYPE_PRG) == NULL) {
         return;
     }
     // Writes load address.
@@ -447,14 +448,18 @@ static void save_onefiler() {
     cputs(" ok!");
     cgetc();
     *(char*)0xd018 &= ~2;  // uppercase + gfx
-    _filetype = 'u';  // Switch back to .usr
 }
 
 static void load_selected_anim() {
     // Loads and unpacks selected movie, returns to animation editor.
     if (loaded_anim == selected_file) return; 
-    if (cbm_open(MY_LFN, 8, CBM_READ, filename[selected_file])) {
-        return;  // Open error.
+    {
+        char path[16];
+        strcpy(path, filename[selected_file]);
+        strcat(path, ",u");
+        if (cbm_open(MY_LFN, 8, CBM_READ, path)) {
+            return;  // Open error.
+        }
     }
     load_and_unpack_anim();
     loaded_anim = selected_file;

@@ -23,11 +23,12 @@ THE SOFTWARE. */
 #include <c64.h>
 #include <conio.h>
 #include <stdio.h>
+#include <string.h>
 
 #pragma codeseg("EDITCODE")
 
 char prompt_path[FILENAME_LENGTH];
-unsigned char prompt_open(const char* prompt, char mode) {
+unsigned char prompt_open(const char* prompt, char mode, char type) {
     clrscr();
     gotoxy(0, 0);
     textcolor(COLOR_YELLOW);
@@ -44,6 +45,7 @@ unsigned char prompt_open(const char* prompt, char mode) {
         } else {
             gets(prompt_path);
         }
+        strcat(prompt_path, type ? ",p" : ",u");
         if (!*prompt_path) return 0;
         if (!cbm_open(MY_LFN, 8, mode, prompt_path)) return 1;
         cputs("err");

@@ -184,7 +184,7 @@ static void switch_to_console_screen() {
 
 static void load_edit_anim() {
     switch_to_console_screen();
-    if (prompt_open("load", CBM_READ)) {
+    if (prompt_open("load", CBM_READ, TYPE_USR)) {
         load_and_unpack_anim();
     }
     redraw_edit_screen();
@@ -236,7 +236,7 @@ static void rle_write_screen() {
 
 static void save_anim() {
     switch_to_console_screen();
-    if (prompt_open("save", CBM_WRITE)) {
+    if (prompt_open("save", CBM_WRITE, TYPE_USR)) {
         const char curr_screen_saved = curr_screen;
 
         const char version = 2;
