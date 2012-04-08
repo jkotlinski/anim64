@@ -68,7 +68,9 @@ static void load_v2_anim() {
 
 void load_and_unpack_anim() {
     unsigned char first_byte;
-    cbm_read(MY_LFN, &first_byte, 1);
+    if (cbm_read(MY_LFN, &first_byte, 1) <= 0) {
+        return;  // Error.
+    }
     switch (first_byte) {
         case 0:
         case 1:

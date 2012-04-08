@@ -184,8 +184,9 @@ static void switch_to_console_screen() {
 
 static void load_edit_anim() {
     switch_to_console_screen();
-    prompt_open("load", CBM_READ);
-    load_and_unpack_anim();
+    if (prompt_open("load", CBM_READ)) {
+        load_and_unpack_anim();
+    }
     redraw_edit_screen();
     show_cursor();
 }
