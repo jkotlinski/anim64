@@ -24,6 +24,7 @@ THE SOFTWARE. */
 // Returns 0 if timed out, 1 if keyboard was pressed.
 char wait_anim(unsigned int duration);
 
-void load_and_unpack_anim();
+// Returns 1 on success, 0 on error.
+char load_and_unpack_anim();
 
 #endif  // ANIM_H_

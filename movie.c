@@ -85,7 +85,11 @@ static void load_music() {
 #define MUSIC_START ((char*)0x1000)
 #define MUSIC_STOP ((char*)0x2800)
     char buf[2];
-    cbm_read(MY_LFN, buf, sizeof(buf));
+    if (!cbm_read(MY_LFN, buf, sizeof(buf))) {
+        cputs("err");
+        cgetc();
+        return;
+    }
     if (buf[0] == (char)MUSIC_START &&
             buf[1] == ((char)((int)MUSIC_START >> 8))) {
         cbm_read(MY_LFN, MUSIC_START, MUSIC_STOP - MUSIC_START);
@@ -453,16 +457,17 @@ static void save_onefiler() {
     *(char*)0xd018 &= ~2;  // uppercase + gfx
 }
 
-static void load_selected_anim() {
+static char load_selected_anim() {
     // Loads and unpacks selected movie, returns to animation editor.
-    if (loaded_anim == selected_file) return; 
-    {
-        if (cbm_open(MY_LFN, 8, CBM_READ, dos_path(selected_file))) {
-            return;  // Open error.
-        }
+    if (loaded_anim == selected_file) return 1; 
+    if (cbm_open(MY_LFN, 8, CBM_READ, dos_path(selected_file))) {
+        return 0;  // Open error.
     }
-    load_and_unpack_anim();
+    if (!load_and_unpack_anim()) {
+        return 0;
+    }
     loaded_anim = selected_file;
+    return 1;
 }
 
 static char handle_key(unsigned char key) {
@@ -506,7 +511,12 @@ static char handle_key(unsigned char key) {
             show_screen();
             break;
         case CH_STOP:
-            load_selected_anim();
+            if (!load_selected_anim()) {
+                textcolor(COLOR_RED);
+                cputs("err");
+                cgetc();
+                break;
+            }
             preview_play_anim(movie.speed[selected_file],
                     skip_music_frames(),
                     movie.frames[selected_file]);
