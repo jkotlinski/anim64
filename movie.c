@@ -366,13 +366,16 @@ static void edit_field() {
     draw_fields();
 }
 
+static char* dos_path(unsigned char file) {
+    char path[16];
+    strcpy(path, filename[file]);
+    strcat(path, ",u");
+    return path;
+}
+
 static unsigned int get_file_length(unsigned char file) {
-    unsigned int length;
     if (!filename[file][0]) return 0;
-    cbm_open(MY_LFN, 8, CBM_READ, filename[file]);
-    length = cbm_read(MY_LFN, &_EDITRAM_LAST__, (char*)0x8000 - &_EDITRAM_LAST__);
-    cbm_close(MY_LFN);
-    return length;
+    return cbm_load(dos_path(file), 8, &_EDITRAM_LAST__);
 }
 
 static void write_onefiler_anims() {
@@ -454,10 +457,7 @@ static void load_selected_anim() {
     // Loads and unpacks selected movie, returns to animation editor.
     if (loaded_anim == selected_file) return; 
     {
-        char path[16];
-        strcpy(path, filename[selected_file]);
-        strcat(path, ",u");
-        if (cbm_open(MY_LFN, 8, CBM_READ, path)) {
+        if (cbm_open(MY_LFN, 8, CBM_READ, dos_path(selected_file))) {
             return;  // Open error.
         }
     }
