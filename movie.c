@@ -394,9 +394,6 @@ static unsigned int get_file_length(unsigned char file) {
 }
 
 static void write_onefiler_anims() {
-    /* It would be possible to let the first heap start from player end,
-     * but it seems like there are problems in magic area around 3FFx...
-     */
 #define HEAP_COUNT 3
     unsigned int heap_start[3] = { 
         (unsigned int)HEAP_START,  // RAM end - 0x8000 
