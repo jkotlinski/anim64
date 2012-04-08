@@ -514,7 +514,6 @@ static char handle_key(unsigned char key) {
             if (!load_selected_anim()) {
                 textcolor(COLOR_RED);
                 cputs("err");
-                cgetc();
                 break;
             }
             preview_play_anim(movie.speed[selected_file],
