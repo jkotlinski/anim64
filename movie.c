@@ -207,14 +207,25 @@ static void prompt_music() {
 static void read_filename() {
     char* ptr = filename[selected_file];
     char chars = 7;
-    while (chars-- > 0) {
+    while (chars > 0) {
         unsigned char c = cgetc();
         if (c == CH_ENTER) {
             break;
         }
+        if (c == CH_DEL) {
+            if (ptr > filename[selected_file]) {
+                --ptr;
+                ++chars;
+                gotox(wherex() - 1);
+                cputc(' ');
+                gotox(wherex() - 1);
+            }
+            continue;
+        }
         cputc(c);
         *ptr = c;
         ++ptr;
+        --chars;
     }
     *ptr = 0;
 }
