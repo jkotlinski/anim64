@@ -204,7 +204,7 @@ static void prompt_music() {
     }
 }
 
-static void read_filename() {
+static void get_filename() {
     char* ptr = filename[selected_file];
     char chars = 7;
     while (chars > 0) {
@@ -357,7 +357,7 @@ static void edit_field() {
             gotox(0);
             cclear(FILENAME_LENGTH);
             gotox(0);
-            read_filename();
+            get_filename();
             invalidate_loaded_anim();
             break;
         case 1:  // Duration.
