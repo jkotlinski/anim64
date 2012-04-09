@@ -133,23 +133,9 @@ extern unsigned char _EDITRAM_LAST__;  /* Defined by linker. */
 
 #pragma codeseg("CODE")
 
-unsigned char* start[FILE_COUNT];
-
 void show_screen();
 
 extern volatile unsigned char caught_irqs;
-
-void move_files_in_place() {
-    unsigned char file_it = 0;
-    unsigned char* head = HEAP_START;
-    while (1) {
-        unsigned int size = *(unsigned int*)head;
-        if (size == 0) break;
-        head += 2;
-        start[file_it++] = head;
-        head += size;
-    }
-}
 
 static char is_onefiler() {
     return movie.speed[0];
@@ -159,7 +145,6 @@ void play_movie_if_onefiler() {
     if (!is_onefiler()) {
         return;
     }
-    move_files_in_place();
     for (;;) ++*(char*)0xd020;
     /*
     unsigned int wait_duration = 0;
@@ -420,8 +405,8 @@ static void write_onefiler_anims() {
             cputs(" version err");
             return;
         }
-        cputc(_EDITRAM_LAST__ + '0');
-        if (heap_end - heap_start >= file_length + sizeof(file_length)) {
+        // +2 for size, another +2 for EOF marker.
+        if (heap_end - heap_start >= file_length + 2 + 2) {
             cbm_write(MY_LFN, &file_length, sizeof(file_length));
             cbm_write(MY_LFN, &_EDITRAM_LAST__, file_length);
             heap_start += file_length + sizeof(file_length);
