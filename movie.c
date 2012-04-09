@@ -381,9 +381,16 @@ static char* dos_path(unsigned char file) {
     return path;
 }
 
-static unsigned int get_file_length(unsigned char file) {
+static int get_file_length(unsigned char file) {
+    int length;
     if (!filename[file][0]) return 0;
-    return cbm_load(dos_path(file), 8, &_EDITRAM_LAST__);
+    /* TODO: Would be great to change to cbm_load - but then, anim files
+     * also must include load address.
+     */
+    cbm_open(8, 8, 8, dos_path(file));
+    length = cbm_read(8, &_EDITRAM_LAST__, (char*)0x8000 - &_EDITRAM_LAST__);
+    cbm_close(8);
+    return length;
 }
 
 static void write_onefiler_anims() {
@@ -398,7 +405,7 @@ static void write_onefiler_anims() {
                 textcolor(COLOR_RED);
                 gotoxy(0, file_it + 2);
                 cputs(filename[file_it]);
-                cputs(" bad");
+                cputs(" read err");
                 return;
             }
             continue;
@@ -407,6 +414,13 @@ static void write_onefiler_anims() {
         cputs(filename[file_it]);
         cputs(": ");
         cputhex16(file_length);
+        if (_EDITRAM_LAST__ != 2) {
+            // Not latest version!
+            textcolor(COLOR_RED);
+            cputs(" version err");
+            return;
+        }
+        cputc(_EDITRAM_LAST__ + '0');
         if (heap_end - heap_start >= file_length + sizeof(file_length)) {
             cbm_write(MY_LFN, &file_length, sizeof(file_length));
             cbm_write(MY_LFN, &_EDITRAM_LAST__, file_length);
@@ -420,6 +434,7 @@ static void write_onefiler_anims() {
     // End of file marker (0).
     heap_start = 0;
     cbm_write(MY_LFN, &heap_start, sizeof(heap_start));
+    cputs(" ok!");
 }
 
 static void save_onefiler() {
@@ -434,7 +449,6 @@ static void save_onefiler() {
     *(char*)0xd018 |= 2;  // lower/uppercase gfx
     write_onefiler_anims();
     cbm_close(MY_LFN);
-    cputs(" ok!");
     cgetc();
     *(char*)0xd018 &= ~2;  // uppercase + gfx
 }
