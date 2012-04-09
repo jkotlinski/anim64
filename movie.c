@@ -33,19 +33,13 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $3800 - $7fff: packed screens ($4800 bytes)
- * $8000 - $83e7: chars, screen 0
- * $83e8 - $83e8: bg/border, screen 0
- * $83e9 - $87d0: colors, screen 0
- * $8800 - $8fd0: chars + border + colors, screen 1
- * $9000 - $cfff: packed screens ($4000 bytes)
- * $e000 - $fffd: packed screens ($1ffe bytes)
- *
- * in total, that gives ~$a800 of packed screens.
- * when loading, that will go to $3800-$e000... 
- * normal kernal loader cannot load beyond $9fff,
- * so onefilers *must* be compressed with exomizer
- * or similar to fit.
+/* $3800 - $9fff: packed screens ($6800 bytes)
+ * $a000 - $a3e7: chars, screen 0
+ * $a3e8 - $a3e8: bg/border, screen 0
+ * $a3e9 - $a7d0: colors, screen 0
+ * $a800 - $afd0: chars + border + colors, screen 1
+ * $b000 - $cfff: unused
+ * $e000 - $fffd: unused
  */
 
 #define FILE_COUNT 20
@@ -148,12 +142,11 @@ extern volatile unsigned char caught_irqs;
 void move_files_in_place() {
     unsigned char file_it = 0;
     unsigned char* head = HEAP_START;
-    while (*head) {
-        unsigned char* addr = (unsigned char*)((*head++ << 8) | (*head++ & 0xffu));
-        unsigned int size = (*head++ << 8) | (*head++ & 0xffu);
-        start[file_it++] = addr;
-        if (addr != head)
-            memcpy(addr, head, size);
+    while (1) {
+        unsigned int size = *(unsigned int*)head;
+        if (size == 0) break;
+        head += 2;
+        start[file_it++] = head;
         head += size;
     }
 }
@@ -394,18 +387,11 @@ static unsigned int get_file_length(unsigned char file) {
 }
 
 static void write_onefiler_anims() {
-#define HEAP_COUNT 3
-    unsigned int heap_start[3] = { 
-        (unsigned int)HEAP_START,  // RAM end - 0x8000 
-        0x9000u,  // - 0xd000 
-        0xe000u  // - 0xfffd 
-    };
-    static const unsigned int heap_end[3] = { 0x8000u, 0xd000u, 0xfffeu };
+    unsigned int heap_start = (unsigned int)HEAP_START;
+    static const unsigned int heap_end = 0xa000u;
     unsigned char file_it;
-    // TODO: Allocate biggest file first?
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         const unsigned int file_length = get_file_length(file_it);
-        unsigned char heap_it;
         unsigned char alloc_failed = 1;
         if (!file_length) {
             if (*filename[file_it]) {
@@ -421,31 +407,19 @@ static void write_onefiler_anims() {
         cputs(filename[file_it]);
         cputs(": ");
         cputhex16(file_length);
-        for (heap_it = 0; heap_it < sizeof(heap_start) / sizeof(*heap_start); ++heap_it) {
-            if (heap_end[heap_it] - heap_start[heap_it] >= file_length + 4) {
-                unsigned int addr = (int)heap_start[heap_it];
-                addr += 4;  // Include header.
-                // Writes address.
-                cbm_write(MY_LFN, &addr + 1, 1);
-                cbm_write(MY_LFN, &addr, 1);
-                // Writes size.
-                cbm_write(MY_LFN, &file_length + 1, 1);
-                cbm_write(MY_LFN, &file_length, 1);
-                heap_start[heap_it] += file_length;
-                alloc_failed = 0;
-                cbm_write(MY_LFN, &_EDITRAM_LAST__, file_length);
-                break;
-            }
-        }
-        if (alloc_failed) {
+        if (heap_end - heap_start >= file_length + sizeof(file_length)) {
+            cbm_write(MY_LFN, &file_length, sizeof(file_length));
+            cbm_write(MY_LFN, &_EDITRAM_LAST__, file_length);
+            heap_start += file_length + sizeof(file_length);
+        } else {
             textcolor(COLOR_RED);
             cputs(" out of mem");
             return;
         }
     }
     // End of file marker (0).
-    file_it = 0;
-    cbm_write(MY_LFN, &file_it, 1);
+    heap_start = 0;
+    cbm_write(MY_LFN, &heap_start, sizeof(heap_start));
 }
 
 static void save_onefiler() {
