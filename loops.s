@@ -27,48 +27,6 @@
 .export _xor_prev
 .export _copy_colors_to_d800
 
-; void xor_prev(unsigned char* screen_ptr) {
-;    unsigned int offset = 0;
-;    unsigned char* prev_ptr = screen_ptr - 0x400;
-;    while (offset < 40 * 25) {
-;        *screen_ptr++ ^= *prev_ptr++;
-;        ++offset;
-;    }
-; }
-_xor_prev:
-    sta rd + 1
-    sta wr + 1
-    sta or + 1
-    stx rd + 2
-    stx wr + 2
-
-    ; prev_ptr = screen_ptr - 0x400
-    ; also, keep screen_ptr MSB in x
-    txa
-    dex
-    dex
-    dex
-    dex
-    stx or + 2
-    tax 
-
-loop:
-rd: lda $8400  ; a = *screen_ptr
-or: eor $8000  ; a ^= *prev_ptr
-wr: sta $8400  ; *screen_ptr = a
-
-    inc rd + 1  ; ++screen_ptr
-    inc wr + 1
-    inc or + 1  ; ++prev_ptr
-    bne loop
-    inc rd + 2
-    inc wr + 2
-    inc or + 2
-    txa
-    cmp or + 2  ; Has prev_ptr reached original screen_ptr?
-    bne loop
-    rts         ; Yes - done!
-
 ; void copy_colors_to_d800(const unsigned char* src) {
 ;     unsigned char* dst = (unsigned char*)0xd800;
 ;     while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
@@ -126,7 +84,6 @@ _copy_colors_to_d800:
 ;    }
 ;}
 _xor_v2:
-@screen_size = 1501
 @target = ptr1
 @prev_screen = @or + 1
 	sta @prev_screen			; save prev_screen arg
@@ -158,6 +115,7 @@ _xor_v2:
     bne :+
     inc ptr2 + 1
 :
+@screen_size = 1501
     lda ptr2
     cmp #<@screen_size
     bne @loop
@@ -166,3 +124,49 @@ _xor_v2:
     bne @loop
 
     rts
+
+
+.segment "EDITCODE"  ; =========================================
+
+; void xor_prev(unsigned char* screen_ptr) {
+;    unsigned int offset = 0;
+;    unsigned char* prev_ptr = screen_ptr - 0x400;
+;    while (offset < 40 * 25) {
+;        *screen_ptr++ ^= *prev_ptr++;
+;        ++offset;
+;    }
+; }
+_xor_prev:
+    sta rd + 1
+    sta wr + 1
+    sta or + 1
+    stx rd + 2
+    stx wr + 2
+
+    ; prev_ptr = screen_ptr - 0x400
+    ; also, keep screen_ptr MSB in x
+    txa
+    dex
+    dex
+    dex
+    dex
+    stx or + 2
+    tax 
+
+loop:
+rd: lda $8400  ; a = *screen_ptr
+or: eor $8000  ; a ^= *prev_ptr
+wr: sta $8400  ; *screen_ptr = a
+
+    inc rd + 1  ; ++screen_ptr
+    inc wr + 1
+    inc or + 1  ; ++prev_ptr
+    bne loop
+    inc rd + 2
+    inc wr + 2
+    inc or + 2
+    txa
+    cmp or + 2  ; Has prev_ptr reached original screen_ptr?
+    bne loop
+    rts         ; Yes - done!
+
