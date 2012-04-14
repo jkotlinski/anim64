@@ -95,6 +95,7 @@ static void play_movie() {
             anim_ptr = next_anim;
             next_anim = *(unsigned char**)anim_ptr;
             if (!next_anim) {
+                // EOF found, restart movie.
                 anim_ptr = HEAP_START;
                 next_anim = *(unsigned char**)HEAP_START;
             }
