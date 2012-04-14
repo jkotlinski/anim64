@@ -27,6 +27,9 @@ THE SOFTWARE. */
 
 // #define TEST_FOO
 #ifdef TEST_FOO
+/* Loads a compiled movie file with the name "foo", while keeping the
+ * current code intact. This #ifdef is used to make player development
+ * and testing more comfortable. */
 #include <cbm.h>
 #include <conio.h>
 static void load_foo() {
