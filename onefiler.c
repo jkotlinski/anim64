@@ -50,21 +50,36 @@ extern volatile unsigned char caught_irqs;
 
 static void play_movie() {
     const unsigned char* anim_ptr = HEAP_START;
+    const unsigned char frame_count = anim_ptr[3];
+    unsigned char anim_it = 0;
     unsigned char* dst = (unsigned char*)0xa000u;
 
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x84;  // Point video to 0xa000.
 
-    anim_ptr += 4;  // Skip size, version, framecount
-    anim_ptr = rle_unpack(dst, anim_ptr);
-    {
-        unsigned char colors = dst[40 * 25];
-        *(char*)0xd021 = colors;
-        *(char*)0xd020 = colors >> 4;
-    }
-    copy_colors_to_d800(dst + 40 * 25 + 1);
+    anim_ptr += 4;  // Skip size, version, frame count
 
-    while (1) ++*(char*)0xd020;
+    while (1) {
+        anim_ptr = rle_unpack(dst, anim_ptr);
+        {
+            const unsigned char colors = dst[40 * 25];
+            *(char*)0xd021 = colors;
+            *(char*)0xd020 = colors >> 4;
+        }
+
+        if (++anim_it == frame_count) {
+            anim_it = 0;
+            anim_ptr = HEAP_START;
+            anim_ptr += 4;  // Skip size, version, frame count
+        } else if (anim_it > 1) {
+            if (*anim_ptr) {
+                // TODO: XOR
+            }
+            ++anim_ptr;
+        }
+
+        copy_colors_to_d800(dst + 40 * 25 + 1);
+    }
 }
 
 void play_movie_if_onefiler() {
