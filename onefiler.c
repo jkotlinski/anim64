@@ -50,12 +50,15 @@ extern volatile unsigned char caught_irqs;
 
 static void play_movie() {
     const unsigned char* anim_ptr = HEAP_START;
-    const unsigned char frame_count = anim_ptr[3];
+    const unsigned char* next_anim;
+    unsigned char frame_count = anim_ptr[3];
     unsigned char anim_it = 0;
     unsigned char* dst = (unsigned char*)0xa000u;
 
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x84;  // Point video to 0xa000.
+
+    next_anim = anim_ptr + *(unsigned int*)anim_ptr + 2;
 
     anim_ptr += 4;  // Skip size, version, frame count
 
@@ -68,8 +71,14 @@ static void play_movie() {
         }
 
         if (++anim_it == frame_count) {
+            if (!*(unsigned int*)next_anim) {
+                anim_ptr = HEAP_START;
+            } else {
+                anim_ptr = next_anim;
+            }
+            next_anim = anim_ptr + *(unsigned int*)anim_ptr + 2;
             anim_it = 0;
-            anim_ptr = HEAP_START;
+            frame_count = anim_ptr[3];
             anim_ptr += 4;  // Skip size, version, frame count
         } else if (anim_it > 1) {
             if (*anim_ptr) {
