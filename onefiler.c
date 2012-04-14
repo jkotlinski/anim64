@@ -89,10 +89,9 @@ static void play_movie() {
             anim_ptr += 4;  // Skip size, version, frame count
         } 
 
-        copy_colors_to_d800(write + 40 * 25 + 1);
-
         *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
-
+        copy_colors_to_d800(write + 40 * 25 + 1);
+        
         write ^= 0x800;
     }
 }
