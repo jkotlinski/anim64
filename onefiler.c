@@ -24,7 +24,7 @@ THE SOFTWARE. */
 #include "movie.h"
 #include "rle.h"
 
-// #define TEST_FOO
+#define TEST_FOO
 #ifdef TEST_FOO
 #include <cbm.h>
 #include <conio.h>
@@ -50,7 +50,11 @@ extern volatile unsigned char caught_irqs;
 
 static void play_movie() {
     const unsigned char* anim_ptr = HEAP_START;
-    unsigned char* dst = (unsigned char*)0x400u;
+    unsigned char* dst = (unsigned char*)0xa000u;
+
+    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+    *(char*)0xd018 = 0x84;  // Point video to 0xa000.
+
     anim_ptr += 4;  // Skip size, version, framecount
     anim_ptr = rle_unpack(dst, anim_ptr);
     {
@@ -59,6 +63,7 @@ static void play_movie() {
         *(char*)0xd020 = colors >> 4;
     }
     copy_colors_to_d800(dst + 40 * 25 + 1);
+
     while (1) ++*(char*)0xd020;
 }
 
