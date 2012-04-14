@@ -92,12 +92,12 @@ static void play_movie() {
             ++anim_ptr;
         }
         if (++anim_it == frame_count) {
-            if (!*(unsigned int*)next_anim) {
-                anim_ptr = HEAP_START;
-            } else {
-                anim_ptr = next_anim;
-            }
+            anim_ptr = next_anim;
             next_anim = *(unsigned char**)anim_ptr;
+            if (!next_anim) {
+                anim_ptr = HEAP_START;
+                next_anim = *(unsigned char**)HEAP_START;
+            }
             anim_it = 0;
             frame_count = anim_ptr[3];
             anim_ptr += 4;  // Skip size, version, frame count
