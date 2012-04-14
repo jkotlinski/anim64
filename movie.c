@@ -399,13 +399,12 @@ static void write_onefiler_anims() {
         cputs(filename[file_it]);
         cputs(": ");
         cputhex16(file_length);
-        if (_EDITRAM_LAST__ != 2) {
-            // Not latest version!
+        if (_EDITRAM_LAST__ != 2) {  // Checks that anim version == 2.
             textcolor(COLOR_RED);
             cputs(" version err");
             return;
         }
-        // +2 for size, another +2 for EOF marker.
+        // Enough space left? +2 for size, another +2 for EOF marker.
         if (heap_end - heap_start >= file_length + 2 + 2) {
             cbm_write(MY_LFN, &file_length, sizeof(file_length));
             cbm_write(MY_LFN, &_EDITRAM_LAST__, file_length);
