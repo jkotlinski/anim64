@@ -73,7 +73,7 @@ static void play_movie() {
 
         if (anim_it) {
             if (*anim_ptr) {
-                xor(write, (char*)((int)write ^ 0x800));
+                xor_v2(write, (char*)(((int)write) ^ 0x800));
             }
             ++anim_ptr;
         }

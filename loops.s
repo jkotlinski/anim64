@@ -19,7 +19,11 @@
 ; THE SOFTWARE.
 
 .importzp ptr1
+.importzp ptr2
 
+.import popax
+
+.export _xor_v2
 .export _xor_prev
 .export _copy_colors_to_d800
 
@@ -114,3 +118,49 @@ _copy_colors_to_d800:
     inc @src + 1
 :
     jmp @loop
+
+;void xor(char* screen, const char* prev_screen) {
+;    unsigned int i;
+;    for (i = 0; i < SCREEN_SIZE; ++i) {
+;        screen[i] ^= prev_screen[i];
+;    }
+;}
+_xor_v2:
+@screen_size = 1501
+@target = ptr1
+@prev_screen = @or + 1
+	sta @prev_screen			; save prev_screen arg
+	stx @prev_screen + 1
+	jsr popax		; get screen arg
+	sta @target
+	stx @target + 1
+
+    ldy #0
+    sty ptr2
+    sty ptr2 + 1
+
+@loop:
+    lda (@target),y
+@or:
+    eor $1234
+    sta (@target),y
+
+    inc @prev_screen
+    inc @target
+    bne :+
+    inc @prev_screen + 1
+    inc @target + 1
+:
+
+    inc ptr2
+    bne :+
+    inc ptr2 + 1
+:
+    lda ptr2
+    cmp #<@screen_size
+    bne @loop
+    lda ptr2 + 1
+    cmp #>@screen_size
+    bne @loop
+
+    rts

@@ -56,15 +56,8 @@ void clear_screen(char screen) {
     ptr[BG_COLORS_OFFSET] = 0;
 }
 
-void xor(char* screen, const char* prev_screen) {
-    unsigned int i;
-    for (i = 0; i < SCREEN_SIZE; ++i) {
-        screen[i] ^= prev_screen[i];
-    }
-}
-
 void xor_prev_v2() {
     char* curr = curr_screen_chars();
-    xor(curr, curr - SCREEN_SIZE);
+    xor_v2(curr, curr - SCREEN_SIZE);
 }
 
