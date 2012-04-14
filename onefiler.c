@@ -20,15 +20,17 @@ THE SOFTWARE. */
 
 #include "onefiler.h"
 
+#include "loops.h"
 #include "movie.h"
+#include "rle.h"
 
-#define TEST_FOO
+// #define TEST_FOO
 #ifdef TEST_FOO
 #include <cbm.h>
 #include <conio.h>
 static void load_foo() {
     cbm_open(8, 8, 8, "foo");
-    cbm_read(8, (char*)0x7ff, 0x803 + 0x1800);  // Low-code + music.
+    cbm_read(8, (char*)0x7ff, 0x801 + 0x1800);  // Low-code + music.
     cbm_read(8, HEAP_START, 0x1000);  // Code - throw it away...
     cbm_read(8, HEAP_START, (char*)0xa000u - HEAP_START);  // Animation!
     cbm_close(8);
@@ -46,14 +48,29 @@ extern volatile unsigned char caught_irqs;
  * $e000 - $fffd: unused
  */
 
+static void play_movie() {
+    const unsigned char* anim_ptr = HEAP_START;
+    unsigned char* dst = (unsigned char*)0x400u;
+    anim_ptr += 4;  // Skip size, version, framecount
+    anim_ptr = rle_unpack(dst, anim_ptr);
+    {
+        unsigned char colors = dst[40 * 25];
+        *(char*)0xd021 = colors;
+        *(char*)0xd020 = colors >> 4;
+    }
+    copy_colors_to_d800(dst + 40 * 25 + 1);
+    while (1) ++*(char*)0xd020;
+}
+
 void play_movie_if_onefiler() {
 #ifdef TEST_FOO
     load_foo();
 #endif  // TEST_FOO
-    if (!movie.speed[0]) {
-        return;
+    if (movie.speed[0]) {
+        play_movie();  // load_foo may fail if this function has local variables.
     }
-    for (;;) ++*(char*)0xd020;
+}
+
     /*
     unsigned int wait_duration = 0;
     unsigned char file_it = 0;
@@ -78,5 +95,4 @@ void play_movie_if_onefiler() {
         alt_screen ^= 1;
     }
     */
-}
 
