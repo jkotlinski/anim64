@@ -23,6 +23,7 @@ THE SOFTWARE. */
 #include "loops.h"
 #include "movie.h"
 #include "rle.h"
+#include "screen.h"
 
 #define TEST_FOO
 #ifdef TEST_FOO
@@ -53,7 +54,7 @@ static void play_movie() {
     const unsigned char* next_anim;
     unsigned char frame_count = anim_ptr[3];
     unsigned char anim_it = 0;
-    unsigned char* dst = (unsigned char*)0xa000u;
+    unsigned char* write = (unsigned char*)0xa800u;
 
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x84;  // Point video to 0xa000.
@@ -63,13 +64,19 @@ static void play_movie() {
     anim_ptr += 4;  // Skip size, version, frame count
 
     while (1) {
-        anim_ptr = rle_unpack(dst, anim_ptr);
+        anim_ptr = rle_unpack(write, anim_ptr);
         {
-            const unsigned char colors = dst[40 * 25];
+            const unsigned char colors = write[40 * 25];
             *(char*)0xd021 = colors;
             *(char*)0xd020 = colors >> 4;
         }
 
+        if (anim_it) {
+            if (*anim_ptr) {
+                xor(write, (char*)((int)write ^ 0x800));
+            }
+            ++anim_ptr;
+        }
         if (++anim_it == frame_count) {
             if (!*(unsigned int*)next_anim) {
                 anim_ptr = HEAP_START;
@@ -80,14 +87,13 @@ static void play_movie() {
             anim_it = 0;
             frame_count = anim_ptr[3];
             anim_ptr += 4;  // Skip size, version, frame count
-        } else if (anim_it > 1) {
-            if (*anim_ptr) {
-                // TODO: XOR
-            }
-            ++anim_ptr;
-        }
+        } 
 
-        copy_colors_to_d800(dst + 40 * 25 + 1);
+        copy_colors_to_d800(write + 40 * 25 + 1);
+
+        *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
+
+        write ^= 0x800;
     }
 }
 

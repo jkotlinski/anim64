@@ -28,6 +28,7 @@ THE SOFTWARE. */
 #define BG_COLORS_OFFSET (40 * 25)  // (border << 4) | bg
 
 void clear_screen(char screen);
+void xor(char* screen, const char* prev_screen);
 void xor_prev_v2();
 
 extern signed char curr_screen;
