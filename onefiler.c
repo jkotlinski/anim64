@@ -20,12 +20,14 @@ THE SOFTWARE. */
 
 #include "onefiler.h"
 
+#include <string.h>
+
 #include "loops.h"
 #include "movie.h"
 #include "rle.h"
 #include "screen.h"
 
-// #define TEST_FOO
+#define TEST_FOO
 #ifdef TEST_FOO
 /* Loads a compiled movie file with the name "foo", while keeping the
  * current code intact. This #ifdef is used to make player development
@@ -52,6 +54,16 @@ extern volatile unsigned char caught_irqs;
  * $e000 - $fffd: unused
  */
 
+static void init() {
+    *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
+    *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
+    *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
+    *(char*)0xd012 = 0xfb;  // raster line
+    memset((char*)0xa000, ' ', 40 * 25);
+    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
+    *(char*)0xd018 = 0x84;  // Point video to 0xa000.
+}
+
 static void play_movie() {
     const unsigned char* anim_ptr = HEAP_START;
     const unsigned char* next_anim;
@@ -59,8 +71,7 @@ static void play_movie() {
     unsigned char anim_it = 0;
     unsigned char* write = (unsigned char*)0xa800u;
 
-    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    *(char*)0xd018 = 0x84;  // Point video to 0xa000.
+    init();
 
     next_anim = anim_ptr + *(unsigned int*)anim_ptr + 2;
 
