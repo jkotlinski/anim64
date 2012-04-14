@@ -73,7 +73,7 @@ static void play_movie() {
 
     init();
 
-    next_anim = anim_ptr + *(unsigned int*)anim_ptr + 2;
+    next_anim = *(unsigned char**)anim_ptr;
 
     anim_ptr += 4;  // Skip size, version, frame count
 
@@ -97,7 +97,7 @@ static void play_movie() {
             } else {
                 anim_ptr = next_anim;
             }
-            next_anim = anim_ptr + *(unsigned int*)anim_ptr + 2;
+            next_anim = *(unsigned char**)anim_ptr;
             anim_it = 0;
             frame_count = anim_ptr[3];
             anim_ptr += 4;  // Skip size, version, frame count
