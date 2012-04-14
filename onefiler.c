@@ -25,7 +25,7 @@ THE SOFTWARE. */
 #include "rle.h"
 #include "screen.h"
 
-#define TEST_FOO
+// #define TEST_FOO
 #ifdef TEST_FOO
 #include <cbm.h>
 #include <conio.h>

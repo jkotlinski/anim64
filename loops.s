@@ -146,9 +146,11 @@ _xor_v2:
     sta (@target),y
 
     inc @prev_screen
-    inc @target
     bne :+
     inc @prev_screen + 1
+:
+    inc @target
+    bne :+
     inc @target + 1
 :
 
