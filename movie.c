@@ -35,15 +35,6 @@ THE SOFTWARE. */
 
 #define VIDEO_BASE (unsigned char*)0x8000u
 
-/* $3800 - $9fff: packed screens ($6800 bytes)
- * $a000 - $a3e7: chars, screen 0
- * $a3e8 - $a3e8: bg/border, screen 0
- * $a3e9 - $a7d0: colors, screen 0
- * $a800 - $afd0: chars + border + colors, screen 1
- * $b000 - $cfff: unused
- * $e000 - $fffd: unused
- */
-
 #pragma bssseg(push, "EDITCODE")
 char filename[FILE_COUNT][FILENAME_LENGTH];
 char music_path[FILENAME_LENGTH];

@@ -37,6 +37,15 @@ static void load_foo() {
 
 extern volatile unsigned char caught_irqs;
 
+/* $3800 - $9fff: packed screens ($6800 bytes)
+ * $a000 - $a3e7: chars, screen 0
+ * $a3e8 - $a3e8: bg/border, screen 0
+ * $a3e9 - $a7d0: colors, screen 0
+ * $a800 - $afd0: chars + border + colors, screen 1
+ * $b000 - $cfff: unused
+ * $e000 - $fffd: unused
+ */
+
 void play_movie_if_onefiler() {
 #ifdef TEST_FOO
     load_foo();
