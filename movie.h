@@ -30,6 +30,8 @@ typedef struct {
 
 extern Movie movie;
 
+#define HEAP_START (char*)0x3800u
+
 void edit_movie();
 
 void invalidate_loaded_anim();

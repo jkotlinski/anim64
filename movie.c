@@ -126,7 +126,6 @@ static unsigned int skip_music_frames() {
 }
 
 extern unsigned char _EDITRAM_LAST__;  /* Defined by linker. */
-#define HEAP_START (char*)0x3800u
 
 static void draw_headers() {
     textcolor(COLOR_BLUE);

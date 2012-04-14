@@ -22,9 +22,25 @@ THE SOFTWARE. */
 
 #include "movie.h"
 
+#define TEST_FOO
+#ifdef TEST_FOO
+#include <cbm.h>
+#include <conio.h>
+static void load_foo() {
+    cbm_open(8, 8, 8, "foo");
+    cbm_read(8, (char*)0x7ff, 0x803 + 0x1800);  // Low-code + music.
+    cbm_read(8, HEAP_START, 0x1000);  // Code - throw it away...
+    cbm_read(8, HEAP_START, (char*)0xa000u - HEAP_START);  // Animation!
+    cbm_close(8);
+}
+#endif  // TEST_FOO
+
 extern volatile unsigned char caught_irqs;
 
 void play_movie_if_onefiler() {
+#ifdef TEST_FOO
+    load_foo();
+#endif  // TEST_FOO
     if (!movie.speed[0]) {
         return;
     }
