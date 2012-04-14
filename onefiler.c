@@ -1,4 +1,4 @@
-/** Copyright (c) 2011, Johan Kotlinski
+/** Copyright (c) 2012, Johan Kotlinski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -18,25 +18,40 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
-#include <conio.h>
-
-#include "edit.h"
 #include "onefiler.h"
 
-void main() {
-    clrscr();
-    bordercolor(0);
-    bgcolor(0);
+#include "movie.h"
 
-    // *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    // *(char*)0xd018 = 4;  // Point video to 0x8000.
-    *(char*)0xd018 = 0x14;  // Point video to 0x400.
+extern volatile unsigned char caught_irqs;
 
-#if 0
-    while(1) { if (kbhit()) { printf("%x", cgetc()); } }
-#endif
+void play_movie_if_onefiler() {
+    if (!movie.speed[0]) {
+        return;
+    }
+    for (;;) ++*(char*)0xd020;
+    /*
+    unsigned int wait_duration = 0;
+    unsigned char file_it = 0;
+    unsigned char alt_screen = 0;
+    init_music();
+    init_play();
+    for (;;) {
+        // unpack_anim(file_it, alt_screen);
+        while (wait_duration--) {
+            while (!caught_irqs) {
+                blink_vic_from_sid();
+            }
+            --caught_irqs;
+        }
+        play_anim(movie.speed[file_it], alt_screen);
+        wait_duration = movie.frames[file_it] * movie.speed[file_it];
 
-    play_movie_if_onefiler();
-
-    edit();
+        ++file_it;
+        if (file_it == FILE_COUNT || start[file_it] == 0) {
+            file_it = 0;
+        }
+        alt_screen ^= 1;
+    }
+    */
 }
+

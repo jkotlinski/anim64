@@ -21,10 +21,17 @@ THE SOFTWARE. */
 #ifndef MOVIE_H_
 #define MOVIE_H_
 
+#define FILE_COUNT 20
+
+typedef struct {
+    unsigned char frames[FILE_COUNT];
+    unsigned char speed[FILE_COUNT];
+} Movie;
+
+extern Movie movie;
+
 void edit_movie();
 
 void invalidate_loaded_anim();
-
-void play_movie_if_onefiler();
 
 #endif  /* MOVIE_H_ */

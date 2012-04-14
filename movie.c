@@ -18,6 +18,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
+#include "movie.h"
+
 #include <conio.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -42,8 +44,6 @@ THE SOFTWARE. */
  * $e000 - $fffd: unused
  */
 
-#define FILE_COUNT 20
-
 #pragma bssseg(push, "EDITCODE")
 char filename[FILE_COUNT][FILENAME_LENGTH];
 char music_path[FILENAME_LENGTH];
@@ -53,10 +53,7 @@ char music_path[FILENAME_LENGTH];
 /* These variables are used in onefiler mode. They are put in DATA segment
  * instead of BSS to keep them from being zero-initialized.
  */
-static struct Movie {
-    unsigned char frames[FILE_COUNT];
-    unsigned char speed[FILE_COUNT];
-} movie;
+Movie movie;
 #pragma bssseg (pop)
 
 static char selected_file;
@@ -131,106 +128,6 @@ static unsigned int skip_music_frames() {
 extern unsigned char _EDITRAM_LAST__;  /* Defined by linker. */
 #define HEAP_START (char*)0x3800u
 
-#pragma codeseg("CODE")
-
-void show_screen();
-
-extern volatile unsigned char caught_irqs;
-
-static char is_onefiler() {
-    return movie.speed[0];
-}
-
-void play_movie_if_onefiler() {
-    if (!is_onefiler()) {
-        return;
-    }
-    for (;;) ++*(char*)0xd020;
-    /*
-    unsigned int wait_duration = 0;
-    unsigned char file_it = 0;
-    unsigned char alt_screen = 0;
-    init_music();
-    init_play();
-    for (;;) {
-        // unpack_anim(file_it, alt_screen);
-        while (wait_duration--) {
-            while (!caught_irqs) {
-                blink_vic_from_sid();
-            }
-            --caught_irqs;
-        }
-        play_anim(movie.speed[file_it], alt_screen);
-        wait_duration = movie.frames[file_it] * movie.speed[file_it];
-
-        ++file_it;
-        if (file_it == FILE_COUNT || start[file_it] == 0) {
-            file_it = 0;
-        }
-        alt_screen ^= 1;
-    }
-    */
-}
-
-#pragma codeseg("EDITCODE")
-
-static void prompt_music() {
-    if (prompt_open("music", CBM_READ, TYPE_PRG)) {
-        strcpy(music_path, prompt_path);
-        load_music();
-        show_screen();
-    }
-}
-
-static void get_filename() {
-    char* ptr = filename[selected_file];
-    char chars = 7;
-    while (chars > 0) {
-        unsigned char c = cgetc();
-        if (c == CH_ENTER) {
-            break;
-        }
-        if (c == CH_DEL) {
-            if (ptr > filename[selected_file]) {
-                --ptr;
-                ++chars;
-                gotox(wherex() - 1);
-                cputc(' ');
-                gotox(wherex() - 1);
-            }
-            continue;
-        }
-        cputc(c);
-        *ptr = c;
-        ++ptr;
-        --chars;
-    }
-    *ptr = 0;
-}
-
-static unsigned int read_digits() {
-    unsigned int number = 0;
-    unsigned char digits = 3;
-    while (digits > 0) {
-        char c = cgetc();
-        if (c >= '0' && c <= '9') {
-            cputc(c);
-            number *= 10;
-            number += c - '0';
-        } else if (c == CH_ENTER) {
-            break;
-        }
-    }
-    return number;
-}
-static unsigned char update_color(unsigned char column, unsigned char row) {
-    const unsigned char color = (row != selected_file || column != selected_column)
-        ? (row & 1) ? COLOR_GRAY1 : COLOR_GRAY2
-        : COLOR_GREEN;
-    textcolor(color);
-    return color;
-}
-
 static void draw_headers() {
     textcolor(COLOR_BLUE);
     gotoxy(0, 0);
@@ -239,6 +136,14 @@ static void draw_headers() {
     cputs("dur");
     gotoxy(SPEED_X, 0);
     cputs("spd");
+}
+
+static unsigned char update_color(unsigned char column, unsigned char row) {
+    const unsigned char color = (row != selected_file || column != selected_column)
+        ? (row & 1) ? COLOR_GRAY1 : COLOR_GRAY2
+        : COLOR_GREEN;
+    textcolor(color);
+    return color;
 }
 
 static void print_digits(unsigned int number) {
@@ -306,10 +211,60 @@ static void show_screen() {
     draw_fields();
 }
 
+static void prompt_music() {
+    if (prompt_open("music", CBM_READ, TYPE_PRG)) {
+        strcpy(music_path, prompt_path);
+        load_music();
+        show_screen();
+    }
+}
+
+static void get_filename() {
+    char* ptr = filename[selected_file];
+    char chars = 7;
+    while (chars > 0) {
+        unsigned char c = cgetc();
+        if (c == CH_ENTER) {
+            break;
+        }
+        if (c == CH_DEL) {
+            if (ptr > filename[selected_file]) {
+                --ptr;
+                ++chars;
+                gotox(wherex() - 1);
+                cputc(' ');
+                gotox(wherex() - 1);
+            }
+            continue;
+        }
+        cputc(c);
+        *ptr = c;
+        ++ptr;
+        --chars;
+    }
+    *ptr = 0;
+}
+
+static unsigned int read_digits() {
+    unsigned int number = 0;
+    unsigned char digits = 3;
+    while (digits > 0) {
+        char c = cgetc();
+        if (c >= '0' && c <= '9') {
+            cputc(c);
+            number *= 10;
+            number += c - '0';
+        } else if (c == CH_ENTER) {
+            break;
+        }
+    }
+    return number;
+}
+
 static void init() {
     char file_it;
     static char inited;
-    if (inited || is_onefiler()) {
+    if (inited) {
         return;
     }
     /* Since movie is not in BSS, zero-init filename and speed explicitly. */

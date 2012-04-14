@@ -1,4 +1,4 @@
-/** Copyright (c) 2011, Johan Kotlinski
+/** Copyright (c) 2012, Johan Kotlinski
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -18,25 +18,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE. */
 
-#include <conio.h>
+#ifndef ONEFILER_H_
+#define ONEFILER_H_
 
-#include "edit.h"
-#include "onefiler.h"
+void play_movie_if_onefiler();
 
-void main() {
-    clrscr();
-    bordercolor(0);
-    bgcolor(0);
-
-    // *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    // *(char*)0xd018 = 4;  // Point video to 0x8000.
-    *(char*)0xd018 = 0x14;  // Point video to 0x400.
-
-#if 0
-    while(1) { if (kbhit()) { printf("%x", cgetc()); } }
-#endif
-
-    play_movie_if_onefiler();
-
-    edit();
-}
+#endif  // ONEFILER_H_
