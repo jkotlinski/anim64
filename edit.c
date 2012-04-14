@@ -371,7 +371,11 @@ void handle_anim_edit_key(char key) {
         case CH_F2: invalidate_loaded_anim(); save_anim(); break;
         case CH_F5: copy_screen(); break;
         case CH_F6: paste_screen(); break;
-        case CH_F7: switch_to_console_screen(); edit_movie(); redraw_edit_screen(); break;
+        case CH_F7: switch_to_console_screen();
+                    edit_movie();
+                    redraw_edit_screen();
+                    show_cursor();
+                    break;
         case 0x12: reverse = 0x80u; break;
         case 0x92: reverse = 0; break;
 
