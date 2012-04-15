@@ -22,8 +22,10 @@ THE SOFTWARE. */
 
 #include <string.h>
 
+#include "irq.h"
 #include "loops.h"
 #include "movie.h"
+#include "music.h"
 #include "rle.h"
 #include "screen.h"
 
@@ -60,8 +62,11 @@ static void init() {
     *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
     *(char*)0xd012 = 0xfb;  // raster line
     memset((char*)0xa000, ' ', 40 * 25);
+    init_music();
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x84;  // Point video to 0xa000.
+    *(voidFn*)0xfffe = irq_handler_v2;  // set irq handler pointer
+    *(char*)0xd01a = 1;  // enable raster interrupts
 }
 
 static void play_movie() {

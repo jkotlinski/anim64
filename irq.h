@@ -30,7 +30,7 @@ extern volatile char switched_frame;
 
 typedef void (*voidFn)(void);
 
-void irq_handler();
+void irq_handler_v2();
 void edit_play_irq_handler();
 
 #endif  // IRQ_H_
