@@ -163,6 +163,11 @@ _irq_handler_v2:
     lda $d018
     ora #2
     sta $d018
+    jmp :++
+:
+    lda $d018
+    and #~2
+    sta $d018
 :
 
     asl $d019  ; Acknowledges interrupt.
