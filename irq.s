@@ -107,30 +107,6 @@ anim_next_screen:
     rts
 .endif
 
-_edit_play_irq_handler:
-    pha
-    txa
-    pha
-    tya
-    pha
-
-    inc _caught_irqs
-
-    ; Calls music subroutine.
-    lda #0
-    tax
-    tay
-    jsr $1003
-
-    asl $d019  ; Acknowledges interrupt.
-
-    pla
-    tay
-    pla
-    tax
-    pla
-    rti
-
 _irq_handler:
     pha
     txa
@@ -188,3 +164,31 @@ _irq_handler:
     tax
     pla
     rti
+
+
+.segment "EDITCODE"  ; =========================================
+
+_edit_play_irq_handler:
+    pha
+    txa
+    pha
+    tya
+    pha
+
+    inc _caught_irqs
+
+    ; Calls music subroutine.
+    lda #0
+    tax
+    tay
+    jsr $1003
+
+    asl $d019  ; Acknowledges interrupt.
+
+    pla
+    tay
+    pla
+    tax
+    pla
+    rti
+
