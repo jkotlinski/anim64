@@ -20,22 +20,6 @@ THE SOFTWARE. */
 
 #include "player.h"
 
-// #include "effects.h"
-#include "irq.h"
-
-#define RASTER_LINE 0xfb
-
-void init_play() {
-    *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
-    *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
-
-    // Scan all keyboard rows.
-    *(char*)0xdc00 = 0;
-
-    *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
-    *(char*)0xd012 = RASTER_LINE;  // raster line
-}
-
 void blink_vic_from_sid() {
     const unsigned char freq = *(unsigned char*)0xd41b;
     const unsigned char amp = *(unsigned char*)0xd41c;

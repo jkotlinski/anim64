@@ -21,12 +21,6 @@ THE SOFTWARE. */
 #ifndef PLAYER_H_
 #define PLAYER_H_
 
-void init_play();
-void exit_play();
-
-// Returns 0 if timed out, 1 if keyboard was pressed.
-char wait_anim(unsigned int duration);
-
 void blink_vic_from_sid();
 
 #endif  // PLAYER_H_

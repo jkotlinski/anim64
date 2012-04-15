@@ -26,6 +26,7 @@ THE SOFTWARE. */
 #include "loops.h"
 #include "movie.h"
 #include "music.h"
+#include "player.h"
 #include "rle.h"
 #include "screen.h"
 
@@ -105,6 +106,8 @@ static void play_movie() {
                 if (caught_irqs) {
                     --caught_irqs;
                     --count;
+                } else {
+                    blink_vic_from_sid();
                 }
             }
         }

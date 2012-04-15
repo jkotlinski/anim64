@@ -30,17 +30,6 @@ THE SOFTWARE. */
 
 #pragma codeseg("EDITCODE")
 
-void exit_play() {
-    *(char*)0xd01a = 0;  // disable raster interrupts
-    caught_irqs = 0;
-    *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
-    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
-    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
-    *(char*)0xd418 = 0;  // Mute sound.
-
-    if (kbhit()) cgetc();
-}
-
 #define MY_LFN 1
 static void load_v2_anim() {
     unsigned int read_bytes;

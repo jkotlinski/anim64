@@ -20,6 +20,8 @@ THE SOFTWARE. */
 
 #include "anim_play.h"
 
+#include <conio.h>
+
 #include "irq.h"
 #include "music.h"
 #include "player.h"
@@ -27,6 +29,26 @@ THE SOFTWARE. */
 
 #pragma codeseg("EDITCODE")
 #pragma rodataseg("EDITCODE")
+
+static void init_play() {
+    *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
+    *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
+
+    // Scan all keyboard rows.
+    *(char*)0xdc00 = 0;
+
+    *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
+    *(char*)0xd012 = 0xfb;  // raster line
+}
+
+static void exit_play() {
+    *(char*)0xd01a = 0;  // disable raster interrupts
+    caught_irqs = 0;
+    *(voidFn*)0xfffe = (voidFn)0x314;  // set irq handler pointer
+    *(char*)1 = 0x36;  // RAM + I/O + Kernal.
+    *(char*)0xdc0d = 0x81;  // Re-enable kernal timer interrupts.
+    *(char*)0xd418 = 0;  // Mute sound.
+}
 
 void preview_play_anim(unsigned char speed,
         unsigned int skip_music_ticks,
@@ -69,5 +91,7 @@ void preview_play_anim(unsigned char speed,
     }
 exit:
     exit_play();
+
+    if (kbhit()) cgetc();
 }
 
