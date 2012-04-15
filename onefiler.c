@@ -160,29 +160,3 @@ void play_movie_if_onefiler() {
         play_movie();  // load_foo may fail if this function has local variables.
     }
 }
-
-    /*
-    unsigned int wait_duration = 0;
-    unsigned char file_it = 0;
-    unsigned char alt_screen = 0;
-    init_music();
-    init_play();
-    for (;;) {
-        // unpack_anim(file_it, alt_screen);
-        while (wait_duration--) {
-            while (!caught_irqs) {
-                blink_vic_from_sid();
-            }
-            --caught_irqs;
-        }
-        play_anim(movie.speed[file_it], alt_screen);
-        wait_duration = movie.frames[file_it] * movie.speed[file_it];
-
-        ++file_it;
-        if (file_it == FILE_COUNT || start[file_it] == 0) {
-            file_it = 0;
-        }
-        alt_screen ^= 1;
-    }
-    */
-
