@@ -52,7 +52,8 @@ extern volatile unsigned char caught_irqs;
  * $a3e8 - $a3e8: bg/border, screen 0
  * $a3e9 - $a7d0: colors, screen 0
  * $a800 - $afd0: chars + border + colors, screen 1
- * $b000 - $cfff: unused
+ * $b000 - $b3ff: temp buffer, colors
+ * $b400 - $cfff: unused
  * $e000 - $fffd: unused
  */
 
@@ -90,12 +91,37 @@ static void play_movie() {
             *(char*)0xd020 = colors >> 4;
         }
 
+        // Handles XOR.
         if (anim_it) {
             if (*anim_ptr) {
                 xor_v2(write, (char*)(((int)write) ^ 0x800));
             }
             ++anim_ptr;
         }
+        
+        // Unpacks colors.
+        {
+            const char* src = write + 40 * 25 + 1;
+            char* dst = (char*)0xb000u;
+            do {
+                char colors = *src;
+                *dst = colors;
+                ++dst;
+                *dst = colors >> 4;
+                ++dst;
+                ++src;
+            } while (dst != (char*)0xb000u + 40 * 25);
+        }
+
+        // Shows new frame.
+        *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
+
+        // Copies colors.
+        memcpy((char*)0xd800, (char*)0xb000u, 40 * 25);
+
+        write ^= 0x800;
+
+        // Update pointers if we reached animation end.
         if (++anim_it == frame_count) {
             anim_ptr = next_anim;
             next_anim = *(unsigned char**)anim_ptr;
@@ -108,11 +134,6 @@ static void play_movie() {
             frame_count = anim_ptr[3];
             anim_ptr += 4;  // Skip size, version, frame count
         } 
-
-        *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
-        copy_colors_to_d800(write + 40 * 25 + 1);
-        
-        write ^= 0x800;
     }
 }
 
