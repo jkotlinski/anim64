@@ -329,7 +329,6 @@ static void write_onefiler_anims() {
     unsigned char file_it;
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
         const unsigned int file_length = get_file_length(file_it);
-        unsigned char alloc_failed = 1;
         if (!file_length) {
             if (*filename[file_it]) {
                 textcolor(COLOR_RED);
