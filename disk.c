@@ -41,12 +41,11 @@ unsigned char prompt_open(const char* prompt, char mode, char type) {
             prompt_path[0] = '@';
             prompt_path[1] = '0';
             prompt_path[2] = ':';
-            gets(prompt_path + 3);
+            if (!*gets(prompt_path + 3)) return 0;
         } else {
-            gets(prompt_path);
+            if (!*gets(prompt_path)) return 0;
         }
         strcat(prompt_path, type ? ",p" : ",u");
-        if (!*prompt_path) return 0;
         if (!cbm_open(MY_LFN, 8, mode, prompt_path)) return 1;
         cputs("err");
         gotox(0);
