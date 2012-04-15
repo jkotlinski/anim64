@@ -74,6 +74,7 @@ static void play_movie() {
     const unsigned char* anim_ptr = HEAP_START;
     const unsigned char* next_anim;
     unsigned char frame_count = anim_ptr[3];
+    unsigned char anim_it = 0;
     unsigned char anim_frame_it = 0;
     unsigned char* write = (unsigned char*)0xa800u;
     unsigned char first_tick = 1;
@@ -99,7 +100,7 @@ static void play_movie() {
 
         // Waits for enough ticks...
         if (!first_tick) {
-            unsigned char count = 32;
+            unsigned char count = movie.speed[anim_it];
             while (count) {
                 if (caught_irqs) {
                     --caught_irqs;
@@ -124,10 +125,12 @@ static void play_movie() {
 
         // Update pointers if we reached animation end.
         if (++anim_frame_it == frame_count) {
+            ++anim_it;
             anim_ptr = next_anim;
             next_anim = *(unsigned char**)anim_ptr;
             if (!next_anim) {
                 // EOF found, restart movie.
+                anim_it = 0;
                 anim_ptr = HEAP_START;
                 next_anim = *(unsigned char**)HEAP_START;
             }
