@@ -74,7 +74,7 @@ static void play_movie() {
     const unsigned char* anim_ptr = HEAP_START;
     const unsigned char* next_anim;
     unsigned char frame_count = anim_ptr[3];
-    unsigned char anim_it = 0;
+    unsigned char anim_frame_it = 0;
     unsigned char* write = (unsigned char*)0xa800u;
     unsigned char first_tick = 1;
 
@@ -88,7 +88,7 @@ static void play_movie() {
         anim_ptr = rle_unpack(write, anim_ptr);
 
         // Handles XOR.
-        if (anim_it) {
+        if (anim_frame_it) {
             if (*anim_ptr) {
                 xor_v2(write, (char*)(((int)write) ^ 0x800));
             }
@@ -123,7 +123,7 @@ static void play_movie() {
         write ^= 0x800;
 
         // Update pointers if we reached animation end.
-        if (++anim_it == frame_count) {
+        if (++anim_frame_it == frame_count) {
             anim_ptr = next_anim;
             next_anim = *(unsigned char**)anim_ptr;
             if (!next_anim) {
@@ -131,7 +131,7 @@ static void play_movie() {
                 anim_ptr = HEAP_START;
                 next_anim = *(unsigned char**)HEAP_START;
             }
-            anim_it = 0;
+            anim_frame_it = 0;
             frame_count = anim_ptr[3];
             anim_ptr += 4;  // Skip size, version, frame count
         } 
