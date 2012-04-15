@@ -29,7 +29,7 @@ THE SOFTWARE. */
 #include "rle.h"
 #include "screen.h"
 
-#define TEST_FOO
+// #define TEST_FOO
 #ifdef TEST_FOO
 /* Loads a compiled movie file with the name "foo", while keeping the
  * current code intact. This #ifdef is used to make player development
@@ -85,11 +85,6 @@ static void play_movie() {
 
     while (1) {
         anim_ptr = rle_unpack(write, anim_ptr);
-        {
-            const unsigned char colors = write[40 * 25];
-            *(char*)0xd021 = colors;
-            *(char*)0xd020 = colors >> 4;
-        }
 
         // Handles XOR.
         if (anim_it) {
@@ -99,25 +94,18 @@ static void play_movie() {
             ++anim_ptr;
         }
         
-        // Unpacks colors.
-        {
-            const char* src = write + 40 * 25 + 1;
-            char* dst = (char*)0xb000u;
-            do {
-                char colors = *src;
-                *dst = colors;
-                ++dst;
-                *dst = colors >> 4;
-                ++dst;
-                ++src;
-            } while (dst != (char*)0xb000u + 40 * 25);
-        }
+        unpack_colors((char*)0xb000u, write + 40 * 25 + 1);
 
         // Shows new frame.
         *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
 
         // Copies colors.
         memcpy((char*)0xd800, (char*)0xb000u, 40 * 25);
+        {
+            unsigned char colors = write[40 * 25];
+            *(char*)0xd021 = colors;
+            *(char*)0xd020 = colors >> 4;
+        }
 
         write ^= 0x800;
 

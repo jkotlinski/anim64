@@ -25,11 +25,11 @@
 
 .export _xor_v2
 .export _xor_prev
-.export _copy_colors_to_d800
+.export _unpack_colors
 
-; void copy_colors_to_d800(const unsigned char* src) {
-;     unsigned char* dst = (unsigned char*)0xd800;
-;     while (dst != (unsigned char*)(0xd800 + 40 * 25)) {
+; void unpack_colors(char* dst, const unsigned char* src) {
+;     char* end = dst + 0x400;
+;     while (dst != end) {
 ;         const unsigned char colors = *src;
 ;         ++src;
 ;         *dst = colors;
@@ -39,14 +39,18 @@
 ;     }
 ; }
 dst	= ptr1 ; Borrows cc65 temp pointer.
-_copy_colors_to_d800:
+_unpack_colors:
     sta @src
     stx @src + 1
-    ; dst = 0xd800;
+	jsr popax
+    sta dst
+    stx dst + 1
+    inx
+    inx
+    inx
+    inx
+    stx @end + 1
     ldy #0
-    sty dst
-    lda #$d8
-    sta dst + 1
 @loop:
 @src = @loop + 1
     ; *dst = *src;
@@ -66,6 +70,7 @@ _copy_colors_to_d800:
     inc dst + 1
     ; if (dst == 0xdc00) then return;
     lda dst + 1
+@end:
     cmp #$dc
     bne :+
     rts 

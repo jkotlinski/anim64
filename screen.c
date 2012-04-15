@@ -44,7 +44,7 @@ unsigned char* curr_bg_color() {
 void redraw_edit_screen() {
     unsigned char colors;
     memcpy((char*)0x400, curr_screen_chars(), 40 * 25);
-    copy_colors_to_d800(curr_screen_colors());
+    unpack_colors((char*)0xd800, curr_screen_colors());
     colors = *curr_bg_color();
     *(char*)0xd021 = colors;
     *(char*)0xd020 = colors >> 4;
