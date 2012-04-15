@@ -29,6 +29,7 @@ void __fastcall__ xor_prev(unsigned char* screen_ptr);
 /* xor's screen[0, SCREEN_SIZE] with prev_screen[0, SCREEN_SIZE] */
 void __fastcall__ xor_v2(char* screen, const char* prev_screen);
 
+/* dst must be page-aligned. */
 void __fastcall__ unpack_colors(char* dst, const unsigned char* src);
 
 #endif  // DIFF_ASM_H_
