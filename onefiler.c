@@ -29,7 +29,7 @@ THE SOFTWARE. */
 #include "rle.h"
 #include "screen.h"
 
-// #define TEST_FOO
+#define TEST_FOO
 #ifdef TEST_FOO
 /* Loads a compiled movie file with the name "foo", while keeping the
  * current code intact. This #ifdef is used to make player development
@@ -76,6 +76,7 @@ static void play_movie() {
     unsigned char frame_count = anim_ptr[3];
     unsigned char anim_it = 0;
     unsigned char* write = (unsigned char*)0xa800u;
+    unsigned char first_tick = 1;
 
     init();
 
@@ -95,6 +96,18 @@ static void play_movie() {
         }
         
         unpack_colors((char*)0xb000u, write + 40 * 25 + 1);
+
+        // Waits for enough ticks...
+        if (!first_tick) {
+            unsigned char count = 32;
+            while (count) {
+                if (caught_irqs) {
+                    --caught_irqs;
+                    --count;
+                }
+            }
+        }
+        first_tick = 0;
 
         // Shows new frame.
         *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
