@@ -68,7 +68,6 @@ static void init() {
     *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
     *(char*)0xd018 = 0x84;  // Point video to 0xa000.
     *(voidFn*)0xfffe = irq_handler_v2;  // set irq handler pointer
-    *(char*)0xd01a = 1;  // enable raster interrupts
 }
 
 static void play_movie() {
@@ -99,8 +98,11 @@ static void play_movie() {
         
         unpack_colors((char*)0xb000u, write + 40 * 25 + 1);
 
-        // Waits for enough ticks...
-        if (!first_tick) {
+        if (first_tick) {
+            *(char*)0xd01a = 1;  // Enables raster interrupts.
+            first_tick = 0;
+        } else {
+            // Waits for enough ticks...
             unsigned char count = movie.speed[anim_it];
             while (count) {
                 if (caught_irqs) {
@@ -111,7 +113,6 @@ static void play_movie() {
                 }
             }
         }
-        first_tick = 0;
 
         // Shows new frame.
         *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
