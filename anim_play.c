@@ -61,7 +61,7 @@ void preview_play_anim(unsigned char speed,
         tick_music();
     }
     init_play();
-    *(voidFn*)0xfffe = edit_play_irq_handler;  // set irq handler pointer
+    *(voidFn*)0xfffe = irq_handler_v2;  // set irq handler pointer
     *(char*)0xd01a = 1;  // enable raster interrupts
     while (frames--) {
         unsigned char frame_delay = speed;

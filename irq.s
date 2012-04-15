@@ -19,7 +19,6 @@
 ; THE SOFTWARE.
 
 .export _irq_handler_v2
-.export _edit_play_irq_handler
 .export _caught_irqs  ; counter
 
 _caught_irqs: .byte 0
@@ -76,31 +75,3 @@ _irq_handler_v2:
     tax
     pla
     rti
-
-
-.segment "EDITCODE"  ; =========================================
-
-_edit_play_irq_handler:
-    pha
-    txa
-    pha
-    tya
-    pha
-
-    inc _caught_irqs
-
-    ; Calls music subroutine.
-    lda #0
-    tax
-    tay
-    jsr $1003
-
-    asl $d019  ; Acknowledges interrupt.
-
-    pla
-    tay
-    pla
-    tax
-    pla
-    rti
-

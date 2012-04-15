@@ -26,6 +26,5 @@ extern volatile char caught_irqs;  // Increased by 1 every tick.
 typedef void (*voidFn)(void);
 
 void irq_handler_v2();
-void edit_play_irq_handler();
 
 #endif  // IRQ_H_
