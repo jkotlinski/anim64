@@ -235,7 +235,7 @@ static void get_filename() {
     *ptr = 0;
 }
 
-static unsigned int read_digits() {
+unsigned int read_digits() {
     unsigned int number = 0;
     unsigned char digits = 3;
     while (digits > 0) {

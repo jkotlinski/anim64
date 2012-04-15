@@ -36,4 +36,6 @@ void edit_movie();
 
 void invalidate_loaded_anim();
 
+unsigned int read_digits();
+
 #endif  /* MOVIE_H_ */

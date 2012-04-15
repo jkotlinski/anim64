@@ -179,7 +179,7 @@ static void switch_to_console_screen() {
     clrscr();
     // *(char*)0xdd00 = 0x17;  // Use graphics bank 0. ($0000-$3fff)
     *(char*)0xd021 = COLOR_BLACK;
-    memset((char*)0xd800, COLOR_YELLOW, 0x400);
+    memset((char*)0xd800, COLOR_YELLOW, 40 * 25);
 }
 
 static void load_edit_anim() {
@@ -344,9 +344,11 @@ void handle_anim_edit_key(char key) {
             ++*(char*)0xd021;
             break;
         case CH_F8:
-            ++end_frame;
-#define MAX_END_FRAME 15
-            end_frame &= MAX_END_FRAME;
+            switch_to_console_screen();
+            cputs("frames (1-16): ");
+            end_frame = (read_digits() - 1) & 15;
+            redraw_edit_screen();
+            show_cursor();
             break;
         case ' ':
         case 0x80 | ' ':
