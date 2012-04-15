@@ -123,46 +123,7 @@ _irq_handler:
     dex
     stx frame_delay
 
-    ; Calls music subroutine.
-    lda #0
-    tax
-    tay
-    jsr $1003
-
-    ; #define SCX_REG *(char*)0xd016
-    ; SCX_REG = (SCX_REG & ~3) | (*(char*)0xd41c >> 6); 
-    lda $d41c
-    lsr
-    lsr
-    lsr
-    lsr
-    lsr
-    lsr
-    sta :+ + 1
-    lda $d016
-    and #~3
-:   eor #0
-    sta $d016
-
-    ; Flips to UPPERCASE when SID channel 3 has max amplitude.
-    lda $d41c
-    cmp #$ff
-    bne :+
-    lda $d018
-    ora #2
-    sta $d018
-:
-
-    inc _caught_irqs
-
-    asl $d019  ; Acknowledges interrupt.
-
-    pla
-    tay
-    pla
-    tax
-    pla
-    rti
+; ----8<---- ...got rid of some old code here
 .endif
 
 _irq_handler_v2:
