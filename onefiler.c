@@ -48,13 +48,14 @@ static void load_foo() {
 
 extern volatile unsigned char caught_irqs;
 
-/* $3800 - $9fff: packed screens ($6800 bytes)
+/*  $400 -  $7ff: temp color buffer
+ *  $800 - $37ff: code & music
+ * $3800 - $9fff: packed screens ($6800 bytes)
  * $a000 - $a3e7: chars, screen 0
  * $a3e8 - $a3e8: bg/border, screen 0
  * $a3e9 - $a7d0: colors, screen 0
  * $a800 - $afd0: chars + border + colors, screen 1
- * $b000 - $b3ff: temp buffer, colors
- * $b400 - $cfff: unused
+ * $b000 - $cfff: unused
  * $e000 - $fffd: unused
  */
 
@@ -98,7 +99,7 @@ static void play_movie() {
             ++anim_ptr;
         }
         
-        unpack_colors((char*)0xb000u, write + 40 * 25 + 1);
+        unpack_colors((char*)0x400u, write + 40 * 25 + 1);
 
         if (first_tick) {
             *(char*)0xd01a = 1;  // Enables raster interrupts.
@@ -120,7 +121,7 @@ static void play_movie() {
         *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
 
         // Copies colors.
-        memcpy((char*)0xd800, (char*)0xb000u, 40 * 25);
+        memcpy((char*)0xd800, (char*)0x400u, 40 * 25);
         {
             unsigned char colors = write[40 * 25];
             *(char*)0xd021 = colors;
