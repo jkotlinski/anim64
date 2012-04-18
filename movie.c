@@ -331,6 +331,7 @@ static void write_onefiler_anims() {
         const unsigned int file_length = get_file_length(file_it);
         if (!file_length) {
             if (*filename[file_it]) {
+                cbm_close(MY_LFN);
                 textcolor(COLOR_RED);
                 gotoxy(0, file_it + 2);
                 cputs(filename[file_it]);
@@ -344,6 +345,7 @@ static void write_onefiler_anims() {
         cputs(": ");
         cputhex16(file_length);
         if (_EDITRAM_LAST__ != 2) {  // Checks that anim version == 2.
+            cbm_close(MY_LFN);
             textcolor(COLOR_RED);
             cputs(" version err");
             return;
@@ -353,12 +355,14 @@ static void write_onefiler_anims() {
             const unsigned int next_addr = heap_start + 2 + file_length;
             if (cbm_write(MY_LFN, &next_addr, sizeof(next_addr)) <= 0 ||
                     cbm_write(MY_LFN, &_EDITRAM_LAST__, file_length) <= 0) {
+                cbm_close(MY_LFN);
                 textcolor(COLOR_RED);
                 cputs(" disk full?");
                 return;
             }
             heap_start += file_length + sizeof(file_length);
         } else {
+            cbm_close(MY_LFN);
             textcolor(COLOR_RED);
             cputs(" out of mem");
             return;
@@ -367,6 +371,7 @@ static void write_onefiler_anims() {
     // End of file marker (0).
     heap_start = 0;
     cbm_write(MY_LFN, &heap_start, sizeof(heap_start));
+    cbm_close(MY_LFN);
     cputs(" ok!");
 }
 
@@ -381,7 +386,6 @@ static void save_onefiler() {
     cbm_write(MY_LFN, (char*)0x801, (unsigned int)HEAP_START - 0x801);
     *(char*)0xd018 |= 2;  // lower/uppercase gfx
     write_onefiler_anims();
-    cbm_close(MY_LFN);
     cgetc();
     *(char*)0xd018 &= ~2;  // uppercase + gfx
 }
