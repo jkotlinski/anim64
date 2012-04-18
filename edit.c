@@ -21,7 +21,6 @@ THE SOFTWARE. */
 #include "edit.h"
 
 #include <conio.h>
-#include <errno.h>
 #include <string.h>
 #include <time.h>
 

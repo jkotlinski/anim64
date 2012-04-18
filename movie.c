@@ -21,7 +21,6 @@ THE SOFTWARE. */
 #include "movie.h"
 
 #include <conio.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 
