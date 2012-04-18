@@ -41,7 +41,7 @@ static void load_foo() {
     cbm_open(8, 8, 8, "foo");
     cbm_read(8, (char*)0x7ff, 0x801 + 0x1800);  // Low-code + music.
     cbm_read(8, HEAP_START, 0x1000);  // Code - throw it away...
-    cbm_read(8, HEAP_START, (char*)0xa000u - HEAP_START);  // Animation!
+    cbm_read(8, HEAP_START, (char*)0xd000u - HEAP_START);  // Animation!
     cbm_close(8);
 }
 #endif  // TEST_FOO
@@ -50,24 +50,25 @@ extern volatile unsigned char caught_irqs;
 
 /*  $400 -  $7ff: temp color buffer
  *  $800 - $37ff: code & music
- * $3800 - $9fff: packed screens ($6800 bytes)
- * $a000 - $a3e7: chars, screen 0
- * $a3e8 - $a3e8: bg/border, screen 0
- * $a3e9 - $a7d0: colors, screen 0
- * $a800 - $afd0: chars + border + colors, screen 1
- * $b000 - $cfff: unused
- * $e000 - $fffd: unused
+ * $3800 - $cfff: packed screens ($9800 bytes)
+ * $e000 - $efff: copy of character ROM
+ * $f000 - $f3e7: chars, screen 0
+ * $f3e8 - $f3e8: bg/border, screen 0
+ * $f3e9 - $f7d0: colors, screen 0
+ * $f800 - $ffd0: chars + border + colors, screen 1
  */
 
 static void init() {
     *(char*)0xdc0d = 0x7f;  // Disable kernal timer interrupts.
-    *(char*)1 = 0x35;  // Switch out kernal - enables $e000-$ffff RAM.
+    *(char*)1 = 0x31;  // RAM + character ROM + RAM.
+    memcpy((char*)0xe000, (char*)0xd000, 0x1000);  // Copy character ROM to RAM.
+    *(char*)1 = 0x35;  // RAM + I/O + RAM.
     *(char*)0xd011 &= 0x7f;  // clear raster line bit 8
     *(char*)0xd012 = 0xfb;  // raster line
-    memset((char*)0xa000, ' ', 40 * 25);
+    memset((char*)0xf000, ' ', 40 * 25);
     init_music();
-    *(char*)0xdd00 = 0x15;  // Use graphics bank 2. ($8000-$bfff)
-    *(char*)0xd018 = 0x84;  // Point video to 0xa000.
+    *(char*)0xdd00 = 0x14;  // Use graphics bank 3. ($c000-$ffff)
+    *(char*)0xd018 = 0xc8;  // Point video to $f000, char to $e000.
     *(voidFn*)0xfffe = irq_handler_v2;  // set irq handler pointer
 }
 
@@ -78,7 +79,7 @@ static void play_movie() {
     unsigned char anim_frame_count = anim_ptr[3];
     unsigned char anim_it = 0;
     unsigned char anim_frame_it = 0;
-    unsigned char* write = (unsigned char*)0xa800u;
+    unsigned char* write = (unsigned char*)0xf800u;
     unsigned char first_tick = 1;
     unsigned char frames_left = movie.frames[0];
 
@@ -118,7 +119,7 @@ static void play_movie() {
         }
 
         // Shows new frame.
-        *(char*)0xd018 ^= 0x20;  // Point video to 0xa000/0xa800.
+        *(char*)0xd018 ^= 0x20;  // Point video to 0xf000/0xf800.
 
         // Copies colors.
         memcpy((char*)0xd800, (char*)0x400u, 40 * 25);
