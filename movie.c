@@ -313,7 +313,9 @@ static char* dos_path(unsigned char file) {
 
 static int get_file_length(unsigned char file) {
     int length;
-    if (!filename[file][0]) return 0;
+    if (!filename[file][0]) {
+        return 0;
+    }
     /* TODO: Would be great to change to cbm_load - but then, anim files
      * also must include load address.
      */
@@ -380,10 +382,15 @@ static void save_onefiler() {
     if (prompt_open("demo", CBM_WRITE, TYPE_PRG) == NULL) {
         return;
     }
-    // Writes load address.
-    cbm_write(MY_LFN, buf, sizeof(buf));
-    // Saves player program code.
-    cbm_write(MY_LFN, (char*)0x801, (unsigned int)HEAP_START - 0x801);
+    cputs("write...");
+    if (cbm_write(MY_LFN, buf, sizeof(buf)) <= 0 ||
+            cbm_write(MY_LFN, (char*)0x801, (unsigned int)HEAP_START - 0x801) <= 0) {
+        cbm_close(MY_LFN);
+        textcolor(COLOR_RED);
+        cputs(" disk full?");
+        cgetc();
+        return;
+    }
     *(char*)0xd018 |= 2;  // lower/uppercase gfx
     write_onefiler_anims();
     cgetc();
