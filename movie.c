@@ -373,6 +373,7 @@ static void write_onefiler_anims(FILE* f) {
 static void save_onefiler() {
     FILE* f = prompt_open("demo", 1);
     char buf[2] = { 1, 8 };
+    if (!f) return;
     cputs("write...");
     if (!fwrite(buf, sizeof(buf), 1, f) ||
             !fwrite((char*)0x801, (unsigned int)HEAP_START - 0x801, 1, f)) {
