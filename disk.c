@@ -37,16 +37,21 @@ unsigned char prompt_open(const char* prompt, char mode, char type) {
         cputs(prompt);
         cputc('>');
         if (mode == CBM_WRITE) {
-            // Replace.
-            prompt_path[0] = '@';
-            prompt_path[1] = '0';
-            prompt_path[2] = ':';
-            if (!*gets(prompt_path + 3)) return 0;
+            prompt_path[0] = 's';
+            prompt_path[1] = ':';
+            if (!*gets(prompt_path + 2)) return 0;
+            // Scratch file.
+            if (cbm_open(1, 8, 15, prompt_path)) {
+                goto err;
+            }
+            cbm_close(1);
+            memmove(prompt_path, prompt_path + 2, sizeof(prompt_path) - 2);
         } else {
             if (!*gets(prompt_path)) return 0;
         }
         strcat(prompt_path, type ? ",p" : ",u");
         if (!cbm_open(MY_LFN, 8, mode, prompt_path)) return 1;
+err:
         cputs("err");
         gotox(0);
     }
