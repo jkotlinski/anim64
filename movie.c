@@ -379,7 +379,7 @@ static void write_onefiler_anims() {
 
 static void save_onefiler() {
     char buf[2] = { 1, 8 };
-    if (prompt_open("demo", CBM_WRITE, TYPE_PRG) == NULL) {
+    if (prompt_open("movie", CBM_WRITE, TYPE_PRG) == NULL) {
         return;
     }
     cputs("write...");
