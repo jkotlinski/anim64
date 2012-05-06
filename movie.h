@@ -30,7 +30,7 @@ typedef struct {
 
 extern Movie movie;
 
-#define HEAP_START (char*)0x3c00u
+#define HEAP_START (char*)0x3800u
 
 void edit_movie();
 

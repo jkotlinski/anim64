@@ -20,6 +20,7 @@ THE SOFTWARE. */
 
 #include "convert.h"
 
+#include <cbm.h>
 #include <string.h>
 
 #include "loops.h"
@@ -66,9 +67,10 @@ static void unpack_v1(unsigned char* screen_base, char interframe_compression) {
 
 void inc_d020();
 
-void convert_v1_v2(char use_iframe, FILE* f) {
+#define MY_LFN 1
+void convert_v1_v2(char use_iframe) {
     char screen;
-    fread((char*)0x8000, 1, 0x2000, f);
+    cbm_read(MY_LFN, (char*)0x8000, 0x2000);
     rle_unpack((char*)0xa000u, (char*)0x8000u);
     unpack_v1((char*)0xa000u, use_iframe);
 

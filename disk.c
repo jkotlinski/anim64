@@ -28,21 +28,30 @@ THE SOFTWARE. */
 #pragma codeseg("EDITCODE")
 
 char prompt_path[FILENAME_LENGTH];
-FILE* prompt_open(const char* prompt, char write) {
+unsigned char prompt_open(const char* prompt, char mode, char type) {
     clrscr();
     gotoxy(0, 0);
     textcolor(COLOR_YELLOW);
     for (;;) {
-        FILE* f;
         cputc('\n');
         cputs(prompt);
         cputc('>');
-        gets(prompt_path);
-        if (!*prompt_path) return 0;
-        _filetype = strcmp(prompt, "demo") ? 'u' : 'p';
-        if (f = fopen(prompt_path, write ? "w" : "r")) {
-            return f;
+        if (mode == CBM_WRITE) {
+            prompt_path[0] = 's';
+            prompt_path[1] = ':';
+            if (!*gets(prompt_path + 2)) return 0;
+            // Scratch file.
+            if (cbm_open(1, 8, 15, prompt_path)) {
+                goto err;
+            }
+            cbm_close(1);
+            memmove(prompt_path, prompt_path + 2, sizeof(prompt_path) - 2);
+        } else {
+            if (!*gets(prompt_path)) return 0;
         }
+        strcat(prompt_path, type ? ",p" : ",u");
+        if (!cbm_open(MY_LFN, 8, mode, prompt_path)) return 1;
+err:
         cputs("err");
         gotox(0);
     }

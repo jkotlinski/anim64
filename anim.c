@@ -30,20 +30,15 @@ THE SOFTWARE. */
 
 #pragma codeseg("EDITCODE")
 
-static void load_v2_anim(FILE* f) {
+#define MY_LFN 1
+static void load_v2_anim() {
     unsigned int read_bytes;
     const unsigned char* rle_start;
     curr_screen = 0;
-    fread(&end_frame, 1, 1, f);
+    cbm_read(MY_LFN, &end_frame, 1);
     --end_frame;
     // Read all compressed frames to start of screen area...
-    read_bytes = fread(SCREEN_BASE, 1, SCREEN_AREA_SIZE, f);
-    if (!read_bytes) {
-        textcolor(COLOR_RED);
-        cputs("err");
-        cgetc();
-        return;
-    }
+    read_bytes = cbm_read(MY_LFN, SCREEN_BASE, SCREEN_AREA_SIZE);
     // ...move them to end of screen area...
     rle_start = CLIPBOARD - read_bytes;
     memmove(rle_start, SCREEN_BASE, read_bytes);
@@ -60,26 +55,26 @@ static void load_v2_anim(FILE* f) {
     }
 }
 
-char load_and_unpack_anim(FILE* f) {
+char load_and_unpack_anim() {
     unsigned char first_byte;
-    if (!fread(&first_byte, 1, 1, f)) {
-        fclose(f);
+    if (cbm_read(MY_LFN, &first_byte, 1) <= 0) {
+        cbm_close(MY_LFN);
         return 0;  // Error.
     }
     switch (first_byte) {
         case 0:
         case 1:
             // Version 1: first_byte is interframe compression on/off.
-            convert_v1_v2(first_byte, f);
+            convert_v1_v2(first_byte);
             break;
         case 2:
             // Version 2.
-            load_v2_anim(f);
+            load_v2_anim();
             break;
         default:
             for (;;) ++*(char*)0xd020;  // Not supported.
     }
-    fclose(f);
+    cbm_close(MY_LFN);
     curr_screen = 0;
     return 1;
 }
