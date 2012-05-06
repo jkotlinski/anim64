@@ -49,8 +49,8 @@ static void load_foo() {
 extern volatile unsigned char caught_irqs;
 
 /*  $400 -  $7ff: temp color buffer
- *  $800 - $3bff: code & music
- * $3c00 - $cfff: packed screens ($9800 bytes)
+ *  $800 - $37ff: code & music
+ * $3800 - $cfff: packed screens ($9800 bytes)
  * $e000 - $efff: copy of character ROM
  * $f000 - $f3e7: chars, screen 0
  * $f3e8 - $f3e8: bg/border, screen 0
