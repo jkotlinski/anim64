@@ -81,7 +81,7 @@ void preview_play_anim(unsigned char speed,
                     goto exit;
                 }
             }
-            blink_vic_from_sid();
+            blink_vic_from_sid(*curr_bg_color());
         }
         if (end_frame == curr_screen) {
             curr_screen = 0;

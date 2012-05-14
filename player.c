@@ -20,17 +20,17 @@ THE SOFTWARE. */
 
 #include "player.h"
 
-void blink_vic_from_sid() {
+void blink_vic_from_sid(unsigned char default_colors) {
     const unsigned char freq = *(unsigned char*)0xd41b;
     const unsigned char amp = *(unsigned char*)0xd41c;
     if (freq > 0xe0 && amp > 0xe0u) {
         *(char*)0xd020 = *(char*)0xd41b;
     } else {
-        *(char*)0xd020 = 0;
+        *(char*)0xd020 = default_colors >> 4;
     }
     if (freq > 0xf8u && amp > 0xf0u) {
         *(char*)0xd021 = *(char*)0xd41b;
     } else {
-        *(char*)0xd021 = 0;
+        *(char*)0xd021 = default_colors;
     }
 }

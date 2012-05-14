@@ -82,6 +82,7 @@ static void play_movie() {
     unsigned char* write = (unsigned char*)0xf800u;
     unsigned char first_tick = 1;
     unsigned char frames_left = movie.frames[0];
+    unsigned char colors = 0;
 
     init();
 
@@ -113,7 +114,7 @@ static void play_movie() {
                     --caught_irqs;
                     --count;
                 } else {
-                    blink_vic_from_sid();
+                    blink_vic_from_sid(colors);
                 }
             }
         }
@@ -123,11 +124,9 @@ static void play_movie() {
 
         // Copies colors.
         memcpy((char*)0xd800, (char*)0x400u, 40 * 25);
-        {
-            unsigned char colors = write[40 * 25];
-            *(char*)0xd021 = colors;
-            *(char*)0xd020 = colors >> 4;
-        }
+        colors = write[40 * 25];
+        *(char*)0xd021 = colors;
+        *(char*)0xd020 = colors >> 4;
 
         write ^= 0x800;
 

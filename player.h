@@ -21,6 +21,6 @@ THE SOFTWARE. */
 #ifndef PLAYER_H_
 #define PLAYER_H_
 
-void blink_vic_from_sid();
+void blink_vic_from_sid(unsigned char default_colors);
 
 #endif  // PLAYER_H_
