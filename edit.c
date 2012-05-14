@@ -105,10 +105,10 @@ static void hide_cursor() {
 static char has_copy;
 void copy_screen() {
     char bg = *(char*)0xd020;
+    remember_screen();  // Saves edit screen to SCREEN_BASE area.
     *(char*)0xd020 = COLOR_GREEN;
     has_copy = 1;
-    hide_cursor();
-    // Copies one frame.
+    // Copies screen from SCREEN_BASE area to clipboard.
     memcpy(CLIPBOARD, SCREEN_BASE + SCREEN_SIZE * curr_screen, SCREEN_SIZE);
     *(char*)0xd020 = bg;
 }
