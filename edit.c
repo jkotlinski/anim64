@@ -303,11 +303,14 @@ void handle_anim_edit_key(char key) {
             }
             break;
         case CH_CURS_LEFT:
-            if (cur_x > 0) {
-                hide_cursor();
+            hide_cursor();
+            if (cur_x) {
                 --cur_x;
-                show_cursor();
+            } else {
+                cur_x = 39;
+                if (cur_y) --cur_y;
             }
+            show_cursor();
             break;
         case CH_CURS_RIGHT:
             if (cur_x < 39) {
