@@ -102,6 +102,9 @@ static void hide_cursor() {
     punch(hidden_screen_char, hidden_color);
 }
 
+/* (CLIP_X1, CLIP_Y1) = top left.
+ * (CLIP_X2, CLIP_Y2) = bottom right.
+ */
 static char CLIP_X1 = 0xff;
 static char CLIP_X2;
 static char CLIP_Y1;
@@ -124,7 +127,7 @@ static void paint_copy_mark() {
     }
 }
 
-void copy() {
+static void copy() {
     remember_screen();  // Saves edit screen to SCREEN_BASE area.
 
     CLIP_X1 = cur_x;
@@ -162,13 +165,7 @@ done:
     memcpy(CLIPBOARD + 40 * 25, (char*)0xd800, 40 * 25);
 
     if (CLIP_X1 == CLIP_X2 && CLIP_Y1 == CLIP_Y2) {
-        // Copy entire screen.
-        CLIP_X1 = 0;
-        CLIP_Y1 = 0;
-        CLIP_X2 = 39;
-        CLIP_Y2 = 24;
-
-        // Flash screen to give some kind of feedback.
+        // Copies entire screen. Flashes screen to give some kind of feedback.
         *(char*)0xd021 ^= 0xf;
         {
             unsigned long now;
@@ -176,15 +173,46 @@ done:
             while (now + 8 != clock()) {}
         }
         *(char*)0xd021 ^= 0xf;
+    } else {
+        // Order coordinates.
+        if (CLIP_X1 > CLIP_X2) {
+            const char tmp = CLIP_X1;
+            CLIP_X1 = CLIP_X2;
+            CLIP_X2 = tmp;
+        }
+        if (CLIP_Y1 > CLIP_Y2) {
+            const char tmp = CLIP_Y1;
+            CLIP_Y1 = CLIP_Y2;
+            CLIP_Y2 = tmp;
+        }
     }
 }
 
 static void paste() {
     if (CLIP_X1 == 0xff) return;
-    memcpy(DISPLAY_BASE, CLIPBOARD, 40 * 25);
-    memcpy((char*)0xd800, CLIPBOARD + 40 * 25, 40 * 25);
-    remember_screen();
+
+    if (CLIP_X1 == CLIP_X2 && CLIP_Y1 == CLIP_Y2) {
+        // Copies entire screen.
+        memcpy(DISPLAY_BASE, CLIPBOARD, 40 * 25);
+        memcpy((char*)0xd800, CLIPBOARD + 40 * 25, 40 * 25);
+    } else {
+        // Pastes region.
+        char y;
+        for (y = CLIP_Y1; y <= CLIP_Y2; ++y) {
+            const char dst_y = y + cur_y - CLIP_Y1;
+            char x;
+            if (dst_y >= 25) break;
+            for (x = CLIP_X1; x <= CLIP_X2; ++x) {
+                const char dst_x = x + cur_x - CLIP_X1;
+                if (dst_x >= 40) break;
+                DISPLAY_BASE[dst_y * 40 + dst_x] = CLIPBOARD[y * 40 + x];
+                ((char*)0xd800)[dst_y * 40 + dst_x] = CLIPBOARD[40 * 25 + y * 40 + x];
+            }
+        }
+    }
+
     show_cursor();
+    remember_screen();
 }
 
 static void tidy_up_colors() {
