@@ -102,7 +102,7 @@ static void hide_cursor() {
     punch(hidden_screen_char, hidden_color);
 }
 
-static char CLIP_X1;
+static char CLIP_X1 = 0xff;
 static char CLIP_X2;
 static char CLIP_Y1;
 static char CLIP_Y2;
@@ -124,7 +124,6 @@ static void paint_copy_mark() {
     }
 }
 
-static char has_copy;
 void copy() {
     remember_screen();  // Saves edit screen to SCREEN_BASE area.
 
@@ -133,8 +132,7 @@ void copy() {
     CLIP_Y1 = cur_y;
     CLIP_Y2 = cur_y;
 
-    has_copy = 0;
-    while (!has_copy) {
+    for (;;) {
         redraw_edit_screen();
         paint_copy_mark();
 poll_key:
@@ -152,13 +150,13 @@ poll_key:
                 if (CLIP_X2) --CLIP_X2;
                 break;
             case CH_F5:
-                has_copy = 1;
-                break;
+                goto done;
             default:
                 goto poll_key;
         }
     }
 
+done:
     redraw_edit_screen();
     memcpy(CLIPBOARD, SCREEN_BASE + SCREEN_SIZE * curr_screen, SCREEN_SIZE);
 
@@ -181,7 +179,7 @@ poll_key:
 }
 
 static void paste() {
-    if (!has_copy) return;
+    if (CLIP_X1 == 0xff) return;
     memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
     redraw_edit_screen();
     show_cursor();
