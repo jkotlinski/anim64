@@ -102,21 +102,86 @@ static void hide_cursor() {
     punch(hidden_screen_char, hidden_color);
 }
 
-static char has_copy;
-void copy_screen() {
-    char bg = *(char*)0xd020;
-    remember_screen();  // Saves edit screen to SCREEN_BASE area.
-    *(char*)0xd020 = COLOR_GREEN;
-    has_copy = 1;
-    // Copies screen from SCREEN_BASE area to clipboard.
-    memcpy(CLIPBOARD, SCREEN_BASE + SCREEN_SIZE * curr_screen, SCREEN_SIZE);
-    *(char*)0xd020 = bg;
+static char CLIP_X1;
+static char CLIP_X2;
+static char CLIP_Y1;
+static char CLIP_Y2;
+
+static void paint_copy_mark() {
+    const unsigned char x2 = ((CLIP_X1 < CLIP_X2) ? CLIP_X2 : CLIP_X1) + 1;
+    const unsigned char y2 = ((CLIP_Y1 < CLIP_Y2) ? CLIP_Y2 : CLIP_Y1) + 1;
+    unsigned char y1 = (CLIP_Y1 < CLIP_Y2) ? CLIP_Y1 : CLIP_Y2;
+    const char alt_color = 0xf ^ *(char*)0xd020;
+    while (y1 < y2) {
+        unsigned char x1 = (CLIP_X1 < CLIP_X2) ? CLIP_X1 : CLIP_X2;
+        while (x1 < x2) {
+            const unsigned int offs = y1 * 40 + x1;
+            DISPLAY_BASE[offs] ^= 0x80;
+            ((char*)0xd800)[offs] = alt_color;
+            ++x1;
+        }
+        ++y1;
+    }
 }
 
-static void paste_screen() {
+static char has_copy;
+void copy() {
+    remember_screen();  // Saves edit screen to SCREEN_BASE area.
+
+    CLIP_X1 = cur_x;
+    CLIP_X2 = cur_x;
+    CLIP_Y1 = cur_y;
+    CLIP_Y2 = cur_y;
+
+    has_copy = 0;
+    while (!has_copy) {
+        redraw_edit_screen();
+        paint_copy_mark();
+poll_key:
+        switch (cgetc()) {
+            case CH_CURS_DOWN:
+                if (CLIP_Y2 < 39) ++CLIP_Y2;
+                break;
+            case CH_CURS_UP:
+                if (CLIP_Y2) --CLIP_Y2;
+                break;
+            case CH_CURS_RIGHT:
+                if (CLIP_X2 < 39) ++CLIP_X2;
+                break;
+            case CH_CURS_LEFT:
+                if (CLIP_X2) --CLIP_X2;
+                break;
+            case CH_F5:
+                has_copy = 1;
+                break;
+            default:
+                goto poll_key;
+        }
+    }
+
+    redraw_edit_screen();
+    memcpy(CLIPBOARD, SCREEN_BASE + SCREEN_SIZE * curr_screen, SCREEN_SIZE);
+
+    if (CLIP_X1 == CLIP_X2 && CLIP_Y1 == CLIP_Y2) {
+        // Copy entire screen.
+        CLIP_X1 = 0;
+        CLIP_Y1 = 0;
+        CLIP_X2 = 39;
+        CLIP_Y2 = 24;
+
+        // Flash screen to give some kind of feedback.
+        *(char*)0xd021 ^= 0xf;
+        {
+            unsigned long now;
+            now = clock();
+            while (now + 8 != clock()) {}
+        }
+        *(char*)0xd021 ^= 0xf;
+    }
+}
+
+static void paste() {
     if (!has_copy) return;
-    hide_cursor();
-    // Copies one frame.
     memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
     redraw_edit_screen();
     show_cursor();
@@ -374,8 +439,8 @@ void handle_anim_edit_key(char key) {
 
         case CH_F1: load_edit_anim(); break;
         case CH_F2: invalidate_loaded_anim(); save_anim(); break;
-        case CH_F5: copy_screen(); break;
-        case CH_F6: paste_screen(); break;
+        case CH_F5: copy(); break;
+        case CH_F6: paste(); break;
         case CH_F7: switch_to_console_screen();
                     edit_movie();
                     redraw_edit_screen();

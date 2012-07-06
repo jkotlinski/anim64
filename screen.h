@@ -23,7 +23,7 @@ THE SOFTWARE. */
 
 #define SCREEN_BASE ((char*)0x6000)
 #define SCREEN_SIZE (40 * 25 + 1 + 40 * 25 / 2)  // 1501 ($5dd) bytes.
-#define CLIPBOARD (unsigned char*)0xc000u
+#define CLIPBOARD ((unsigned char*)0xc000u)
 #define SCREEN_AREA_SIZE (CLIPBOARD - SCREEN_BASE)
 #define BG_COLORS_OFFSET (40 * 25)  // (border << 4) | bg
 
