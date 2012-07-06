@@ -158,7 +158,8 @@ poll_key:
 
 done:
     redraw_edit_screen();
-    memcpy(CLIPBOARD, SCREEN_BASE + SCREEN_SIZE * curr_screen, SCREEN_SIZE);
+    memcpy(CLIPBOARD, DISPLAY_BASE, 40 * 25);
+    memcpy(CLIPBOARD + 40 * 25, (char*)0xd800, 40 * 25);
 
     if (CLIP_X1 == CLIP_X2 && CLIP_Y1 == CLIP_Y2) {
         // Copy entire screen.
@@ -180,8 +181,9 @@ done:
 
 static void paste() {
     if (CLIP_X1 == 0xff) return;
-    memcpy(SCREEN_BASE + SCREEN_SIZE * curr_screen, CLIPBOARD, SCREEN_SIZE);
-    redraw_edit_screen();
+    memcpy(DISPLAY_BASE, CLIPBOARD, 40 * 25);
+    memcpy((char*)0xd800, CLIPBOARD + 40 * 25, 40 * 25);
+    remember_screen();
     show_cursor();
 }
 
