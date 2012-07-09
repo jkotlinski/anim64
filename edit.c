@@ -168,8 +168,7 @@ done:
         // Copies entire screen. Flashes screen to give some kind of feedback.
         *(char*)0xd021 ^= 0xf;
         {
-            unsigned long now;
-            now = clock();
+            unsigned long now = clock();
             while (now + 8 != clock()) {}
         }
         *(char*)0xd021 ^= 0xf;
