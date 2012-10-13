@@ -83,6 +83,7 @@ static void play_movie() {
     unsigned char first_tick = 1;
     unsigned char frames_left = movie.frames[0];
     unsigned char colors = 0;
+    unsigned char curr_movie_speed = movie.speed[0];
 
     init();
 
@@ -108,7 +109,7 @@ static void play_movie() {
             first_tick = 0;
         } else {
             // Waits for enough ticks...
-            unsigned char count = movie.speed[anim_it];
+            unsigned char count = curr_movie_speed;
             while (count) {
                 if (caught_irqs) {
                     --caught_irqs;
@@ -127,6 +128,7 @@ static void play_movie() {
         colors = write[40 * 25];
         *(char*)0xd021 = colors;
         *(char*)0xd020 = colors >> 4;
+        curr_movie_speed = movie.speed[anim_it];
 
         write ^= 0x800;
 
