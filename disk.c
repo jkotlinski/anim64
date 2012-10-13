@@ -20,12 +20,24 @@ THE SOFTWARE. */
 
 #include "disk.h"
 
-#include <c64.h>
-#include <conio.h>
 #include <stdio.h>
 #include <string.h>
+#include "cbm_dir.h"
 
+#include <conio.h>
 #pragma codeseg("EDITCODE")
+#pragma rodataseg("EDITCODE")
+
+static void list_files() {
+    unsigned char ent[DIRENT_SIZE];
+    opendir(1, 8);
+    while (!readdir(1, ent)) {
+        cputs(ent);
+        cputc('\n');
+        gotox(0);
+    }
+    closedir(1);
+}
 
 char prompt_path[FILENAME_LENGTH];
 unsigned char prompt_open(const char* prompt, char mode, char type) {
@@ -35,11 +47,15 @@ unsigned char prompt_open(const char* prompt, char mode, char type) {
     for (;;) {
         cputc('\n');
         cputs(prompt);
-        cputc('>');
+        cputs(" (*=list)>");
         if (mode == CBM_WRITE) {
             prompt_path[0] = 's';
             prompt_path[1] = ':';
             if (!*gets(prompt_path + 2)) return 0;
+            if (prompt_path[2] == '*') {
+                list_files();
+                continue;
+            }
             // Scratch file.
             if (cbm_open(1, 8, 15, prompt_path)) {
                 goto err;
@@ -48,6 +64,10 @@ unsigned char prompt_open(const char* prompt, char mode, char type) {
             memmove(prompt_path, prompt_path + 2, sizeof(prompt_path) - 2);
         } else {
             if (!*gets(prompt_path)) return 0;
+            if (prompt_path[0] == '*') {
+                list_files();
+                continue;
+            }
         }
         strcat(prompt_path, type ? ",p" : ",u");
         if (!cbm_open(MY_LFN, 8, mode, prompt_path)) return 1;

@@ -321,6 +321,7 @@ static int get_file_length(unsigned char file) {
      */
     cbm_open(8, 8, 8, dos_path(file));
     length = cbm_read(8, &_EDITRAM_LAST__, (char*)0x8000 - &_EDITRAM_LAST__);
+
     cbm_close(8);
     return length;
 }

@@ -28,7 +28,6 @@ THE SOFTWARE. */
 #include "music.h"
 #include "player.h"
 #include "rle.h"
-#include "screen.h"
 
 // #define TEST_FOO
 #ifdef TEST_FOO
