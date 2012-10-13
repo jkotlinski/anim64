@@ -27,4 +27,7 @@ char wait_anim(unsigned int duration);
 // Returns 1 on success, 0 on error.
 char load_and_unpack_anim();
 
+// Returns 1 on success, 0 on error.
+char load_linde();
+
 #endif  // ANIM_H_

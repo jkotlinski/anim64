@@ -274,6 +274,16 @@ static void switch_to_console_screen() {
     memset((char*)0xd800, COLOR_YELLOW, 40 * 25);
 }
 
+static void import_linde() {
+    switch_to_console_screen();
+    if (prompt_open("import", CBM_READ, TYPE_PRG)) {
+        if (!load_linde()) {
+            cputs("err");
+        }
+    }
+    show_cursor();
+}
+
 static void load_edit_anim() {
     switch_to_console_screen();
     if (prompt_open("load", CBM_READ, TYPE_USR)) {
@@ -455,6 +465,10 @@ void handle_anim_edit_key(char key) {
             preview_play_anim(32, 0, 255);
             redraw_edit_screen();
             show_cursor();
+            break;
+
+        case 0x93:  // CLR (shift + HOME)
+            import_linde();
             break;
 
         /* case 0x13:  // HOME

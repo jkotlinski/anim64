@@ -78,3 +78,17 @@ char load_and_unpack_anim() {
     curr_screen = 0;
     return 1;
 }
+
+char load_linde() {
+    char tmp = 0;
+    // skip 0x801
+    if (0 == cbm_read(MY_LFN, &tmp, 1)) return 0;
+    if (tmp != 1) return 0;
+    cbm_read(MY_LFN, &tmp, 1);
+    if (tmp != 8) return 0;
+    cbm_read(MY_LFN, (char*)0x400, 0x53);  // skip code
+    cbm_read(MY_LFN, (char*)0x400, 40 * 25);  // chars
+    cbm_read(MY_LFN, (char*)0xd800, 40 * 25);  // colors
+    cbm_read(MY_LFN, (char*)0xd020, 2);  // border
+    cbm_close(MY_LFN);
+}
