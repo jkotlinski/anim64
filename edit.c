@@ -141,7 +141,7 @@ static void copy() {
 poll_key:
         switch (cgetc()) {
             case CH_CURS_DOWN:
-                if (CLIP_Y2 < 39) ++CLIP_Y2;
+                if (CLIP_Y2 < 24) ++CLIP_Y2;
                 break;
             case CH_CURS_UP:
                 if (CLIP_Y2) --CLIP_Y2;
