@@ -31,6 +31,7 @@ THE SOFTWARE. */
 #include "movie.h"
 #include "rle.h"
 #include "screen.h"
+#include "cc65/mycbm.h"
 
 #pragma codeseg("EDITCODE")
 #pragma rodataseg("EDITCODE")
@@ -311,7 +312,7 @@ static unsigned int rle_pack_screen() {
 static void rle_write_screen() {
     inc_d020();
     if (curr_screen == 0) {
-        cbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
+        mycbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
         return;
     }
     {
@@ -325,14 +326,14 @@ static void rle_write_screen() {
         use_iframe = (iframe_bytes < non_iframe_bytes);
         if (use_iframe) {
             // Write using interframe...
-            cbm_write(MY_LFN, RLE_BUFFER, iframe_bytes);
+            mycbm_write(MY_LFN, RLE_BUFFER, iframe_bytes);
             xor_prev_v2();
         } else {
             // ...un-interframe, repack and write.
             xor_prev_v2();
-            cbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
+            mycbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
         }
-        cbm_write(MY_LFN, &use_iframe, 1);
+        mycbm_write(MY_LFN, &use_iframe, 1);
     }
 }
 
@@ -342,9 +343,9 @@ static void save_anim() {
         const char curr_screen_saved = curr_screen;
 
         const char version = 2;
-        cbm_write(MY_LFN, &version, 1);  // Version.
+        mycbm_write(MY_LFN, &version, 1);  // Version.
         ++end_frame;
-        cbm_write(MY_LFN, &end_frame, 1);  // Frame count.
+        mycbm_write(MY_LFN, &end_frame, 1);  // Frame count.
         --end_frame;
 
         for (curr_screen = 0; curr_screen <= end_frame; ++curr_screen) {
@@ -352,7 +353,7 @@ static void save_anim() {
         }
         curr_screen = curr_screen_saved;
 
-        cbm_close(MY_LFN);
+        mycbm_close(MY_LFN);
         if (_oserror) {
             textcolor(COLOR_RED);
             cputs("disk full?");

@@ -20,7 +20,7 @@ THE SOFTWARE. */
 
 #include "convert.h"
 
-#include <cbm.h>
+#include "cc65/mycbm.h"
 #include <string.h>
 
 #include "loops.h"
@@ -70,7 +70,7 @@ void inc_d020();
 #define MY_LFN 1
 void convert_v1_v2(char use_iframe) {
     char screen;
-    cbm_read(MY_LFN, (char*)0x8000, 0x2000);
+    mycbm_read(MY_LFN, (char*)0x8000, 0x2000);
     rle_unpack((char*)0xa000u, (char*)0x8000u);
     unpack_v1((char*)0xa000u, use_iframe);
 

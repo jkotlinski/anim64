@@ -22,7 +22,7 @@ THE SOFTWARE. */
 
 #include <stdio.h>
 #include <string.h>
-#include "cc65/cbm_dir.h"
+#include "cc65/mycbm.h"
 
 #include <conio.h>
 #pragma codeseg("EDITCODE")
@@ -57,10 +57,10 @@ unsigned char prompt_open(const char* prompt, char mode, char type) {
                 continue;
             }
             // Scratch file.
-            if (cbm_open(1, 8, 15, prompt_path)) {
+            if (mycbm_open(1, 8, 15, prompt_path)) {
                 goto err;
             }
-            cbm_close(1);
+            mycbm_close(1);
             memmove(prompt_path, prompt_path + 2, sizeof(prompt_path) - 2);
         } else {
             if (!*gets(prompt_path)) return 0;
@@ -70,7 +70,7 @@ unsigned char prompt_open(const char* prompt, char mode, char type) {
             }
         }
         strcat(prompt_path, type ? ",p" : ",u");
-        if (!cbm_open(MY_LFN, 8, mode, prompt_path)) return 1;
+        if (!mycbm_open(MY_LFN, 8, mode, prompt_path)) return 1;
 err:
         cputs("err");
         gotox(0);
