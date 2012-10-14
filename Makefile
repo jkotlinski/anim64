@@ -33,7 +33,7 @@ all:   	anim64
 	@echo $<
 	@$(AS) $(basename $<).s
 
-OBJS = main.o music.o movie.o rle.o rlepack.o rleunpack.o player.o irq.o disk.o loops.o anim.o convert.o screen.o anim_play.o edit.o onefiler.o cbm_dir.o
+OBJS = main.o music.o movie.o rle.o rlepack.o rleunpack.o player.o irq.o disk.o loops.o anim.o convert.o screen.o anim_play.o edit.o onefiler.o cc65/cbm_dir.o
 
 -include $(OBJS:%.o=$(DEPDIR)/%.u)
 

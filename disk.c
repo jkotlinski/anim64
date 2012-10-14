@@ -22,7 +22,7 @@ THE SOFTWARE. */
 
 #include <stdio.h>
 #include <string.h>
-#include "cbm_dir.h"
+#include "cc65/cbm_dir.h"
 
 #include <conio.h>
 #pragma codeseg("EDITCODE")
