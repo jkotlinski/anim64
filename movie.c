@@ -325,6 +325,10 @@ static int get_file_length(unsigned char file) {
     mycbm_open(8, 8, 8, dos_path(file));
     length = mycbm_read(8, &_EDITRAM_LAST__, (char*)0x8000 - &_EDITRAM_LAST__);
 
+    while (length == (char*)0x8000 - &_EDITRAM_LAST__) {
+        ++*(char*)0xd020;  // File too big to fit in edit ram!
+    }
+
     mycbm_close(8);
     return length;
 }
