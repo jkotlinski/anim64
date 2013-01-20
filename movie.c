@@ -212,7 +212,7 @@ static void prompt_music() {
 
 static void get_filename() {
     char* ptr = filename[selected_file];
-    char chars = 7;
+    char chars = FILENAME_LENGTH;
     while (chars > 0) {
         unsigned char c = cgetc();
         if (c == CH_ENTER) {
