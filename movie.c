@@ -387,6 +387,7 @@ static void save_onefiler() {
         return;
     }
     cputs("write...");
+    // Writes code from RAM to disk.
     if (mycbm_write(MY_LFN, buf, sizeof(buf)) <= 0 ||
             mycbm_write(MY_LFN, (char*)0x801, (unsigned int)HEAP_START - 0x801) <= 0) {
         mycbm_close(MY_LFN);
