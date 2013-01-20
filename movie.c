@@ -314,7 +314,8 @@ static char* dos_path(unsigned char file) {
     return path;
 }
 
-static int get_file_length(unsigned char file) {
+/* Returns bytes read. */
+static int load_file_to_screen_base(unsigned char file) {
     int length;
     if (!filename[file][0]) {
         return 0;
@@ -323,11 +324,8 @@ static int get_file_length(unsigned char file) {
      * also must include load address.
      */
     mycbm_open(8, 8, 8, dos_path(file));
-    length = mycbm_read(8, &_EDITRAM_LAST__, (char*)0x8000 - &_EDITRAM_LAST__);
-
-    while (length == (char*)0x8000 - &_EDITRAM_LAST__) {
-        ++*(char*)0xd020;  // File too big to fit in edit ram!
-    }
+    length = mycbm_read(8, SCREEN_BASE, CLIPBOARD - SCREEN_BASE);
+    invalidate_loaded_anim();
 
     mycbm_close(8);
     return length;
@@ -338,7 +336,7 @@ static void write_onefiler_anims() {
     static const unsigned int heap_end = 0xd000u;
     unsigned char file_it;
     for (file_it = 0; file_it < FILE_COUNT; ++file_it) {
-        const unsigned int file_length = get_file_length(file_it);
+        const unsigned int file_length = load_file_to_screen_base(file_it);
         if (!file_length) {
             if (*filename[file_it]) {
                 mycbm_close(MY_LFN);
@@ -354,7 +352,7 @@ static void write_onefiler_anims() {
         cputs(filename[file_it]);
         cputs(": ");
         cputhex16(file_length);
-        if (_EDITRAM_LAST__ != 2) {  // Checks that anim version == 2.
+        if (*SCREEN_BASE != 2) {  // Checks that anim version == 2.
             mycbm_close(MY_LFN);
             textcolor(COLOR_RED);
             cputs(" version err");
@@ -364,7 +362,7 @@ static void write_onefiler_anims() {
         if (heap_end - heap_start >= file_length + 2 + 2) {
             const unsigned int next_addr = heap_start + 2 + file_length;
             if (mycbm_write(MY_LFN, &next_addr, sizeof(next_addr)) <= 0 ||
-                    mycbm_write(MY_LFN, &_EDITRAM_LAST__, file_length) <= 0) {
+                    mycbm_write(MY_LFN, SCREEN_BASE, file_length) <= 0) {
                 mycbm_close(MY_LFN);
                 textcolor(COLOR_RED);
                 cputs(" disk full?");
