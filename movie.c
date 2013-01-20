@@ -206,8 +206,8 @@ static void prompt_music() {
     if (prompt_open("music", CBM_READ, TYPE_PRG)) {
         strcpy(music_path, prompt_path);
         load_music();
-        show_screen();
     }
+    show_screen();
 }
 
 static void get_filename() {
