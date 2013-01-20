@@ -211,29 +211,31 @@ static void prompt_music() {
 }
 
 static void get_filename() {
-    char* ptr = filename[selected_file];
-    char chars = FILENAME_LENGTH;
-    while (chars > 0) {
+    char* const ptr = filename[selected_file];
+    char i = 0;
+    while (ptr[i]) {
+        cputc(ptr[i++]);
+    }
+    for (;;) {
         unsigned char c = cgetc();
         if (c == CH_ENTER) {
-            break;
+            ptr[i] = 0;
+            return;
         }
         if (c == CH_DEL) {
-            if (ptr > filename[selected_file]) {
-                --ptr;
-                ++chars;
+            if (i > 0) {
+                --i;
                 gotox(wherex() - 1);
                 cputc(' ');
                 gotox(wherex() - 1);
             }
             continue;
         }
-        cputc(c);
-        *ptr = c;
-        ++ptr;
-        --chars;
+        if (i < FILENAME_LENGTH - 1) {
+            cputc(c);
+            ptr[i++] = c;
+        }
     }
-    *ptr = 0;
 }
 
 unsigned int read_digits() {
