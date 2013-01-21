@@ -5,21 +5,21 @@
 #define ENCODED_FLAG 0x60
 #define SCREEN_SIZE 1501
 
-unsigned char org[SCREEN_SIZE];
-unsigned char packed[SCREEN_SIZE];
+unsigned char src[SCREEN_SIZE];
+unsigned char dst[SCREEN_SIZE];
 
-int write_index = 0;
-int read_index = 0;
+int write_index;
+int read_index;
 
 /* Backpointer is 3 bytes: ENCODED_FLAG, distance, length.
  * ENCODED_FLAG bytes are encoded as ENCODED_FLAG, 0xff.
  */
 
 static void write_byte(unsigned char byte) {
-    packed[write_index++] = byte;
+    dst[write_index++] = byte;
 }
 static void copy_byte() {
-    char byte = org[read_index++];
+    char byte = src[read_index++];
     printf("%x ", 0xff & byte);
     write_byte(byte);
     if (byte == ENCODED_FLAG) {
@@ -35,7 +35,7 @@ static int match_length(int start_index) {
         assert(match_index < SCREEN_SIZE);
         assert(read_index + length >= 0);
         assert(read_index + length < SCREEN_SIZE);
-        if (org[match_index] != org[read_index + length]) {
+        if (src[match_index] != src[read_index + length]) {
             break;
         }
         ++length;
@@ -54,6 +54,9 @@ static int match_length(int start_index) {
 }
 
 static void pack() {
+    read_index = 0;
+    write_index = 0;
+
     while (read_index < SCREEN_SIZE) {
         int best_match_index = -1;
         int best_length = -1;
@@ -69,7 +72,7 @@ static void pack() {
         if (best_length > 3) {
             int distance = read_index - best_match_index;
             assert(distance < 0xff);
-            printf("[%x %x]", best_match_index, best_length);
+            printf("[%x %x]", distance, best_length);
             write_byte(ENCODED_FLAG);
             write_byte(distance);
             write_byte(best_length);
@@ -80,14 +83,60 @@ static void pack() {
     }
 }
 
+void unpack() {
+    read_index = 0;
+    write_index = 0;
+
+    while (write_index < SCREEN_SIZE) {
+        if (src[read_index] == ENCODED_FLAG) {
+            if (src[read_index + 1] == 0xff) {
+                dst[write_index++] = ENCODED_FLAG;
+                read_index += 2;
+            } else {
+                // Unroll...
+                unsigned char distance = src[read_index + 1];
+                unsigned char length = src[read_index + 2];
+                const int copy_end = write_index;
+                const int copy_start = write_index - distance;
+                int copy_index = copy_start;
+
+                printf("[ ");
+                while (length--) {
+                    assert(copy_index >= 0);
+                    assert(copy_index < copy_end);
+                    printf("%x ", dst[copy_index]);
+                    dst[write_index++] = dst[copy_index];
+                    if (++copy_index == copy_end) {
+                        copy_index = copy_start;
+                    }
+                }
+                printf("] ");
+                read_index += 3;
+            }
+        } else {
+            printf("%x ", src[read_index]);
+            dst[write_index++] = src[read_index++];
+        }
+    }
+}
+
 int main() {
+    unsigned char original[SCREEN_SIZE];
+
     FILE* f = fopen("wolf7,u", "rb");
-    int read = fread(org, 1, sizeof(org), f);
+    int read = fread(original, 1, sizeof(original), f);
     assert(read == SCREEN_SIZE);
     fclose(f);
+    memcpy(src, original, sizeof(original));
 
     pack();
+    printf("\n%i\n", write_index);
 
-    printf("\n%i", write_index);
+    /* Test unpacking. */
+    memcpy(src, dst, write_index);
+    unpack();
+
+    assert(0 == memcmp(dst, original, sizeof(dst)));
+
     return 0;
 }
