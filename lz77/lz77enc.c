@@ -4,7 +4,6 @@
 
 #define ENCODED_FLAG 0x60
 
-int write_index;
 int read_index;
 
 /* Backpointer is 3 bytes: ENCODED_FLAG, distance, length.
@@ -77,19 +76,18 @@ static unsigned int pack(unsigned char* dst, const unsigned char* src, int src_s
     return written;
 }
 
-void unpack(unsigned char* dst, const unsigned char* src, int dst_size) {
-    read_index = 0;
-    write_index = 0;
+const unsigned char* unpack(unsigned char* dst, const unsigned char* src, int dst_size) {
+    int write_index = 0;
 
     while (write_index < dst_size) {
-        if (src[read_index] == ENCODED_FLAG) {
-            if (src[read_index + 1] == 0xff) {
+        if (*src == ENCODED_FLAG) {
+            if (src[1] == 0xff) {
                 dst[write_index++] = ENCODED_FLAG;
-                read_index += 2;
+                src += 2;
             } else {
                 // Unroll...
-                unsigned char distance = src[read_index + 1];
-                unsigned char length = src[read_index + 2];
+                unsigned char distance = *++src;
+                unsigned char length = *++src;
                 const int copy_end = write_index;
                 const int copy_start = write_index - distance;
                 int copy_index = copy_start;
@@ -105,13 +103,15 @@ void unpack(unsigned char* dst, const unsigned char* src, int dst_size) {
                     }
                 }
                 printf("] ");
-                read_index += 3;
+
+                ++src;
             }
         } else {
-            printf("%x ", src[read_index]);
-            dst[write_index++] = src[read_index++];
+            printf("%x ", *src);
+            dst[write_index++] = *src++;
         }
     }
+    return src;
 }
 
 #define SCREEN_SIZE 1501
