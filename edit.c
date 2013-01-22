@@ -29,7 +29,6 @@ THE SOFTWARE. */
 #include "anim_play.h"
 #include "disk.h"
 #include "movie.h"
-#include "rle.h"
 #include "lz77.h"
 #include "screen.h"
 #include "cc65/mycbm.h"

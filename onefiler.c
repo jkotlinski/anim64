@@ -27,7 +27,7 @@ THE SOFTWARE. */
 #include "movie.h"
 #include "music.h"
 #include "player.h"
-#include "rle.h"
+#include "lz77.h"
 
 // #define TEST_FOO
 #ifdef TEST_FOO
@@ -91,7 +91,7 @@ static void play_movie() {
     anim_ptr += 4;  // Skip size, version, frame count
 
     while (1) {
-        anim_ptr = rle_unpack(write, anim_ptr);
+        anim_ptr = lz77_unpack(write, anim_ptr);
 
         // Handles XOR.
         if (anim_frame_it) {

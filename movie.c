@@ -30,7 +30,6 @@ THE SOFTWARE. */
 #include "anim_play.h"
 #include "disk.h"
 #include "music.h"
-#include "rle.h"
 #include "player.h"
 #include "screen.h"
 
@@ -352,7 +351,7 @@ static void write_onefiler_anims() {
         cputs(filename[file_it]);
         cputs(": ");
         cputhex16(file_length);
-        if (*SCREEN_BASE != 2) {  // Checks that anim version == 2.
+        if (*SCREEN_BASE != 3) {  // Checks that anim version == 3.
             mycbm_close(MY_LFN);
             textcolor(COLOR_RED);
             cputs(" version err");
