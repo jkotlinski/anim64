@@ -21,5 +21,5 @@ THE SOFTWARE. */
 #define ENCODED_FLAG 0x60
 #define PACK_SIZE 1501  // Matches one screen.
 
-const unsigned char* unpack(unsigned char* dst, const unsigned char* src);
-unsigned int pack(unsigned char* dst, const unsigned char* src);
+const unsigned char* lz77_unpack(unsigned char* dst, const unsigned char* src);
+unsigned int lz77_pack(unsigned char* dst, const unsigned char* src);

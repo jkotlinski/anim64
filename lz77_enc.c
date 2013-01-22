@@ -1,38 +1,24 @@
-/** Copyright (c) 2013, Johan Kotlinski
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE. */
-
 #include "lz77.h"
+
+// #include <assert.h>
 
 #pragma codeseg("EDITCODE")
 #pragma rodataseg("EDITCODE")
 
-unsigned int read_index;
+int read_index;
 
 /* Backpointer is 3 bytes: ENCODED_FLAG, distance, length.
  * ENCODED_FLAG bytes are encoded as ENCODED_FLAG, 0xff.
  */
 
-static unsigned char match_length(const unsigned char* src, unsigned int start_index) {
-    unsigned char length = 0;
+static unsigned int match_length(const unsigned char* src, int start_index) {
+    unsigned int length = 0;
     unsigned int match_index = start_index;
     while (1) {
+        // assert(match_index >= 0);
+        // assert(match_index < src_size);
+        // assert(read_index + length >= 0);
+        // assert(read_index + length < src_size);
         if (src[match_index] != src[read_index + length]) {
             break;
         }
@@ -51,17 +37,17 @@ static unsigned char match_length(const unsigned char* src, unsigned int start_i
     return length;
 }
 
-unsigned int pack(unsigned char* dst, const unsigned char* src) {
+unsigned int lz77_pack(unsigned char* dst, const unsigned char* src) {
     unsigned int written = 0;
 
     read_index = 0;
 
     while (read_index < PACK_SIZE) {
-        unsigned int best_match_index;
-        unsigned char best_length = 0;
+        int best_match_index = -1;
+        unsigned int best_length = 0;
         int match_index = read_index - 1;
         while (match_index >= 0 && match_index >= read_index - 0xfe) {
-            unsigned char length = match_length(src, match_index);
+            unsigned int length = match_length(src, match_index);
             if (length > best_length) {
                 best_match_index = match_index;
                 best_length = length;
@@ -69,20 +55,21 @@ unsigned int pack(unsigned char* dst, const unsigned char* src) {
             --match_index;
         }
         if (best_length > 3) {
+            int distance = read_index - best_match_index;
+            // assert(distance < 0xff);
+            // printf("[%x %x]", distance, best_length);
             *dst++ = ENCODED_FLAG;
-            *dst++ = read_index - best_match_index;  // Distance.
+            *dst++ = distance;
             *dst++ = best_length;
             written += 3;
             read_index += best_length;
         } else {
-            char byte = src[read_index];
-            ++read_index;
-            *dst = byte;
-            ++dst;
+            char byte = src[read_index++];
+            // printf("%x ", 0xff & byte);
+            *dst++ = byte;
             ++written;
             if (byte == ENCODED_FLAG) {
-                *dst = 0xff;
-                ++dst;
+                *dst++ = 0xff;
                 ++written;
             }
         }

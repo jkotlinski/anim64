@@ -23,6 +23,6 @@ three bytes, and so on.
 
 
 /* Pack data. Returns the number of bytes written to destination. */
-unsigned int __fastcall__ rle_pack(unsigned char *dest, const unsigned char *src, unsigned int length);
+//unsigned int __fastcall__ rle_pack(unsigned char *dest, const unsigned char *src, unsigned int length);
 /* Unpack data. Returns pointer to last unconsumed byte. */
 unsigned char* __fastcall__ rle_unpack(unsigned char *dest, const unsigned char *src);

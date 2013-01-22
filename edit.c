@@ -30,6 +30,7 @@ THE SOFTWARE. */
 #include "disk.h"
 #include "movie.h"
 #include "rle.h"
+#include "lz77.h"
 #include "screen.h"
 #include "cc65/mycbm.h"
 
@@ -41,6 +42,7 @@ THE SOFTWARE. */
  * $6000 - $bfff: screens
  * $c000 - $c7ff: clipboard
  * $c800 - $cfff: RLE buffer
+ * $d000 - $dfff: VIC
  * $e000 - $ffff: unused
  *
  * note: first plan was to use $8000-$bfff for chars, and switch screen by flipping
@@ -298,40 +300,40 @@ void inc_d020() {
     ++*(char*)0xd020;
 }
 
-#define RLE_BUFFER (char*)0xc800u
-#define RLE_BUFFER_SIZE 0x800u
+#define PACK_BUFFER (char*)0xc800u
+#define PACK_BUFFER_SIZE 0x800u
 
-static unsigned int rle_pack_screen() {
-    unsigned int packed_bytes = rle_pack(RLE_BUFFER, curr_screen_chars(), SCREEN_SIZE);
-    while (packed_bytes > RLE_BUFFER_SIZE) {
+static unsigned int lz77_pack_screen() {
+    unsigned int packed_bytes = lz77_pack(PACK_BUFFER, curr_screen_chars());
+    while (packed_bytes > PACK_BUFFER_SIZE) {
         inc_d020();  // Buffer overflow!
     }
     return packed_bytes;
 }
 
-static void rle_write_screen() {
+static void lz77_write_screen() {
     inc_d020();
     if (curr_screen == 0) {
-        mycbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
+        mycbm_write(MY_LFN, PACK_BUFFER, lz77_pack_screen());
         return;
     }
     {
         // Interframe compression.
-        unsigned int non_iframe_bytes = rle_pack_screen();
+        unsigned int non_iframe_bytes = lz77_pack_screen();
         unsigned int iframe_bytes;
         unsigned char use_iframe;
         xor_prev_v2();
-        iframe_bytes = rle_pack_screen();
+        iframe_bytes = lz77_pack_screen();
 
         use_iframe = (iframe_bytes < non_iframe_bytes);
         if (use_iframe) {
             // Write using interframe...
-            mycbm_write(MY_LFN, RLE_BUFFER, iframe_bytes);
+            mycbm_write(MY_LFN, PACK_BUFFER, iframe_bytes);
             xor_prev_v2();
         } else {
             // ...un-interframe, repack and write.
             xor_prev_v2();
-            mycbm_write(MY_LFN, RLE_BUFFER, rle_pack_screen());
+            mycbm_write(MY_LFN, PACK_BUFFER, lz77_pack_screen());
         }
         mycbm_write(MY_LFN, &use_iframe, 1);
     }
@@ -342,14 +344,14 @@ static void save_anim() {
     if (prompt_open("save", CBM_WRITE, TYPE_USR)) {
         const char curr_screen_saved = curr_screen;
 
-        const char version = 2;
+        const char version = 3;
         mycbm_write(MY_LFN, &version, 1);  // Version.
         ++end_frame;
         mycbm_write(MY_LFN, &end_frame, 1);  // Frame count.
         --end_frame;
 
         for (curr_screen = 0; curr_screen <= end_frame; ++curr_screen) {
-            rle_write_screen();
+            lz77_write_screen();
         }
         curr_screen = curr_screen_saved;
 

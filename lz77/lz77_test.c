@@ -3,6 +3,9 @@
 #include "lz77_dec.c"
 #include "lz77_enc.c"
 
+#include <assert.h>
+#include <stdio.h>
+
 #define SCREEN_SIZE 1501
 
 int main() {
@@ -15,10 +18,10 @@ int main() {
     assert(read == SCREEN_SIZE);
     fclose(f);
 
-    printf("%i", pack(packed, original, SCREEN_SIZE));
+    printf("%i", lz77_pack(packed, original));
 
     /* Test unpacking. */
-    unpack(unpacked, packed, SCREEN_SIZE);
+    lz77_unpack(unpacked, packed);
 
     assert(0 == memcmp(unpacked, original, sizeof(unpacked)));
 
