@@ -15,15 +15,6 @@ int read_index;
  * ENCODED_FLAG bytes are encoded as ENCODED_FLAG, 0xff.
  */
 
-static void copy_byte() {
-    char byte = src[read_index++];
-    printf("%x ", 0xff & byte);
-    dst[write_index++] = byte;
-    if (byte == ENCODED_FLAG) {
-        dst[write_index++] = 0xff;
-    }
-}
-
 static int match_length(int start_index) {
     int length = 0;
     int match_index = start_index;
@@ -75,7 +66,12 @@ static void pack() {
             dst[write_index++] = best_length;
             read_index += best_length;
         } else {
-            copy_byte();
+            char byte = src[read_index++];
+            printf("%x ", 0xff & byte);
+            dst[write_index++] = byte;
+            if (byte == ENCODED_FLAG) {
+                dst[write_index++] = 0xff;
+            }
         }
     }
 }
