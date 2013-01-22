@@ -42,14 +42,14 @@ unsigned int pack(unsigned char* dst, const unsigned char* src, int src_size) {
     while (read_index < src_size) {
         int best_match_index = -1;
         unsigned int best_length = 0;
-        for (int match_index = read_index - 1;
-                match_index >= 0 && match_index >= read_index - 0xfe;
-                --match_index) {
+        int match_index = read_index - 1;
+        while (match_index >= 0 && match_index >= read_index - 0xfe) {
             unsigned int length = match_length(src, match_index, src_size);
             if (length > best_length) {
                 best_match_index = match_index;
                 best_length = length;
             }
+            --match_index;
         }
         if (best_length > 3) {
             int distance = read_index - best_match_index;
