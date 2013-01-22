@@ -20,7 +20,7 @@ THE SOFTWARE. */
 
 #include "lz77.h"
 
-unsigned char* lz77_unpack(unsigned char* dst, const unsigned char* src) {
+const unsigned char* lz77_unpack(unsigned char* dst, const unsigned char* src) {
     unsigned int write_index = 0;
 
     do {
