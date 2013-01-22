@@ -56,7 +56,7 @@ static unsigned int pack(unsigned char* dst, const unsigned char* src, int src_s
         if (best_length > 3) {
             int distance = read_index - best_match_index;
             assert(distance < 0xff);
-            printf("[%x %x]", distance, best_length);
+            // printf("[%x %x]", distance, best_length);
             *dst++ = ENCODED_FLAG;
             *dst++ = distance;
             *dst++ = best_length;
@@ -64,7 +64,7 @@ static unsigned int pack(unsigned char* dst, const unsigned char* src, int src_s
             read_index += best_length;
         } else {
             char byte = src[read_index++];
-            printf("%x ", 0xff & byte);
+            // printf("%x ", 0xff & byte);
             *dst++ = byte;
             ++written;
             if (byte == ENCODED_FLAG) {
@@ -92,22 +92,22 @@ const unsigned char* unpack(unsigned char* dst, const unsigned char* src, int ds
                 const int copy_start = write_index - distance;
                 int copy_index = copy_start;
 
-                printf("[ ");
+                // printf("[ ");
                 while (length--) {
                     assert(copy_index >= 0);
                     assert(copy_index < copy_end);
-                    printf("%x ", dst[copy_index]);
+                    // printf("%x ", dst[copy_index]);
                     dst[write_index++] = dst[copy_index];
                     if (++copy_index == copy_end) {
                         copy_index = copy_start;
                     }
                 }
-                printf("] ");
+                // printf("] ");
 
                 ++src;
             }
         } else {
-            printf("%x ", *src);
+            // printf("%x ", *src);
             dst[write_index++] = *src++;
         }
     }
@@ -126,7 +126,7 @@ int main() {
     assert(read == SCREEN_SIZE);
     fclose(f);
 
-    printf("\n%i\n", pack(packed, original, SCREEN_SIZE));
+    printf("%i", pack(packed, original, SCREEN_SIZE));
 
     /* Test unpacking. */
     unpack(unpacked, packed, SCREEN_SIZE);
