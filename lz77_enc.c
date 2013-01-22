@@ -46,6 +46,7 @@ unsigned int lz77_pack(unsigned char* dst, const unsigned char* src) {
         int best_match_index = -1;
         unsigned char best_length = 0;
         int match_index = read_index - 1;
+        // TODO: This brute force search must be changed to something better...
         while (match_index >= 0 && match_index >= read_index - 0xfe) {
             unsigned char length = match_length(src, match_index);
             if (length > best_length) {
