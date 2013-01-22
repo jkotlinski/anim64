@@ -23,6 +23,7 @@ THE SOFTWARE. */
 #include "player.h"
 #include "irq.h"
 #include "rle.h"
+#include "lz77.h"
 #include "screen.h"
 
 #include <conio.h>
@@ -32,7 +33,7 @@ THE SOFTWARE. */
 #pragma codeseg("EDITCODE")
 
 #define MY_LFN 1
-static void load_v2_anim() {
+static void load_v2v3_anim(char lz77) {
     unsigned int read_bytes;
     const unsigned char* rle_start;
     curr_screen = 0;
@@ -45,7 +46,10 @@ static void load_v2_anim() {
     memmove(rle_start, SCREEN_BASE, read_bytes);
     // ...then unpack them one by one.
     while (curr_screen <= end_frame) {
-        rle_start = rle_unpack(curr_screen_chars(), rle_start);
+        if (lz77)
+            rle_start = lz77_unpack(curr_screen_chars(), rle_start);
+        else
+            rle_start = rle_unpack(curr_screen_chars(), rle_start);
         if (curr_screen != 0) {
             if (*rle_start) {
                 xor_prev_v2();
@@ -69,8 +73,10 @@ char load_and_unpack_anim() {
             convert_v1_v2(first_byte);
             break;
         case 2:
-            // Version 2.
-            load_v2_anim();
+            load_v2v3_anim(0);
+            break;
+        case 3:
+            load_v2v3_anim(1);
             break;
         default:
             for (;;) ++*(char*)0xd020;  // Not supported.
