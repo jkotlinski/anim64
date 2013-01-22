@@ -11,8 +11,8 @@ int read_index;
  * ENCODED_FLAG bytes are encoded as ENCODED_FLAG, 0xff.
  */
 
-static unsigned int match_length(const unsigned char* src, int start_index) {
-    unsigned int length = 0;
+static unsigned char match_length(const unsigned char* src, int start_index) {
+    unsigned char length = 0;
     unsigned int match_index = start_index;
     while (1) {
         // assert(match_index >= 0);
@@ -44,10 +44,10 @@ unsigned int lz77_pack(unsigned char* dst, const unsigned char* src) {
 
     while (read_index < PACK_SIZE) {
         int best_match_index = -1;
-        unsigned int best_length = 0;
+        unsigned char best_length = 0;
         int match_index = read_index - 1;
         while (match_index >= 0 && match_index >= read_index - 0xfe) {
-            unsigned int length = match_length(src, match_index);
+            unsigned char length = match_length(src, match_index);
             if (length > best_length) {
                 best_match_index = match_index;
                 best_length = length;
@@ -55,11 +55,10 @@ unsigned int lz77_pack(unsigned char* dst, const unsigned char* src) {
             --match_index;
         }
         if (best_length > 3) {
-            int distance = read_index - best_match_index;
             // assert(distance < 0xff);
             // printf("[%x %x]", distance, best_length);
             *dst++ = ENCODED_FLAG;
-            *dst++ = distance;
+            *dst++ = read_index - best_match_index;
             *dst++ = best_length;
             written += 3;
             read_index += best_length;
