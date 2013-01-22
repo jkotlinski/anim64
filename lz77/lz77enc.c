@@ -37,9 +37,10 @@ static int match_length(const unsigned char* src, int start_index, int src_size)
     return length;
 }
 
-static void pack(unsigned char* dst, const unsigned char* src, int src_size) {
+static unsigned int pack(unsigned char* dst, const unsigned char* src, int src_size) {
+    unsigned int written = 0;
+
     read_index = 0;
-    write_index = 0;
 
     while (read_index < src_size) {
         int best_match_index = -1;
@@ -57,19 +58,23 @@ static void pack(unsigned char* dst, const unsigned char* src, int src_size) {
             int distance = read_index - best_match_index;
             assert(distance < 0xff);
             printf("[%x %x]", distance, best_length);
-            dst[write_index++] = ENCODED_FLAG;
-            dst[write_index++] = distance;
-            dst[write_index++] = best_length;
+            *dst++ = ENCODED_FLAG;
+            *dst++ = distance;
+            *dst++ = best_length;
+            written += 3;
             read_index += best_length;
         } else {
             char byte = src[read_index++];
             printf("%x ", 0xff & byte);
-            dst[write_index++] = byte;
+            *dst++ = byte;
+            ++written;
             if (byte == ENCODED_FLAG) {
-                dst[write_index++] = 0xff;
+                *dst++ = 0xff;
+                ++written;
             }
         }
     }
+    return written;
 }
 
 void unpack(unsigned char* dst, const unsigned char* src, int dst_size) {
@@ -121,8 +126,7 @@ int main() {
     assert(read == SCREEN_SIZE);
     fclose(f);
 
-    pack(packed, original, SCREEN_SIZE);
-    printf("\n%i\n", write_index);
+    printf("\n%i\n", pack(packed, original, SCREEN_SIZE));
 
     /* Test unpacking. */
     unpack(unpacked, packed, SCREEN_SIZE);
