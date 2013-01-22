@@ -10,9 +10,9 @@ int read_index;
  * ENCODED_FLAG bytes are encoded as ENCODED_FLAG, 0xff.
  */
 
-static int match_length(const unsigned char* src, int start_index, int src_size) {
-    int length = 0;
-    int match_index = start_index;
+static unsigned int match_length(const unsigned char* src, int start_index, int src_size) {
+    unsigned int length = 0;
+    unsigned int match_index = start_index;
     while (1) {
         assert(match_index >= 0);
         assert(match_index < src_size);
@@ -43,11 +43,11 @@ static unsigned int pack(unsigned char* dst, const unsigned char* src, int src_s
 
     while (read_index < src_size) {
         int best_match_index = -1;
-        int best_length = -1;
+        unsigned int best_length = 0;
         for (int match_index = read_index - 1;
                 match_index >= 0 && match_index >= read_index - 0xfe;
                 --match_index) {
-            int length = match_length(src, match_index, src_size);
+            unsigned int length = match_length(src, match_index, src_size);
             if (length > best_length) {
                 best_match_index = match_index;
                 best_length = length;
