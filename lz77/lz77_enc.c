@@ -1,6 +1,6 @@
 #include "lz77.h"
 
-#include <assert.h>
+// #include <assert.h>
 
 int read_index;
 
@@ -12,10 +12,10 @@ static unsigned int match_length(const unsigned char* src, int start_index, int 
     unsigned int length = 0;
     unsigned int match_index = start_index;
     while (1) {
-        assert(match_index >= 0);
-        assert(match_index < src_size);
-        assert(read_index + length >= 0);
-        assert(read_index + length < src_size);
+        // assert(match_index >= 0);
+        // assert(match_index < src_size);
+        // assert(read_index + length >= 0);
+        // assert(read_index + length < src_size);
         if (src[match_index] != src[read_index + length]) {
             break;
         }
@@ -53,7 +53,7 @@ unsigned int pack(unsigned char* dst, const unsigned char* src, int src_size) {
         }
         if (best_length > 3) {
             int distance = read_index - best_match_index;
-            assert(distance < 0xff);
+            // assert(distance < 0xff);
             // printf("[%x %x]", distance, best_length);
             *dst++ = ENCODED_FLAG;
             *dst++ = distance;

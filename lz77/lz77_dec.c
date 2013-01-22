@@ -1,6 +1,6 @@
 #include "lz77.h"
 
-#include <assert.h>
+// #include <assert.h>
 
 const unsigned char* unpack(unsigned char* dst, const unsigned char* src, int dst_size) {
     int write_index = 0;
@@ -20,8 +20,8 @@ const unsigned char* unpack(unsigned char* dst, const unsigned char* src, int ds
 
                 // printf("[ ");
                 while (length--) {
-                    assert(copy_index >= 0);
-                    assert(copy_index < copy_end);
+                    // assert(copy_index >= 0);
+                    // assert(copy_index < copy_end);
                     // printf("%x ", dst[copy_index]);
                     dst[write_index++] = dst[copy_index];
                     if (++copy_index == copy_end) {
