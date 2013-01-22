@@ -5,9 +5,6 @@
 #define ENCODED_FLAG 0x60
 #define SCREEN_SIZE 1501
 
-unsigned char src[SCREEN_SIZE];
-unsigned char dst[SCREEN_SIZE];
-
 int write_index;
 int read_index;
 
@@ -15,7 +12,7 @@ int read_index;
  * ENCODED_FLAG bytes are encoded as ENCODED_FLAG, 0xff.
  */
 
-static int match_length(int start_index) {
+static int match_length(const unsigned char* src, int start_index) {
     int length = 0;
     int match_index = start_index;
     while (1) {
@@ -41,7 +38,7 @@ static int match_length(int start_index) {
     return length;
 }
 
-static void pack() {
+static void pack(unsigned char* dst, const unsigned char* src) {
     read_index = 0;
     write_index = 0;
 
@@ -51,7 +48,7 @@ static void pack() {
         for (int match_index = read_index - 1;
                 match_index >= 0 && match_index >= read_index - 0xfe;
                 --match_index) {
-            int length = match_length(match_index);
+            int length = match_length(src, match_index);
             if (length > best_length) {
                 best_match_index = match_index;
                 best_length = length;
@@ -76,7 +73,7 @@ static void pack() {
     }
 }
 
-void unpack() {
+void unpack(unsigned char* dst, const unsigned char* src) {
     read_index = 0;
     write_index = 0;
 
@@ -115,21 +112,21 @@ void unpack() {
 
 int main() {
     unsigned char original[SCREEN_SIZE];
+    unsigned char packed[SCREEN_SIZE];
+    unsigned char unpacked[SCREEN_SIZE];
 
     FILE* f = fopen("wolf7,u", "rb");
     int read = fread(original, 1, sizeof(original), f);
     assert(read == SCREEN_SIZE);
     fclose(f);
-    memcpy(src, original, sizeof(original));
 
-    pack();
+    pack(packed, original);
     printf("\n%i\n", write_index);
 
     /* Test unpacking. */
-    memcpy(src, dst, write_index);
-    unpack();
+    unpack(unpacked, packed);
 
-    assert(0 == memcmp(dst, original, sizeof(dst)));
+    assert(0 == memcmp(unpacked, original, sizeof(unpacked)));
 
     return 0;
 }
