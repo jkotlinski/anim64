@@ -1,5 +1,5 @@
 #include <cbm.h>
-#include "cc65/cbm_dir.h"
+#include "cc65/mycbm.h"
 
 #pragma codeseg("EDITCODE")
 #pragma rodataseg("EDITCODE")
